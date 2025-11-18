@@ -9,9 +9,21 @@ else:
 class Hydrocarbons(AbstractState):
 
     __generic_hc_names: list[str] = [
+        # Hydrocarbons
         'Methane',
+        'Ethane',
         'Propane',
-        'Hexane'
+        'isoButane',
+        'n-Butane'
+        'isopentane',
+        'n-Pentane'
+
+        # Contaminants/Others
+        'Nitrogen'
+        'CarbonMonooxide'
+        'CarbonDioxide'
+        'HydrogenSulfide',
+
     ]
 
     def __init__(self, backend: str = 'HEOS', molar_compostion: Iterable[float] | None = None):
