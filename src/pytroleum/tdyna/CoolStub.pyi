@@ -473,13 +473,13 @@ class AbstractState:
     def set_fluid_parameter_double(self) -> float:
         ...
 
-    def set_mass_fractions(self, mass_fractions: list[float] | ndarray[float]):
+    def set_mass_fractions(self, mass_fractions: list[float] | ndarray):
         ...
 
-    def set_mole_fractions(self, mole_fractions: list[float] | ndarray[float]) -> float:
+    def set_mole_fractions(self, mole_fractions: list[float] | ndarray) -> float:
         ...
 
-    def set_volu_fractions(self, volu_fractions: list[float] | ndarray[float]) -> float:
+    def set_volu_fractions(self, volu_fractions: list[float] | ndarray) -> float:
         ...
 
     @property
