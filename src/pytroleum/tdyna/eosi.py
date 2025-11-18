@@ -1,0 +1,25 @@
+from typing import TYPE_CHECKING, Iterable
+
+if TYPE_CHECKING:
+    from CoolStub import AbstractState
+else:
+    from CoolProp import AbstractState
+
+
+class Hydrocarbons(AbstractState):
+
+    __generic_hc_names: list[str] = [
+        'Methane',
+        'Propane',
+        'Hexane'
+    ]
+
+    def __init__(self, backend: str = 'HEOS', molar_compostion: Iterable[float] | None = None):
+
+        # This one only requires backend name. Fluid - generic mixture of hydrocarbons with
+        # specified composition.
+
+        super().__init__(backend, '&'.join(self.__generic_hc_names))  # something like that
+
+        if molar_compostion is not None:
+            self.set_mole_fractions(molar_compostion)

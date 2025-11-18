@@ -1,7 +1,7 @@
 # Stub for CoolProp API, needed for autocompletion and convenient class extension
 from CoolProp.CoolProp import PyPhaseEnvelopeData, PySpinodalData
 from numpy import ndarray
-from typing import Any
+from typing import Any, Iterable
 
 
 class AbstractState:
@@ -473,13 +473,13 @@ class AbstractState:
     def set_fluid_parameter_double(self) -> float:
         ...
 
-    def set_mass_fractions(self, mass_fractions: list[float] | ndarray):
+    def set_mass_fractions(self, mass_fractions: Iterable[float]):
         ...
 
-    def set_mole_fractions(self, mole_fractions: list[float] | ndarray) -> float:
+    def set_mole_fractions(self, mole_fractions: Iterable[float]) -> float:
         ...
 
-    def set_volu_fractions(self, volu_fractions: list[float] | ndarray) -> float:
+    def set_volu_fractions(self, volu_fractions: Iterable[float]) -> float:
         ...
 
     @property
