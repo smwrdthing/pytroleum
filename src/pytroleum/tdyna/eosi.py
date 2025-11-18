@@ -13,15 +13,18 @@ class Hydrocarbons(AbstractState):
         'Methane',
         'Ethane',
         'Propane',
-        'isoButane',
-        'n-Butane'
-        'isopentane',
-        'n-Pentane'
+        'IsoButane',
+        'n-Butane',
+        'Isopentane',
+        'n-Pentane',
+
+        # TODO: figure out __cinit__() issue, create if __name__ == '__main__'
+        # for quick tests
 
         # Contaminants/Others
-        'Nitrogen'
-        'CarbonMonooxide'
-        'CarbonDioxide'
+        'Nitrogen',
+        'CarbonMonoxide',
+        'CarbonDioxide',
         'HydrogenSulfide',
 
     ]
