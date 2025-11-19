@@ -38,3 +38,7 @@ class Hydrocarbons(AbstractState):
 
         if molar_compostion is not None:
             self.set_mole_fractions(molar_compostion)
+
+
+if __name__ == "__main__":
+    pass
