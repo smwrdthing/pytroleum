@@ -152,7 +152,7 @@ if __name__ == "__main__":
     # Trying PQ-flash with variable PT
     print('\nPQ FLASH :: var P :: r>')
     print(80*'=')
-    Q = np.linspace(0, 1, len(P))Ля
+    Q = np.linspace(0, 1, len(P))
     T = []
     for pressure, quality in zip(P, Q):
         hcm_eos_PR.update(CPconst.PQ_INPUTS, pressure, quality)
