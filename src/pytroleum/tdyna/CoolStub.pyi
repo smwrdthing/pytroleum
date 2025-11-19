@@ -6,6 +6,9 @@ from typing import Any, Iterable
 
 class AbstractState:
 
+    def __new__(cls, backend: str, fluids: str):
+        ...  # for cython stuff
+
     # Accessibles from AbstractState
 
     def __init__(self, backend: str, fluids: str):
@@ -191,10 +194,10 @@ class AbstractState:
     def first_two_phase_deriv_splined(self) -> float:
         ...
 
-    def fluid_names(self) -> float:
+    def fluid_names(self) -> list:
         ...
 
-    def fluid_param_string(self) -> float:
+    def fluid_param_string(self) -> str:
         ...
 
     def fugacity(self) -> float:

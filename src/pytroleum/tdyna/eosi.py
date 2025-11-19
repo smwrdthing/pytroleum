@@ -1,3 +1,5 @@
+# Interfaces for Equation of State
+
 from typing import TYPE_CHECKING, Iterable
 
 if TYPE_CHECKING:
@@ -32,7 +34,7 @@ class Hydrocarbons(AbstractState):
     def __new__(cls, backend: str = 'HEOS'):
         # Must define __new__ instead of __init__ due to some cython shenanigans.
 
-        instance = super().__new__(cls, backend, '&'.join(  # type: ignore
+        instance = super().__new__(cls, backend, '&'.join(
             cls.__generic_hc_names))
 
         return instance
