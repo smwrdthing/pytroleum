@@ -41,4 +41,5 @@ class Hydrocarbons(AbstractState):
 
 
 if __name__ == "__main__":
-    pass
+
+    hcmix = Hydrocarbons()
