@@ -25,21 +25,24 @@ class Hydrocarbons(AbstractState):
         'Nitrogen',
         'CarbonMonoxide',
         'CarbonDioxide',
-        'HydrogenSulfide',
+        'HydrogenSulfide'
 
     ]
 
-    def __init__(self, backend: str = 'HEOS', molar_compostion: Iterable[float] | None = None):
+    def __new__(cls, backend: str = 'HEOS'):
+        # Must define __new__ instead of __init__ due to some cython shenanigans.
 
-        # This one only requires backend name. Fluid - generic mixture of hydrocarbons with
-        # specified composition.
+        instance = super().__new__(cls, backend, '&'.join(  # type: ignore
+            cls.__generic_hc_names))
 
-        super().__init__(backend, '&'.join(self.__generic_hc_names))  # something like that
+        return instance
 
-        if molar_compostion is not None:
-            self.set_mole_fractions(molar_compostion)
+    def __init__(self, backend: str):
+        # call signature here, should repeat what
+        pass
 
 
 if __name__ == "__main__":
 
-    hcmix = Hydrocarbons()
+    hcmix = Hydrocarbons('HEOS')
+    airmix = AbstractState('HEOS', 'Air.mix')
