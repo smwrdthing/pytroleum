@@ -105,19 +105,28 @@ if __name__ == "__main__":
     # Let's see if this makes sense
 
     natural_gas_composition = {
-        'Methane': 0.5,
+        'Methane': 0.3,
         'Ethane': 0.3,
-        'Propane': 0.2
+        'Propane': 0.2,
+
+        'Nitrogen': 0.1,
+        'CO2': 0.1
     }
+
+    # Check composition sanity
+    assert (abs(np.sum(list(natural_gas_composition.values()))-1) < 1e-3)
 
     # NOTE on molar fractions : CoolProp does absolutely nothing to ensure sum(mole_fractins) = 1
 
     hcm_eos = hydrocarb_factory(natural_gas_composition)
 
+    print('Hydrocarbon composition')
+    print(80*'=')
     i = 1
     for flname, flx in zip(hcm_eos.fluid_names(), hcm_eos.get_mole_fractions()):
         print(f'{i} : {flname} :: {flx}')
         i += 1
+    print(80*'=')
 
     CP.set_config_double(CP.PHASE_ENVELOPE_STARTING_PRESSURE_PA, 1e4)
     hcm_eos.update(PQ_INPUTS, 1e5, 0)
@@ -132,3 +141,18 @@ if __name__ == "__main__":
     ax.set_ylabel('Pressure, atm')
     plt.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
     ax.grid(True)
+
+    # What if we change backend?
+    hcm_eos = hydrocarb_factory(natural_gas_composition, 'PR')
+    hcm_eos.build_phase_envelope("")
+    PE = hcm_eos.get_phase_envelope_data()
+    ax.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
+
+    hcm_eos = hydrocarb_factory(natural_gas_composition, 'SRK')
+    hcm_eos.build_phase_envelope("")
+    PE = hcm_eos.get_phase_envelope_data()
+    ax.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
+
+    ax.legend(['HEOS', 'PR', 'SRK'])
+
+    # Different backends provide different isopleths
