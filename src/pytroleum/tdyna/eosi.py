@@ -6,45 +6,111 @@ if TYPE_CHECKING:
     from CoolStub import AbstractState
 else:
     from CoolProp import AbstractState
+from CoolProp import (
+    DmassHmass_INPUTS,
+    DmassP_INPUTS,
+    DmassQ_INPUTS,
+    DmassSmass_INPUTS,
+    DmassT_INPUTS,
+    DmassUmass_INPUTS,
+    DmolarHmolar_INPUTS,
+    DmolarP_INPUTS,
+    DmolarQ_INPUTS,
+    DmolarSmolar_INPUTS,
+    DmolarT_INPUTS,
+    DmolarUmolar_INPUTS,
+    HmassP_INPUTS,
+    HmassQ_INPUTS,
+    HmassSmass_INPUTS,
+    HmassT_INPUTS,
+    HmolarP_INPUTS,
+    HmolarQ_INPUTS,
+    HmolarSmolar_INPUTS,
+    HmolarT_INPUTS,
+    PQ_INPUTS,
+    PSmass_INPUTS,
+    PSmolar_INPUTS,
+    PT_INPUTS,
+    PUmass_INPUTS,
+    PUmolar_INPUTS,
+    QSmass_INPUTS,
+    QSmolar_INPUTS,
+    QT_INPUTS,
+    SmassT_INPUTS,
+    SmassUmass_INPUTS,
+    SmolarT_INPUTS,
+    SmolarUmolar_INPUTS,
+    TUmass_INPUTS,
+    TUmolar_INPUTS,
+)
 
-# TODO: figure out __cinit__() issue, create if __name__ == '__main__'
-# for quick tests
+
+# Realised we don't need subclass for hydrocarbon mixture interface definition at all.
+# in this case we're good to go with factory function. Though code for AbstractState subclassing
+# is retained in case of future needs
+#
+# How to subclass AbstractState appropriately:
+# class CertainState(AbstractState):
+
+#     def __new__(cls, backend: str = 'HEOS', fluids: str):
+#         # Must define __new__ instead of __init__ due to some cython shenanigans.
+
+#         instance = super().__new__(cls, backend, '&'.join(
+#             cls.__generic_hc_names))
+
+#         return instance
+
+#     def __init__(self, backend: str, fluids: str):
+#         # call signature here, should repeat one in __new__ to silence pylance
+#         pass
+
+# Maybe a default generic composition?
+GENERIC_HYDROCARBON_MIXTURE = [
+    # Hydrocarbons
+    'Methane',
+    'Ethane',
+    'Propane',
+    'IsoButane',
+    'n-Butane',
+    'Isopentane',
+    'n-Pentane',
+
+    # Contaminants/Others
+    'Nitrogen',
+    'CarbonMonoxide',
+    'CarbonDioxide',
+    'HydrogenSulfide'
+]
 
 
-class Hydrocarbons(AbstractState):
+def hydrocarb_factory(composition: dict[str, float], backend: str = 'HEOS') -> AbstractState:
 
-    __generic_hc_names: list[str] = [
-        # Hydrocarbons
-        'Methane',
-        'Ethane',
-        'Propane',
-        'IsoButane',
-        'n-Butane',
-        'Isopentane',
-        'n-Pentane',
+    # No assertions are imposed here
 
-        # Contaminants/Others
-        'Nitrogen',
-        'CarbonMonoxide',
-        'CarbonDioxide',
-        'HydrogenSulfide'
+    hcm_name = '&'.join(list(composition.keys()))
+    hcm_frac = list(composition.values())
 
-    ]
+    hcmix = AbstractState(backend, hcm_name)
+    hcmix.set_mole_fractions(hcm_frac)
 
-    def __new__(cls, backend: str = 'HEOS'):
-        # Must define __new__ instead of __init__ due to some cython shenanigans.
-
-        instance = super().__new__(cls, backend, '&'.join(
-            cls.__generic_hc_names))
-
-        return instance
-
-    def __init__(self, backend: str):
-        # call signature here, should repeat one in __new__ to silence pylance
-        pass
+    return hcmix
 
 
 if __name__ == "__main__":
 
-    hcmix = Hydrocarbons('HEOS')
-    airmix = AbstractState('HEOS', 'Air.mix')
+    # Let's see if this makes sense
+
+    natural_gas_composition = {
+        'Methane': 0.3,
+        'Ethane': 0.4,
+        'Propane': 0.3
+    }
+
+    hcm_eos = hydrocarb_factory(natural_gas_composition)
+
+    i = 1
+    for flname, flx in zip(hcm_eos.fluid_names(), hcm_eos.get_mole_fractions()):
+        print(f'{i} : {flname} :: {flx}')
+        i += 1
+
+    # Trying some calculations
