@@ -1,5 +1,5 @@
 # Stub for CoolProp API, needed for autocompletion and convenient class extension
-from CoolProp.CoolProp import PyPhaseEnvelopeData, PySpinodalData
+from CoolProp.CoolProp import PyPhaseEnvelopeData, PySpinodalData, PyCriticalState
 from numpy import ndarray
 from typing import Any, Iterable
 
@@ -50,7 +50,7 @@ class AbstractState:
     def acentric_factor(self) -> float:
         ...
 
-    def all_critical_points(self) -> float:
+    def all_critical_points(self) -> list[PyCriticalState]:
         ...
 
     def alpha0(self) -> float:

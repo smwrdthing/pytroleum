@@ -101,10 +101,12 @@ if __name__ == "__main__":
     # Let's see if this makes sense
 
     natural_gas_composition = {
-        'Methane': 0.3,
-        'Ethane': 0.4,
-        'Propane': 0.3
+        'Methane': 0.,
+        'Ethane': 0.,
+        'Propane': 0.
     }
+
+    # NOTE on molar fractions : CoolProp does absolutely nothing to ensure sum(mole_fractins) = 1
 
     hcm_eos = hydrocarb_factory(natural_gas_composition)
 
@@ -114,3 +116,5 @@ if __name__ == "__main__":
         i += 1
 
     # Trying some calculations
+
+    hcm_eos.build_phase_envelope()
