@@ -5,6 +5,9 @@ if TYPE_CHECKING:
 else:
     from CoolProp import AbstractState
 
+# TODO: figure out __cinit__() issue, create if __name__ == '__main__'
+# for quick tests
+
 
 class Hydrocarbons(AbstractState):
 
@@ -17,9 +20,6 @@ class Hydrocarbons(AbstractState):
         'n-Butane',
         'Isopentane',
         'n-Pentane',
-
-        # TODO: figure out __cinit__() issue, create if __name__ == '__main__'
-        # for quick tests
 
         # Contaminants/Others
         'Nitrogen',
