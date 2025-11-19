@@ -1,1 +1,16 @@
 
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytroleum"
+authors = [{ name = "Amir Aslanov", email = "amiraslanov16@gmail.com" }]
+description = "Python package for problem-solving in chemical engineering"
+readme = "README.mdd"
+requires-python = ">=3.12"
+keywords = ["one", "two"]
+license = "MIT"
+classifiers = ["Programming Language :: Python :: 3"]
+dependencies = ["numpy", "scipy", "CoolProp"]
+dynamic = ["version"]
