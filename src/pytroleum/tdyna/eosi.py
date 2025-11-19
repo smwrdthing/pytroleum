@@ -6,44 +6,8 @@ if TYPE_CHECKING:
     from CoolStub import AbstractState
 else:
     from CoolProp import AbstractState
-from CoolProp import (
-    DmassHmass_INPUTS,
-    DmassP_INPUTS,
-    DmassQ_INPUTS,
-    DmassSmass_INPUTS,
-    DmassT_INPUTS,
-    DmassUmass_INPUTS,
-    DmolarHmolar_INPUTS,
-    DmolarP_INPUTS,
-    DmolarQ_INPUTS,
-    DmolarSmolar_INPUTS,
-    DmolarT_INPUTS,
-    DmolarUmolar_INPUTS,
-    HmassP_INPUTS,
-    HmassQ_INPUTS,
-    HmassSmass_INPUTS,
-    HmassT_INPUTS,
-    HmolarP_INPUTS,
-    HmolarQ_INPUTS,
-    HmolarSmolar_INPUTS,
-    HmolarT_INPUTS,
-    PQ_INPUTS,
-    PSmass_INPUTS,
-    PSmolar_INPUTS,
-    PT_INPUTS,
-    PUmass_INPUTS,
-    PUmolar_INPUTS,
-    QSmass_INPUTS,
-    QSmolar_INPUTS,
-    QT_INPUTS,
-    SmassT_INPUTS,
-    SmassUmass_INPUTS,
-    SmolarT_INPUTS,
-    SmolarUmolar_INPUTS,
-    TUmass_INPUTS,
-    TUmolar_INPUTS,
-)
-import CoolProp.CoolProp as CP
+import CoolProp
+import CoolProp.constants as CPconst
 
 
 # Realised we don't need subclass for hydrocarbon mixture interface definition at all.
@@ -83,6 +47,8 @@ GENERIC_HYDROCARBON_MIXTURE = [
     'HydrogenSulfide'
 ]
 
+CP = __import__('CoolProp.CoolProp')
+
 
 def hydrocarb_factory(composition: dict[str, float], backend: str = 'HEOS') -> AbstractState:
 
@@ -105,16 +71,18 @@ if __name__ == "__main__":
     # Let's see if this makes sense
 
     natural_gas_composition = {
-        'Methane': 0.3,
-        'Ethane': 0.3,
-        'Propane': 0.2,
+        'Methane': 0.6,
+        'Ethane': 0.2,
+        'Propane': 0.1,
 
-        'Nitrogen': 0.1,
-        'CO2': 0.1
+        'Nitrogen': 0.05,
+        'CO2': 0.05,
+        # 'CO': 0.04,
+        # 'H2S' : 0.01
     }
 
     # Check composition sanity
-    assert (abs(np.sum(list(natural_gas_composition.values()))-1) < 1e-3)
+    assert (abs(np.sum(list(natural_gas_composition.values()))-1) < 1e-2)
 
     # NOTE on molar fractions : CoolProp does absolutely nothing to ensure sum(mole_fractins) = 1
 
@@ -128,8 +96,8 @@ if __name__ == "__main__":
         i += 1
     print(80*'=')
 
-    CP.set_config_double(CP.PHASE_ENVELOPE_STARTING_PRESSURE_PA, 1e4)
-    hcm_eos.update(PQ_INPUTS, 1e5, 0)
+    # Not mandatory, might be useful for robustness
+    # CP.set_config_double(CP.PHASE_ENVELOPE_STARTING_PRESSURE_PA, 1e4)
 
     # Trying some calculations
     hcm_eos.build_phase_envelope("")
@@ -143,16 +111,74 @@ if __name__ == "__main__":
     ax.grid(True)
 
     # What if we change backend?
-    hcm_eos = hydrocarb_factory(natural_gas_composition, 'PR')
-    hcm_eos.build_phase_envelope("")
-    PE = hcm_eos.get_phase_envelope_data()
+    hcm_eos_PR = hydrocarb_factory(natural_gas_composition, 'PR')
+    hcm_eos_PR.build_phase_envelope("")
+    PE = hcm_eos_PR.get_phase_envelope_data()
     ax.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
 
-    hcm_eos = hydrocarb_factory(natural_gas_composition, 'SRK')
-    hcm_eos.build_phase_envelope("")
-    PE = hcm_eos.get_phase_envelope_data()
+    hcm_eos_SRK = hydrocarb_factory(natural_gas_composition, 'SRK')
+    hcm_eos_SRK.build_phase_envelope("")
+    PE = hcm_eos_SRK.get_phase_envelope_data()
     ax.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
 
     ax.legend(['HEOS', 'PR', 'SRK'])
 
     # Different backends provide different isopleths
+
+    # Compute some specific points
+
+    # HEOS interface refuses to perform computations in regions where Q < 1
+    # for some reasons, maybe biary interaction parameters are off? IDK
+
+    P = np.array([10, 20, 30, 40, 50, 60])*1e5
+    T = np.ones_like(P)*(-15+273.15)
+
+    # Trying PT-flash with const T
+    print('\nPT FLASH :: const T :: k^')
+    print(80*'=')
+    Q = []
+    for pressure, temperature in zip(P, T):
+        hcm_eos_PR.update(CPconst.PT_INPUTS, pressure, temperature)
+        Q.append(hcm_eos_PR.Q())
+
+        print(80*'-')
+        print(
+            f'P = {pressure/1e5} bar; T = {temperature-273.15} C; Q = {Q[-1]*100} %'
+        )
+        ax.plot(temperature-273.15, pressure/1e5, 'k^')
+    # Vapor quality is off??
+    print(80*'='+'\n')
+
+    # Trying PQ-flash with variable PT
+    print('\nPQ FLASH :: var P :: r>')
+    print(80*'=')
+    Q = np.linspace(0, 1, len(P))Ля
+    T = []
+    for pressure, quality in zip(P, Q):
+        hcm_eos_PR.update(CPconst.PQ_INPUTS, pressure, quality)
+        T.append(hcm_eos_PR.T())
+
+        print(80*'-')
+        print(
+            f'P = {pressure/1e5} bar; T = {T[-1]-273.15:.2f} C; Q = {quality*100:.2f} %'
+        )
+
+        ax.plot(T[-1]-273.15, pressure/1e5, 'r>')
+    print(80*'='+'\n')
+
+    # Trying PQ flash with const P
+    print('\nPQ FLASH :: const P :: b>')
+    print(80*'=')
+    P = np.ones_like(Q)*40e5
+    # Q from flash-calculations above
+    T = []
+    for pressure, quality in zip(P, Q):
+        hcm_eos_PR.update(CPconst.PQ_INPUTS, pressure, quality)
+        T.append(hcm_eos_PR.T())
+
+        print(80*'-')
+        print(
+            f'P = {pressure/1e5} bar; T = {T[-1]-273.15:.2f} C; Q = {quality*100:.2f} %'
+        )
+
+        ax.plot(T[-1]-273.15, pressure/1e5, 'b>')
