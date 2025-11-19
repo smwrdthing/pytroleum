@@ -65,7 +65,7 @@ class AbstractState:
     def backend_name(self) -> float:
         ...
 
-    def build_phase_envelope(self) -> float:
+    def build_phase_envelope(self, envelope_type: str):
         ...
 
     def build_spinodal(self) -> float:

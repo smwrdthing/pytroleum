@@ -43,6 +43,7 @@ from CoolProp import (
     TUmass_INPUTS,
     TUmolar_INPUTS,
 )
+import CoolProp.CoolProp as CP
 
 
 # Realised we don't need subclass for hydrocarbon mixture interface definition at all.
@@ -98,12 +99,15 @@ def hydrocarb_factory(composition: dict[str, float], backend: str = 'HEOS') -> A
 
 if __name__ == "__main__":
 
+    import numpy as np
+    import matplotlib.pyplot as plt
+
     # Let's see if this makes sense
 
     natural_gas_composition = {
-        'Methane': 0.,
-        'Ethane': 0.,
-        'Propane': 0.
+        'Methane': 0.5,
+        'Ethane': 0.3,
+        'Propane': 0.2
     }
 
     # NOTE on molar fractions : CoolProp does absolutely nothing to ensure sum(mole_fractins) = 1
@@ -115,6 +119,16 @@ if __name__ == "__main__":
         print(f'{i} : {flname} :: {flx}')
         i += 1
 
-    # Trying some calculations
+    CP.set_config_double(CP.PHASE_ENVELOPE_STARTING_PRESSURE_PA, 1e4)
+    hcm_eos.update(PQ_INPUTS, 1e5, 0)
 
-    hcm_eos.build_phase_envelope()
+    # Trying some calculations
+    hcm_eos.build_phase_envelope("")
+    PE = hcm_eos.get_phase_envelope_data()
+
+    fig, ax = plt.subplots()
+    ax.set_title('Isopleth')
+    ax.set_xlabel(r'T $\degree$C')
+    ax.set_ylabel('Pressure, atm')
+    plt.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
+    ax.grid(True)
