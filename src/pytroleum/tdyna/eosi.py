@@ -38,7 +38,7 @@ class Hydrocarbons(AbstractState):
         return instance
 
     def __init__(self, backend: str):
-        # call signature here, should repeat what
+        # call signature here, should repeat one in __new__ to silence pylance
         pass
 
 
