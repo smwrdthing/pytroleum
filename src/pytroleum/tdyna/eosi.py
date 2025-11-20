@@ -47,8 +47,6 @@ GENERIC_HYDROCARBON_MIXTURE = [
     'HydrogenSulfide'
 ]
 
-CP = __import__('CoolProp.CoolProp')
-
 
 def hydrocarb_factory(composition: dict[str, float], backend: str = 'HEOS') -> AbstractState:
 
