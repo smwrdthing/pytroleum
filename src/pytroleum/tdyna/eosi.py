@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 else:
     from CoolProp import AbstractState
 import CoolProp
-import CoolProp.constants as CPconst
+import CoolProp.constants as CoolConst
 
 # Realised we don't need subclass for hydrocarbon mixture interface definition at all.
 # in this case we're good to go with factory function. Though code for AbstractState
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     # Q from flash-calculations above
     T = []
     for pressure, quality in zip(P, Q):
-        hcm_eos_PR.update(CPconst.PQ_INPUTS, pressure, quality)
+        hcm_eos_PR.update(CoolConst.PQ_INPUTS, pressure, quality)
         T.append(hcm_eos_PR.T())
 
         print(50*'-')
