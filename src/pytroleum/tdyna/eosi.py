@@ -80,7 +80,11 @@ if __name__ == "__main__":
     }
 
     # Check composition sanity
-    assert (abs(np.sum(list(natural_gas_composition.values()))-1) < 1e-2)
+    try:
+        assert (abs(np.sum(list(natural_gas_composition.values()))-1) < 1e-2)
+    except AssertionError as e:
+        msg = "Sum of mole fractions is more than 1"
+        raise ValueError(msg) from e
 
     # NOTE on molar fractions : CoolProp does absolutely nothing to ensure sum(mole_fractins) = 1
 
