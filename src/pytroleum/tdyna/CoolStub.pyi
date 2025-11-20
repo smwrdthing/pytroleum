@@ -213,7 +213,7 @@ class AbstractState:
         ...
 
     def get_binary_interaction_double(
-            self, component1: str | int, component2: str | int) -> float:
+            self, component1: int, component2: int, bip: str) -> float:
         ...
 
     def get_binary_interaction_string(
