@@ -180,3 +180,22 @@ if __name__ == "__main__":
         )
 
         ax.plot(T[-1]-273.15, pressure/1e5, 'b>')
+
+    # Checking material balance for CoolProp calcs
+    P, Q = 1e4, 0.8
+    hcm_eos_PR.update(CPconst.PQ_INPUTS, P, Q)
+    x = np.array(hcm_eos_PR.get_mole_fractions())
+    x_vapor = np.array(hcm_eos_PR.mole_fractions_vapor())
+    x_liquid = np.array(hcm_eos_PR.mole_fractions_liquid())
+
+    x_balance = x_vapor*Q + x_liquid*(1-Q)
+
+    print("\nMolar fractions")
+    print(f"x={x} | overall")
+    print(f"xv={x_vapor} | vapor")
+    print(f"xl={x_liquid} | liquid")
+    print(f'Q*xv+(1-Q)*xl = {x_balance} | balance eq.')
+
+    assert (np.allclose(x, x_balance))  # if no exception -> balance holds
+
+    plt.show()
