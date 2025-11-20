@@ -170,4 +170,15 @@ if __name__ == "__main__":
     ax.grid(True)
     ct = ax.contour(T-273.15, QQ*100, PP/1e5, levels=P[1:-1]/1e5, colors='k')
     ct.clabel(fmt=r'%.0f bar')
+
+    # I want to check binaries too
+    print('\nBinary interaction coeffs :: kij')
+    print(50*'=')
+    fluids = hcm_eos_PR.fluid_names()
+    for i, base in enumerate(fluids):
+        print(50*'-')
+        for j, check in enumerate(fluids[i+1:]):
+            bip = hcm_eos_PR.get_binary_interaction_double(i, j, 'kij')
+            print(f'{base.lower()} & {check.lower()} :: {bip:.2e}')
+
     plt.show()
