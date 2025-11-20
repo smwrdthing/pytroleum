@@ -112,76 +112,22 @@ if __name__ == "__main__":
         'H2S': 0.01
     }
 
-    # Check composition sanity
-    try:
-        assert (abs(np.sum(list(natural_gas_composition.values()))-1) < 1e-2)
-    except AssertionError as e:
-        msg = "Sum of mole fractions is more than 1"
-        raise ValueError(msg) from e
-
-    # NOTE on molar fractions : CoolProp does absolutely nothing to ensure
-    # sum(mole_fractins) = 1
-
-    hcm_eos = factory_hydrocarbs(natural_gas_composition)
-
-    print('Hydrocarbon composition')
-    print(80*'=')
-    i = 1
-    for flname, flx in zip(hcm_eos.fluid_names(), hcm_eos.get_mole_fractions()):
-        print(f'{i} : {flname} :: {flx}')
-        i += 1
-    print(80*'=')
-
-    # Not mandatory, might be useful for robustness
-    # CP.set_config_double(CP.PHASE_ENVELOPE_STARTING_PRESSURE_PA, 1e4)
-
-    # Trying some calculations
-    hcm_eos.build_phase_envelope("")
-    PE = hcm_eos.get_phase_envelope_data()
+    # What if we change backend?
+    hcm_eos_PR = factory_hydrocarbs(natural_gas_composition)
+    hcm_eos_PR.build_phase_envelope("")
+    PE = hcm_eos_PR.get_phase_envelope_data()
 
     fig, ax = plt.subplots()
     ax.set_title('Isopleth')
     ax.set_xlabel(r'T $\degree$C')
     ax.set_ylabel('Pressure, atm')
-    plt.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
+    ax.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
     ax.grid(True)
 
-    # What if we change backend?
-    hcm_eos_PR = factory_hydrocarbs(natural_gas_composition, 'PR')
-    hcm_eos_PR.build_phase_envelope("")
-    PE = hcm_eos_PR.get_phase_envelope_data()
-    ax.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
-
-    hcm_eos_SRK = factory_hydrocarbs(natural_gas_composition, 'SRK')
-    hcm_eos_SRK.build_phase_envelope("")
-    PE = hcm_eos_SRK.get_phase_envelope_data()
-    ax.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
-
-    ax.legend(['HEOS', 'PR', 'SRK'])
-
-    # Different backends provide different isopleths
-
-    # Trying PQ-flash with variable PT
-    print('\nPQ FLASH :: var P :: r>')
-    print(80*'=')
-    P = np.array([10, 20, 30, 40, 50, 60])*1e5
-    Q = np.linspace(0, 1, len(P))
-    T = []
-    for pressure, quality in zip(P, Q):
-        hcm_eos_PR.update(CPconst.PQ_INPUTS, pressure, quality)
-        T.append(hcm_eos_PR.T())
-
-        print(80*'-')
-        print(
-            f'P = {pressure/1e5} bar; T = {T[-1]-273.15:.2f} C; Q = {quality*100:.2f} %'
-        )
-
-        ax.plot(T[-1]-273.15, pressure/1e5, 'r>')
-    print(80*'='+'\n')
-
     # Trying PQ flash with const P
-    print('\nPQ FLASH :: const P :: b>')
-    print(80*'=')
+    print('\nPQ FLASH :: const P')
+    print(50*'=')
+    Q = np.arange(0, 1+0.1, 0.1)
     P = np.ones_like(Q)*40e5
     # Q from flash-calculations above
     T = []
@@ -189,28 +135,10 @@ if __name__ == "__main__":
         hcm_eos_PR.update(CPconst.PQ_INPUTS, pressure, quality)
         T.append(hcm_eos_PR.T())
 
-        print(80*'-')
+        print(50*'-')
         print(
             f'P = {pressure/1e5} bar; T = {T[-1]-273.15:.2f} C; Q = {quality*100:.2f} %'
         )
 
         ax.plot(T[-1]-273.15, pressure/1e5, 'b>')
-
-    # Checking material balance for CoolProp calcs
-    P, Q = 1e4, 0.8
-    hcm_eos_PR.update(CPconst.PQ_INPUTS, P, Q)
-    x = np.array(hcm_eos_PR.get_mole_fractions())
-    x_vapor = np.array(hcm_eos_PR.mole_fractions_vapor())
-    x_liquid = np.array(hcm_eos_PR.mole_fractions_liquid())
-
-    x_balance = x_vapor*Q + x_liquid*(1-Q)
-
-    print("\nMolar fractions")
-    print(f"x={x} | overall")
-    print(f"xv={x_vapor} | vapor")
-    print(f"xl={x_liquid} | liquid")
-    print(f'Q*xv+(1-Q)*xl = {x_balance} | balance eq.')
-
-    assert (np.allclose(x, x_balance))  # if no exception -> balance holds
-
     plt.show()
