@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from CoolStub import AbstractState
 else:
     from CoolProp import AbstractState
-import CoolProp
+import CoolProp.CoolProp as CP
 import CoolProp.constants as CoolConst
 
 # Realised we don't need subclass for hydrocarbon mixture interface definition at all.
@@ -127,8 +127,8 @@ if __name__ == "__main__":
     # Trying PQ flash with const P
     print('\nPQ FLASH :: const P')
     print(50*'=')
-    Q = np.arange(0, 1+0.1, 0.1)
-    P = np.ones_like(Q)*40e5
+    Q = np.arange(0, 1+0.05, 0.05)
+    P = np.ones_like(Q)*10e5
     # Q from flash-calculations above
     T = []
     for pressure, quality in zip(P, Q):
