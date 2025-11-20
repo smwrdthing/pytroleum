@@ -112,7 +112,6 @@ if __name__ == "__main__":
         'H2S': 0.01
     }
 
-    # What if we change backend?
     hcm_eos_PR = factory_hydrocarbs(natural_gas_composition)
     hcm_eos_PR.build_phase_envelope("")
     PE = hcm_eos_PR.get_phase_envelope_data()
@@ -120,14 +119,18 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     ax.set_title('Isopleth')
     ax.set_xlabel(r'T $\degree$C')
-    ax.set_ylabel('Pressure, atm')
+    ax.set_ylabel('Pressure, bar')
     ax.plot(np.array(PE.T)-273.15, np.array(PE.p)/1e5)
     ax.grid(True)
+
+    # Configuring starting pressure
+    # default is 100 Pa?
+    CP.set_config_double(CP.PHASE_ENVELOPE_STARTING_PRESSURE_PA, 1e4)
 
     # Trying PQ flash with const P
     print('\nPQ FLASH :: const P')
     print(50*'=')
-    Q = np.arange(0, 1+0.05, 0.05)
+    Q = np.arange(0, 1+0.1, 0.1)
     P = np.ones_like(Q)*10e5
     # Q from flash-calculations above
     T = []
@@ -141,5 +144,30 @@ if __name__ == "__main__":
             f'P = {pressure/1e5} bar; T = {T[-1]-273.15:.2f} C; Q = {quality*100:.2f} %'
         )
 
-        ax.plot(T[-1]-273.15, pressure/1e5, 'b>')
+        ax.plot(T[-1]-273.15, pressure/1e5, 'r.:')
+
+    # Trying flash calcs for multiple pressure values, building Q(T) for const P
+    stepQ = 0.1
+    Q = np.arange(0, 1+stepQ, stepQ)
+    P = np.array([5, 10, 20, 30, 40, 50, 60, 65])*1e5
+    T = []
+    for pressure in P:
+        t = []
+        for quality in Q:
+            hcm_eos_PR.update(
+                CoolConst.PQ_INPUTS, pressure, quality
+            )
+            t.append(hcm_eos_PR.T())
+        T.append(t)
+    T = np.asarray(T)
+
+    QQ, PP = np.meshgrid(Q, P)
+
+    fig, ax = plt.subplots()
+    ax.set_title('Vapor quality vs temperature (const set of P)')
+    ax.set_xlabel(r'Temperature [$\degree$C]')
+    ax.set_ylabel('Q [mol/mol, %]')
+    ax.grid(True)
+    ct = ax.contour(T-273.15, QQ*100, PP/1e5, levels=P[1:-1]/1e5, colors='k')
+    ct.clabel(fmt=r'%.0f bar')
     plt.show()
