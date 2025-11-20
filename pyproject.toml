@@ -14,3 +14,15 @@ license = "MIT"
 classifiers = ["Programming Language :: Python :: 3"]
 dependencies = ["numpy", "scipy", "CoolProp"]
 dynamic = ["version"]
+
+[tool.setuptools]
+packages = [
+    "pytroleum",
+    "pytroleum.tdyna",
+    "pytroleum.sdyna",
+    "pytroleum.tport",
+]
+package-dir = { "pytroleum" = "src/pytroleum" }
+
+[tool.setuptools.package-data]
+pytroleum = ["**/*.pyi"]
