@@ -127,33 +127,10 @@ if __name__ == "__main__":
 
     # Different backends provide different isopleths
 
-    # Compute some specific points
-
-    # HEOS interface refuses to perform computations in regions where Q < 1
-    # for some reasons, maybe biary interaction parameters are off? IDK
-
-    P = np.array([10, 20, 30, 40, 50, 60])*1e5
-    T = np.ones_like(P)*(-15+273.15)
-
-    # Trying PT-flash with const T
-    print('\nPT FLASH :: const T :: k^')
-    print(80*'=')
-    Q = []
-    for pressure, temperature in zip(P, T):
-        hcm_eos_PR.update(CPconst.PT_INPUTS, pressure, temperature)
-        Q.append(hcm_eos_PR.Q())
-
-        print(80*'-')
-        print(
-            f'P = {pressure/1e5} bar; T = {temperature-273.15} C; Q = {Q[-1]*100} %'
-        )
-        ax.plot(temperature-273.15, pressure/1e5, 'k^')
-    # Vapor quality is off??
-    print(80*'='+'\n')
-
     # Trying PQ-flash with variable PT
     print('\nPQ FLASH :: var P :: r>')
     print(80*'=')
+    P = np.array([10, 20, 30, 40, 50, 60])*1e5
     Q = np.linspace(0, 1, len(P))
     T = []
     for pressure, quality in zip(P, Q):
