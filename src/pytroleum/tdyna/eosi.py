@@ -132,7 +132,8 @@ if __name__ == "__main__":
     # Q from flash-calculations above
     T = []
     for pressure, quality in zip(P, Q):
-        hcm_eos_PR.update(CoolConst.PQ_INPUTS, pressure, quality)
+        hcm_eos_PR.update(CoolConst.PQ_INPUTS, pressure,
+                          quality)  # type: ignore
         T.append(hcm_eos_PR.T())
 
         print(50*'-')
