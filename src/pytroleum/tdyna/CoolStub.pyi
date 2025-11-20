@@ -212,10 +212,12 @@ class AbstractState:
     def gas_constant(self) -> float:
         ...
 
-    def get_binary_interaction_double(self, component1: str | int, component2: str | int) -> float:
+    def get_binary_interaction_double(
+            self, component1: str | int, component2: str | int) -> float:
         ...
 
-    def get_binary_interaction_string(self, component1: str | int, component2: str | int) -> str:
+    def get_binary_interaction_string(
+            self, component1: str | int, component2: str | int) -> str:
         ...
 
     def get_fluid_constant(self, component_index: int, const_key: int) -> float:
@@ -456,7 +458,8 @@ class AbstractState:
         ...
 
     def update_with_guesses(
-            self, input_pair_key: int, input1: float, input2: float, guesse: Any) -> float:
+            self, input_pair_key: int,
+            input1: float, input2: float, guesse: Any) -> float:
         ...
 
     def viscosity(self) -> float:
