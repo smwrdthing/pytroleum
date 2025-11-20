@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 name = "pytroleum"
 authors = [{ name = "Amir Aslanov", email = "amiraslanov16@gmail.com" }]
 description = "Python package for problem-solving in chemical engineering"
-readme = "README.mdd"
+readme = "README.md"
 requires-python = ">=3.12"
 keywords = ["one", "two"]
 license = "MIT"
