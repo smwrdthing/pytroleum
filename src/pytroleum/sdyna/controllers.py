@@ -90,6 +90,40 @@ class PropIntDiff:
 
 class StartStop:
 
-    def __init__(self, upperlim, bottomlim) -> None:
+    def __init__(self, upperlim: float, lowerlim: float,
+                 signal_max: float, signal_min: float) -> None:
+
+        # Setting parameters
+        self.signal_min = signal_min
+        self.signal_max = signal_max
+
         self.upperlim = upperlim
-        self.bottomlim = bottomlim
+        self.lowerlim = lowerlim
+
+        # Entry to operational value of signal
+        self.signal: float = 0
+
+    def control(self, probe, invert=False):
+
+        # Inverted on-off - on mode decreases probes, off increases
+        # example : pump controlling liquid level
+        if invert:
+            # If probe overshoots upper limit we impose max signal
+            if probe > self.upperlim:
+                self.signal = self.signal_max
+            # If probe is less than lower limit we minimize signal
+            if probe < self.lowerlim:
+                self.signal = self.signal_min
+
+        # Non-inverted on-off - on mode increases probes, off decreases
+        # example : compressor controlling pressure in vessel
+        else:
+            # If probe overshoots upper limit we impose minimal signal
+            if probe > self.upperlim:
+                self.signal = self.signal_min
+            # If probe is less than lower limit we give max signal
+            if probe < self.lowerlim:
+                self.signal = self.signal_max
+            # signal value in-between does not change, this is expected behavior
+
+        # This should cover start/stop logic entirely
