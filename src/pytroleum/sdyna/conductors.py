@@ -33,6 +33,9 @@ class Valve(AbstractCDR):
     def __init__(self) -> None:
         super().__init__()
 
+    def advance(self):
+        pass
+
 
 class CentrifugalPump(AbstractCDR):
 
@@ -40,6 +43,9 @@ class CentrifugalPump(AbstractCDR):
 
     def __init__(self) -> None:
         super().__init__()
+
+    def advance(self):
+        pass
 
 
 class UnderPass(AbstractCDR):
@@ -50,6 +56,9 @@ class UnderPass(AbstractCDR):
     def __init__(self) -> None:
         super().__init__()
 
+    def advance(self):
+        pass
+
 
 class OverPass(AbstractCDR):
 
@@ -59,6 +68,9 @@ class OverPass(AbstractCDR):
     def __init__(self) -> None:
         super().__init__()
 
+    def advance(self):
+        pass
+
 
 class LumpedFurnaceWall(AbstractCDR):
 
@@ -67,6 +79,9 @@ class LumpedFurnaceWall(AbstractCDR):
     def __init__(self) -> None:
         super().__init__()
 
+    def advance(self):
+        pass
+
 
 class PhaseInterface(AbstractCDR):
 
@@ -74,3 +89,6 @@ class PhaseInterface(AbstractCDR):
 
     def __init__(self) -> None:
         super().__init__()
+
+    def advance(self):
+        pass
