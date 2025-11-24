@@ -72,10 +72,11 @@ class PropIntDiff:
 
         # Computing new signal
         self.gain = self.P*self.error
-        self.integral = self.integral + self.I*self.error*dt
+        self.integral = self.integral + self.I * (
+            self.error*dt*(not PID.saturated))  # anti-windup measure
         self.diff = self.D*(
             self.error-self.history_error + self.F*self.history_diff)/(dt+self.F)
-        self.signal = self.gain+self.integral+self.error
+        self.signal = self.gain+self.integral+self.diff
 
         # Performing saturation and rate limitataions checks and amends
         self.check_saturation()
