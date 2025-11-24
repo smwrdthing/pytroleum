@@ -1,6 +1,5 @@
 # Stub for CoolProp API, needed for autocompletion and convenient class extension
 from CoolProp.CoolProp import PyPhaseEnvelopeData, PySpinodalData, PyCriticalState
-from numpy import ndarray
 from typing import Any, Iterable
 
 
@@ -451,7 +450,12 @@ class AbstractState:
     def unspecify_phase(self):
         ...
 
-    def update(self, input_pair_key: int, input1: float, input2: float):
+    def update(self, input_pair_key: int, input1: float | Any, input2: float | Any):
+        # Type checker cries without union with Any, this is not a very good
+        # thing to do, but it is too much of a trouble to figure out which type
+        # will suite all of numpy floats (why do they need that much anyway?)
+        # so we leave things as is. To be fair this whole stub thing should be
+        # implemented better, revisit when appropriate
         ...
 
     def update_QT_pure_superanc(self, Q: float, T: float) -> float:
