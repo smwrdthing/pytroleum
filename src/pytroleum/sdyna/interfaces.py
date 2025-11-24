@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 
+@runtime_checkable
 class GenericCV(Protocol):
 
     # Interface for control volume
@@ -22,6 +23,7 @@ class GenericCV(Protocol):
         ...
 
 
+@runtime_checkable
 class GenericCDR(Protocol):
 
     # Interface for conductor
