@@ -58,7 +58,7 @@ class PropIntDiff:
             self.signal = self.history_signal+np.sign(rate)*self.ratelim*dt
 
     def control(self, dt: float, probe: float, polarity: float = 1,
-                norm_by: float | None = None):
+                norm_by: float = 1):
 
         # Previous step values become history
         self.history_gain = self.gain
@@ -68,11 +68,7 @@ class PropIntDiff:
         self.history_signal = self.signal
 
         # Computing new error
-        self.error = polarity*(self.setpoint-probe)
-
-        # If normalization factor is given - normalize error by it
-        if norm_by is not None:
-            self.error = self.error/norm_by
+        self.error = polarity*(self.setpoint-probe)/norm_by
 
         # Computing new signal
         self.gain = self.P*self.error
