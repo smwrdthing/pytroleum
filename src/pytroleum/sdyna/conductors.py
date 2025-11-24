@@ -1,23 +1,29 @@
-import abc
+# Conductors here
+
 import numpy as np
+from abc import ABC, abstractmethod
+from typing import Callable, Iterable
+from interfaces import GenericCV
 
 
-class AbstractCDR:
+class AbstractCDR(ABC):
 
-    # Should be abstract base class for conductor
+    # Abstract base class for conductor
 
+    @abstractmethod
     def __init__(self) -> None:
-        self.sink = None
-        self.source = None
+        self.sink: GenericCV | None = None
+        self.source: GenericCV | None = None
 
-    def connect_as_sink(self, convolume):
+    def connect_as_sink(self, convolume: GenericCV):
         self.sink = convolume
 
-    def connect_as_source(self, convolume):
+    def connect_as_source(self, convolume: GenericCV):
         self.source = convolume
 
+    @abstractmethod
     def advance(self):
-        pass
+        return
 
 
 class Valve(AbstractCDR):
