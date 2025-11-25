@@ -182,3 +182,13 @@ if __name__ == "__main__":
             print(f'{base.lower()} & {check.lower()} :: {bip:.2e}')
 
     plt.show()
+
+    # NOTE
+    # Peculiar issue : this section runs normally in Jupyter intercative window for the
+    # first time, but re-runnin it crushes kernel. Those kind of issues were reported to
+    # coolprop users group when computing phase envelope; apparently there are issues with
+    # computations for interfaces used for phase envelope generation, it is easy to
+    # circimvent, but still annoying
+    #
+    # Additional NOTE
+    # Terminal execution runs normally, issue might be on jupyter's side?
