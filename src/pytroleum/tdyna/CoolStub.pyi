@@ -1,479 +1,487 @@
-# Stub for CoolProp API, needed for autocompletion and convenient class extension
-from CoolProp.CoolProp import PyPhaseEnvelopeData, PySpinodalData, PyCriticalState
-from typing import Any, Iterable
+from __future__ import annotations
+from typing import Any
 
 
 class AbstractState:
 
-    def __new__(cls, backend: str, fluids: str):
-        ...  # for cython stuff
-
-    # Accessibles from AbstractState
-
-    def __init__(self, backend: str, fluids: str):
+    def __init__(self, backend: str, fluid: str) -> None:
         ...
 
-    def Bvirial(self) -> float:
+    def Bvirial(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def Cvirial(self) -> float:
+    def Cvirial(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def PIP(self) -> float:
+    def PIP(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def Prandtl(self) -> float:
+    def Prandtl(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def Q(self) -> float:
+    def Q(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def T(self) -> float:
+    def T(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def T_critical(self) -> float:
+    def T_critical(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def T_reducing(self) -> float:
+    def T_reducing(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def Tmax(self) -> float:
+    def Tmax(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def Tmin(self) -> float:
+    def Tmin(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def Ttriple(self) -> float:
+    def Ttriple(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def acentric_factor(self) -> float:
+    def acentric_factor(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def all_critical_points(self) -> list[PyCriticalState]:
+    def all_critical_points(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def alpha0(self) -> float:
+    def alpha0(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def alphar(self) -> float:
+    def alphar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def apply_simple_mixing_rule(self) -> float:
+    def apply_simple_mixing_rule(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def backend_name(self) -> float:
+    def backend_name(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def build_phase_envelope(self, envelope_type: str):
+    def build_phase_envelope(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def build_spinodal(self) -> float:
+    def build_spinodal(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def change_EOS(self, component: int, new_EOS: str) -> float:
+    def change_EOS(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def chemical_potential(self) -> float:
+    def chemical_potential(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def compressibility_factor(self) -> float:
+    def compressibility_factor(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def conductivity(self) -> float:
+    def conductivity(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def conductivity_contributions(self) -> float:
+    def conductivity_contributions(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def conformal_state(self) -> float:
+    def conformal_state(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def cp0mass(self) -> float:
+    def cp0mass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def cp0molar(self) -> float:
+    def cp0molar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def cpmass(self) -> float:
+    def cpmass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def cpmolar(self) -> float:
+    def cpmolar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def criticality_contour_values(self) -> float:
+    def criticality_contour_values(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def cvmass(self) -> float:
+    def cvmass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def cvmolar(self) -> float:
+    def cvmolar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d2alpha0_dDelta2(self) -> float:
+    def d2alpha0_dDelta2(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d2alpha0_dDelta_dTau(self) -> float:
+    def d2alpha0_dDelta_dTau(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d2alpha0_dTau2(self) -> float:
+    def d2alpha0_dTau2(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d2alphar_dDelta2(self) -> float:
+    def d2alphar_dDelta2(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d2alphar_dDelta_dTau(self) -> float:
+    def d2alphar_dDelta_dTau(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d2alphar_dTau2(self) -> float:
+    def d2alphar_dTau2(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d3alpha0_dDelta2_dTau(self) -> float:
+    def d3alpha0_dDelta2_dTau(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d3alpha0_dDelta3(self) -> float:
+    def d3alpha0_dDelta3(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d3alpha0_dDelta_dTau2(self) -> float:
+    def d3alpha0_dDelta_dTau2(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d3alpha0_dTau3(self) -> float:
+    def d3alpha0_dTau3(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d3alphar_dDelta2_dTau(self) -> float:
+    def d3alphar_dDelta2_dTau(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d3alphar_dDelta3(self) -> float:
+    def d3alphar_dDelta3(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d3alphar_dDelta_dTau2(self) -> float:
+    def d3alphar_dDelta_dTau2(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d3alphar_dTau3(self) -> float:
+    def d3alphar_dTau3(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d4alphar_dDelta2_dTau2(self) -> float:
+    def d4alphar_dDelta2_dTau2(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d4alphar_dDelta3_dTau(self) -> float:
+    def d4alphar_dDelta3_dTau(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d4alphar_dDelta4(self) -> float:
+    def d4alphar_dDelta4(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d4alphar_dDelta_dTau3(self) -> float:
+    def d4alphar_dDelta_dTau3(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def d4alphar_dTau4(self) -> float:
+    def d4alphar_dTau4(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def dalpha0_dDelta(self) -> float:
+    def dalpha0_dDelta(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def dalpha0_dTau(self) -> float:
+    def dalpha0_dTau(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def dalphar_dDelta(self) -> float:
+    def dalphar_dDelta(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def dalphar_dTau(self) -> float:
+    def dalphar_dTau(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def delta(self) -> float:
+    def delta(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def first_partial_deriv(self) -> float:
+    def first_partial_deriv(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def first_saturation_deriv(self) -> float:
+    def first_saturation_deriv(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def first_two_phase_deriv(self) -> float:
+    def first_two_phase_deriv(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def first_two_phase_deriv_splined(self) -> float:
+    def first_two_phase_deriv_splined(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def fluid_names(self) -> list:
+    def fluid_names(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def fluid_param_string(self) -> str:
+    def fluid_param_string(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def fugacity(self) -> float:
+    def fugacity(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def fugacity_coefficient(self) -> float:
+    def fugacity_coefficient(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def fundamental_derivative_of_gas_dynamics(self) -> float:
+    def fundamental_derivative_of_gas_dynamics(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def gas_constant(self) -> float:
+    def gas_constant(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def get_binary_interaction_double(
-            self, component1: int, component2: int, bip: str) -> float:
+    def get_binary_interaction_double(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def get_binary_interaction_string(
-            self, component1: str | int, component2: str | int) -> str:
+    def get_binary_interaction_string(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def get_fluid_constant(self, component_index: int, const_key: int) -> float:
+    def get_fluid_constant(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def get_fluid_parameter_double(self, component: int, param: str) -> float:
+    def get_fluid_parameter_double(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def get_mass_fractions(self) -> list[float]:
+    def get_mass_fractions(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def get_mole_fractions(self) -> list[float]:
+    def get_mole_fractions(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def get_phase_envelope_data(self) -> PyPhaseEnvelopeData:
+    def get_phase_envelope_data(self, *args: Any, **kwargs: Any) -> PyPhaseEnvelopeData:
         ...
 
-    def get_spinodal_data(self) -> PySpinodalData:
+    def get_spinodal_data(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def gibbsmass(self) -> float:
+    def gibbsmass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def gibbsmass_excess(self) -> float:
+    def gibbsmass_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def gibbsmolar(self) -> float:
+    def gibbsmolar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def gibbsmolar_excess(self) -> float:
+    def gibbsmolar_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def gibbsmolar_residual(self) -> float:
+    def gibbsmolar_residual(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def has_melting_line(self) -> bool:
+    def has_melting_line(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def helmholtzmass(self) -> float:
+    def helmholtzmass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def helmholtzmass_excess(self) -> float:
+    def helmholtzmass_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def helmholtzmolar(self) -> float:
+    def helmholtzmolar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def helmholtzmolar_excess(self) -> float:
+    def helmholtzmolar_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def hmass(self) -> float:
+    def hmass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def hmass_excess(self) -> float:
+    def hmass_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def hmass_idealgas(self) -> float:
+    def hmass_idealgas(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def hmolar(self) -> float:
+    def hmolar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def hmolar_excess(self) -> float:
+    def hmolar_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def hmolar_idealgas(self) -> float:
+    def hmolar_idealgas(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def hmolar_residual(self) -> float:
+    def hmolar_residual(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def ideal_curve(self) -> float:
+    def ideal_curve(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def isobaric_expansion_coefficient(self) -> float:
+    def isobaric_expansion_coefficient(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def isothermal_compressibility(self) -> float:
+    def isothermal_compressibility(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def keyed_output(self, param_key: int) -> float | str:
+    def keyed_output(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def melting_line(self) -> float:
+    def melting_line(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def molar_mass(self) -> float:
+    def molar_mass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def mole_fractions_liquid(self) -> float:
+    def mole_fractions_liquid(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def mole_fractions_vapor(self) -> float:
+    def mole_fractions_vapor(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def name(self) -> float:
+    def name(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def neff(self) -> float:
+    def neff(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def p(self) -> float:
+    def p(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def p_critical(self) -> float:
+    def p_critical(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def phase(self) -> int:
+    def phase(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def pmax(self) -> float:
+    def pmax(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def rhomass(self) -> float:
+    def rhomass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def rhomass_critical(self) -> float:
+    def rhomass_critical(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def rhomass_reducing(self) -> float:
+    def rhomass_reducing(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def rhomolar(self) -> float:
+    def rhomolar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def rhomolar_critical(self) -> float:
+    def rhomolar_critical(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def rhomolar_reducing(self) -> float:
+    def rhomolar_reducing(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def saturated_liquid_keyed_output(self, param_key: int) -> float:
+    def saturated_liquid_keyed_output(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def saturated_vapor_keyed_output(self, param_key: int) -> float:
+    def saturated_vapor_keyed_output(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def saturation_ancillary(self) -> float:
+    def saturation_ancillary(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def second_partial_deriv(self) -> float:
+    def second_partial_deriv(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def second_saturation_deriv(self) -> float:
+    def second_saturation_deriv(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def second_two_phase_deriv(self) -> float:
+    def second_two_phase_deriv(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def set_binary_interaction_double(self) -> float:
+    def set_binary_interaction_double(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def set_binary_interaction_string(self) -> float:
+    def set_binary_interaction_string(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def set_cubic_alpha_C(self) -> float:
+    def set_cubic_alpha_C(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def set_fluid_parameter_double(self) -> float:
+    def set_fluid_parameter_double(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def set_mass_fractions(self, mass_fractions: Iterable[float]):
+    def set_mass_fractions(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def set_mole_fractions(self, mole_fractions: Iterable[float]) -> float:
+    def set_mole_fractions(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def set_volu_fractions(self, volu_fractions: Iterable[float]) -> float:
+    def set_volu_fractions(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def smass(self) -> float:
+    def smass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def smass_excess(self) -> float:
+    def smass_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def smass_idealgas(self) -> float:
+    def smass_idealgas(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def smolar(self) -> float:
+    def smolar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def smolar_excess(self) -> float:
+    def smolar_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def smolar_idealgas(self) -> float:
+    def smolar_idealgas(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def smolar_residual(self) -> float:
+    def smolar_residual(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def specify_phase(self, imposed_phase_key: int) -> float:
+    def specify_phase(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def speed_sound(self) -> float:
+    def speed_sound(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def surface_tension(self) -> float:
+    def surface_tension(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def tangent_plane_distance(self) -> float:
+    def tangent_plane_distance(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def tau(self) -> float:
+    def tau(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def trivial_keyed_output(self, params_key: int) -> float:
+    def trivial_keyed_output(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def true_critical_point(self) -> float:
+    def true_critical_point(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def umass(self) -> float:
+    def umass(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def umass_excess(self) -> float:
+    def umass_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def umass_idealgas(self) -> float:
+    def umass_idealgas(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def umolar(self) -> float:
+    def umolar(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def umolar_excess(self) -> float:
+    def umolar_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def umolar_idealgas(self) -> float:
+    def umolar_idealgas(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def unspecify_phase(self):
+    def unspecify_phase(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def update(self, input_pair_key: int, input1: float | Any, input2: float | Any):
-        # Type checker cries without union with Any, this is not a very good
-        # thing to do, but it is too much of a trouble to figure out which type
-        # will suite all of numpy floats (why do they need that much anyway?)
-        # so we leave things as is. To be fair this whole stub thing should be
-        # implemented better, revisit when appropriate
+    def update(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def update_QT_pure_superanc(self, Q: float, T: float) -> float:
+    def update_QT_pure_superanc(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def update_with_guesses(
-            self, input_pair_key: int,
-            input1: float, input2: float, guesse: Any) -> float:
+    def update_with_guesses(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def viscosity(self) -> float:
+    def viscosity(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def viscosity_contributions(self) -> float:
+    def viscosity_contributions(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def volumemass_excess(self) -> float:
+    def volumemass_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def volumemolar_excess(self) -> float:
+    def volumemolar_excess(self, *args: Any, **kwargs: Any) -> Any:
         ...
+
+
+class PyPhaseEnvelopeData:
+    K: list[float]
+    Q: list[float]
+    T: list[float]
+    TypeI: list[float]
+    hmolar_liq: list[float]
+    hmolar_vap: list[float]
+    iTsat_max: list[float]
+    icrit: list[float]
+    ipsat_max: list[float]
+    lnT: list[float]
+    lnp: list[float]
+    lnrhomolar_liq: list[float]
+    lnrhomolar_vap: list[float]
+    p: list[float]
+    rhomolar_liq: list[float]
+    rhomolar_vap: list[float]
+    smolar_liq: list[float]
+    smolar_vap: list[float]
+    x: list[float]
+    y: list[float]
