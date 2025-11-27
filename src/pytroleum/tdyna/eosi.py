@@ -75,8 +75,8 @@ def factory_eos(composition: dict[str, float], backend: str = 'HEOS',
     return eos
 
 
-def factory_hydrocarbs(composition: dict[str, float], backend: str = 'PR',
-                       with_state: None | Iterable = None) -> AbstractState:
+def factory_natgas(composition: dict[str, float], backend: str = 'PR',
+                   with_state: None | Iterable = None) -> AbstractState:
 
     # Note how for general factory default CoolProp backend is Helmholtz EOS and for
     # hydrocarbons it is Peng-Robinson EOS.
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         'H2S': 0.01
     }
 
-    hcm_eos_PR = factory_hydrocarbs(natural_gas_composition)
+    hcm_eos_PR = factory_natgas(natural_gas_composition)
     hcm_eos_PR.build_phase_envelope("")
     PE = hcm_eos_PR.get_phase_envelope_data()
 
