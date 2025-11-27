@@ -32,19 +32,19 @@ import CoolProp.constants as CoolConst
 MOLE_FRACTION_SUM_TOL = 1e-3
 GENERIC_HYDROCARBS = {
     # Hydrocarbons
-    'Methane',
-    'Ethane',
-    'Propane',
-    'IsoButane',
-    'n-Butane',
-    'Isopentane',
-    'n-Pentane',
+    'METHANE',
+    'ETHANE',
+    'PROPANE',
+    'ISOBUTANE',
+    'N-BUTANE',
+    'ISOPENTANE',
+    'N-PENTANE',
 
     # Contaminants/Others
-    'Nitrogen',
-    'CarbonMonoxide',
-    'CarbonDioxide',
-    'HydrogenSulfide'
+    'NITROGEN',
+    'CARBONMONOXIDE',
+    'CARBONDIOXIDE',
+    'HYDROGENSULFIDE'
 }
 
 
@@ -84,6 +84,8 @@ def factory_hydrocarbs(composition: dict[str, float], backend: str = 'PR',
     # Here we want to obtain an interface of hydrocarbon gases. Some assertions with
     # regard to provided compostion should be done.
     names = list(composition.keys())
+    # black magic to eliminate case sensitivity
+    names = set(' '.join(names).upper().split(' '))
     if len(GENERIC_HYDROCARBS.intersection(names)) == 0:
         msg = ("No components associated with typical natural gas")
         raise ValueError(msg)
