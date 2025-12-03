@@ -3,20 +3,20 @@ from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
-class GenericCV(Protocol):
+class ControlVolume(Protocol):
 
     # Interface for control volume
 
-    outlets: list[GenericCDR]
-    inlets: list[GenericCDR]
+    outlets: list[Conductor]
+    inlets: list[Conductor]
 
     def __init__(self) -> None:
         ...
 
-    def connect_as_inlet(self, conductor: GenericCDR):
+    def connect_as_inlet(self, conductor: Conductor):
         ...
 
-    def connect_as_outlet(self, conductor: GenericCDR):
+    def connect_as_outlet(self, conductor: Conductor):
         ...
 
     def advance(self) -> None:
@@ -24,20 +24,20 @@ class GenericCV(Protocol):
 
 
 @runtime_checkable
-class GenericCDR(Protocol):
+class Conductor(Protocol):
 
     # Interface for conductor
 
-    source: GenericCV
-    sink: GenericCV
+    source: ControlVolume
+    sink: ControlVolume
 
     def __init__(self) -> None:
         ...
 
-    def connect_as_source(self, convolume: GenericCV) -> None:
+    def connect_as_source(self, convolume: ControlVolume) -> None:
         ...
 
-    def connect_as_sink(self, convolume: GenericCV) -> None:
+    def connect_as_sink(self, convolume: ControlVolume) -> None:
         ...
 
     def advance(self) -> None:

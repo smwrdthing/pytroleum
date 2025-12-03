@@ -3,22 +3,22 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Callable, Iterable
-from interfaces import GenericCV
+from interfaces import ControlVolume
 
 
-class AbstractCDR(ABC):
+class Conductor(ABC):
 
     # Abstract base class for conductor
 
     @abstractmethod
     def __init__(self) -> None:
-        self.sink: GenericCV | None = None
-        self.source: GenericCV | None = None
+        self.sink: ControlVolume | None = None
+        self.source: ControlVolume | None = None
 
-    def connect_as_sink(self, convolume: GenericCV):
+    def connect_as_sink(self, convolume: ControlVolume):
         self.sink = convolume
 
-    def connect_as_source(self, convolume: GenericCV):
+    def connect_as_source(self, convolume: ControlVolume):
         self.source = convolume
 
     @abstractmethod
@@ -26,7 +26,7 @@ class AbstractCDR(ABC):
         return
 
 
-class Valve(AbstractCDR):
+class Valve(Conductor):
 
     # Subclass to represent Valve
 
@@ -37,7 +37,7 @@ class Valve(AbstractCDR):
         pass
 
 
-class CentrifugalPump(AbstractCDR):
+class CentrifugalPump(Conductor):
 
     # Subclass ro representcentrifugal pump
 
@@ -48,7 +48,7 @@ class CentrifugalPump(AbstractCDR):
         pass
 
 
-class UnderPass(AbstractCDR):
+class UnderPass(Conductor):
 
     # Subclass to represent passage at the bottom of section formed by crest of weir and
     # internal wall of vessel
@@ -60,7 +60,7 @@ class UnderPass(AbstractCDR):
         pass
 
 
-class OverPass(AbstractCDR):
+class OverPass(Conductor):
 
     # Subclass to represent passage at the top of section formed by crest of weir and
     # internal wall of vessel
@@ -72,7 +72,7 @@ class OverPass(AbstractCDR):
         pass
 
 
-class LumpedFurnaceWall(AbstractCDR):
+class FurnaceHeatConduti(Conductor):
 
     # Subcalss to represent heat flux from furnace
 
@@ -83,7 +83,7 @@ class LumpedFurnaceWall(AbstractCDR):
         pass
 
 
-class PhaseInterface(AbstractCDR):
+class PhaseInterface(Conductor):
 
     # Subclass to represent interfacial interactinos
 

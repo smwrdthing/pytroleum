@@ -2,27 +2,27 @@
 from __future__ import annotations
 import numpy as np
 from abc import ABC, abstractmethod
-from interfaces import GenericCDR
+from interfaces import Conductor
 from typing import Callable
 
 
-class AbstractCV(ABC):
+class ControlVolume(ABC):
 
     # Abstract base class for control volume
 
     @abstractmethod
     def __init__(self) -> None:
         # Matter state manager here?
-        self.outlets: list[GenericCDR] = []
-        self.inlets: list[GenericCDR] = []
+        self.outlets: list[Conductor] = []
+        self.inlets: list[Conductor] = []
 
     # Introduce custom decorator for iterable inputs
-    def connet_as_inlet(self, conductor: GenericCDR) -> None:
+    def connet_as_inlet(self, conductor: Conductor) -> None:
         if conductor not in self.inlets:
             self.inlets.append(conductor)
 
     # Introduce custom decorator for iterable inputs
-    def connect_as_outlet(self, conductor: GenericCDR) -> None:
+    def connect_as_outlet(self, conductor: Conductor) -> None:
         if conductor not in self.outlets:
             self.outlets.append(conductor)
 
@@ -31,7 +31,7 @@ class AbstractCV(ABC):
         return
 
 
-class Atmosphere(AbstractCV):
+class Atmosphere(ControlVolume):
 
     # Class for atmosphere representation. Should imposs nominal infinite
     # volume and constant values for thermodynamic paramters
@@ -43,7 +43,7 @@ class Atmosphere(AbstractCV):
         pass
 
 
-class Reservoir(AbstractCV):
+class Reservoir(ControlVolume):
 
     # Class to represent petroleum fluids reservoir. In context of dynamical system
     # modelling imposes infinite volume and constant params (for now?)
@@ -55,7 +55,7 @@ class Reservoir(AbstractCV):
         pass
 
 
-class SectionH(AbstractCV):
+class SectionHorizontal(ControlVolume):
 
     # Class for horizontal section
 
@@ -70,7 +70,7 @@ class SectionH(AbstractCV):
         pass
 
 
-class SectionV(AbstractCV):
+class SectionVertical(ControlVolume):
 
     # Class for vertical section, not really needed right now, might be useful later for
     # tests and other equipment?
