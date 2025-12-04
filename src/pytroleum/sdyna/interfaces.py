@@ -13,10 +13,10 @@ class ControlVolume(Protocol):
     def __init__(self) -> None:
         ...
 
-    def connect_as_inlet(self, conductor: Conductor):
+    def connect_inlet(self, conductor: Conductor):
         ...
 
-    def connect_as_outlet(self, conductor: Conductor):
+    def connect_outlet(self, conductor: Conductor):
         ...
 
     def advance(self) -> None:
@@ -34,10 +34,10 @@ class Conductor(Protocol):
     def __init__(self) -> None:
         ...
 
-    def connect_as_source(self, convolume: ControlVolume) -> None:
+    def connect_source(self, convolume: ControlVolume) -> None:
         ...
 
-    def connect_as_sink(self, convolume: ControlVolume) -> None:
+    def connect_sink(self, convolume: ControlVolume) -> None:
         ...
 
     def advance(self) -> None:
