@@ -2,6 +2,7 @@ import numpy as np
 import CoolProp.constants as CoolConst
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
+from numpy.typing import NDArray
 from typing import Iterable, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from ..tdyna.CoolStub import AbstractState  # type: ignore
@@ -60,35 +61,35 @@ class OperationData(ABC):
     # Maybe will be extended to store more
 
     # EOS interfaces for phases
-    eos: Iterable[AbstractState] = field(default_factory=lambda: [DEFAULT_EOS])
+    eos: list[AbstractState] = field(default_factory=lambda: [DEFAULT_EOS])
 
     # Thermodynamic parameters
-    p: Iterable[float] = field(default_factory=lambda: DEFAULT_PRESSURE)
-    V: Iterable[float] = field(default_factory=lambda: DEFAULT_VOLUME)
-    T: Iterable[float] = field(default_factory=lambda: DEFAULT_TEMPERATURE)
-    rho: Iterable[float] = field(default_factory=lambda: DEFAULT_DENSITY)
-    u: Iterable[float] = field(default_factory=lambda: DEFAULT_SPECIFIC_ENERGY)
+    p: NDArray = field(default_factory=lambda: DEFAULT_PRESSURE)
+    V: NDArray = field(default_factory=lambda: DEFAULT_VOLUME)
+    T: NDArray = field(default_factory=lambda: DEFAULT_TEMPERATURE)
+    rho: NDArray = field(default_factory=lambda: DEFAULT_DENSITY)
+    u: NDArray = field(default_factory=lambda: DEFAULT_SPECIFIC_ENERGY)
 
     # For potential VLE
-    x_all: Iterable[float] = field(default_factory=lambda: DEFAULT_COMPOSITION)
-    x_vap: Iterable[float] = field(
+    x_all: NDArray = field(default_factory=lambda: DEFAULT_COMPOSITION)
+    x_vap: NDArray = field(
         default_factory=lambda: DEFAULT_COMPOSITION_VAPOR)
-    x_liq: Iterable[float] = field(
+    x_liq: NDArray = field(
         default_factory=lambda: DEFAULT_COMPOSITION_LIQUID)
-    Q_vap: Iterable[float] = field(
+    Q_vap: NDArray = field(
         default_factory=lambda: DEFAULT_VAPOR_QUALITY)
 
     # Fields for transport properties
-    mu: Iterable[float] = field(default_factory=lambda: DEFAULT_VISOCISTY)
-    lam: Iterable[float] = field(
+    mu: NDArray = field(default_factory=lambda: DEFAULT_VISOCISTY)
+    lam: NDArray = field(
         default_factory=lambda: DEFAULT_THERMAL_CONDUCTIVITY)
 
 
 @dataclass
 class StateData(OperationData):
-    m: Iterable[float] = field(default_factory=lambda: DEFAULT_MASS)
-    E: Iterable[float] = field(default_factory=lambda: DEFAULT_ENERGY)
-    h: Iterable[float] = field(default_factory=lambda: DEFAULT_H)
+    m: NDArray = field(default_factory=lambda: DEFAULT_MASS)
+    E: NDArray = field(default_factory=lambda: DEFAULT_ENERGY)
+    h: NDArray = field(default_factory=lambda: DEFAULT_H)
 
 
 @dataclass
@@ -96,15 +97,15 @@ class FlowData(OperationData):
     # This will be used for stream description in Conductors,
     # so we need elevation, velocity and specific energy of stream.
     z: float = DEFAULT_ELEVATION
-    w: Iterable[float] = field(
+    w: NDArray = field(
         default_factory=lambda: DEFAULT_VELOCITY)
-    j: Iterable[float] = field(
+    j: NDArray = field(
         default_factory=lambda: DEFAULT_SPECIFIC_ENERGY)
-    G: Iterable[float] = field(
+    G: NDArray = field(
         default_factory=lambda: DEFAULT_FLOWRATE)
-    Q: Optional[Iterable[float]] = field(
+    Q: Optional[NDArray] = field(
         default_factory=lambda: DEFAULT_FLOWRATE*DEFAULT_DENSITY)
-    J: Optional[Iterable[float]] = field(
+    J: Optional[NDArray] = field(
         default_factory=lambda: DEFAULT_FLOWRATE*DEFAULT_SPECIFIC_ENERGY)
 
 
