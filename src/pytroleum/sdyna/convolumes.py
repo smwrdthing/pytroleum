@@ -38,7 +38,8 @@ class ControlVolume(ABC):
     def matter_temperature(self):
         T = []
         for eos, p, u in zip(self.conditions.eos, self.conditions.p, self.conditions.u):
-            T.append(eos.update(CoolConst.PUmass_INPUTS, p, u))
+            eos.update(CoolConst.PUmass_INPUTS, p, u)
+            T.append(eos.T())
         T = np.array(T)
         self.conditions.T = T
 
