@@ -1,5 +1,6 @@
 import numpy as np
-from typing import Callable, Iterable
+from typing import Callable, Iterable, overload
+from numpy.typing import NDArray
 # Apply vectorization with decorators. Either enforce input arguments type conversion
 # or straight up use np.vectorize; second approach destroysdocstrings
 
@@ -16,8 +17,11 @@ from typing import Callable, Iterable
 # CROSS-SECTIONAL AREA COMPUTATIONS
 # -----------------------------------------------------------------------------
 
+# types generally should be defined somewhere else, should fix later
+type Numeric = float | NDArray
 
-def area_cs_circle_trunc(D: float, h: float) -> float:
+
+def area_cs_circle_trunc(D: Numeric, h: Numeric) -> Numeric:
     """This function computes area of circle which is truncated with horizontal
     straight line. Formula obtained by the integration of the following function
     from zero to h:
@@ -47,7 +51,7 @@ def area_cs_circle_trunc(D: float, h: float) -> float:
     return A
 
 
-def area_cs_cover_ellipse(H: float, x: float, D: float, h: float) -> float:
+def area_cs_cover_ellipse(H: Numeric, x: Numeric, D: Numeric, h: Numeric) -> Numeric:
     """_summary_
 
     Parameters
@@ -74,7 +78,7 @@ def area_cs_cover_ellipse(H: float, x: float, D: float, h: float) -> float:
         "Cross-sectional area for this type of covers is not supported yet")
 
 
-def area_cs_cover_circle(x: float, D: float, h: float) -> float:
+def area_cs_cover_circle(x: Numeric, D: Numeric, h: Numeric) -> Numeric:
     """Computations for special case of elliptic cover with H = D/2
 
     Parameters
@@ -93,7 +97,7 @@ def area_cs_cover_circle(x: float, D: float, h: float) -> float:
     return area_cs_cover_ellipse(D/2, D, x, h)
 
 
-def area_cs_cover_cone(H: float, x: float, D: float, h: float) -> float:
+def area_cs_cover_cone(H: Numeric, x: Numeric, D: Numeric, h: Numeric) -> Numeric:
     """_summary_
 
     Parameters
@@ -120,7 +124,7 @@ def area_cs_cover_cone(H: float, x: float, D: float, h: float) -> float:
         "Cross-sectional area for this type of covers is not supported yet")
 
 
-def area_cs_cover_torus(H: float, D: float, x: float, h: float) -> float:
+def area_cs_cover_torus(H: Numeric, D: Numeric, x: Numeric, h: Numeric) -> Numeric:
     """_summary_
 
     Parameters
@@ -147,7 +151,7 @@ def area_cs_cover_torus(H: float, D: float, x: float, h: float) -> float:
         "Cross-sectional area for this type of covers is not supported yet")
 
 
-def area_cs_Utube_trunc(D_t: float) -> float:
+def area_cs_Utube_trunc(D_t: Numeric) -> Numeric:
     """This function computes cross-sectional area of the U-shaped tube in the middle
     region far apart from start/end of tube.
 
@@ -168,7 +172,7 @@ def area_cs_Utube_trunc(D_t: float) -> float:
 # -----------------------------------------------------------------------------
 
 
-def area_planecut_cylinder(L: float, D: float, h: float) -> float:
+def area_planecut_cylinder(L: Numeric, D: Numeric, h: Numeric) -> Numeric:
     """ This function computes area of a top surface formed by truncation of
     horizontal cylinder by a horizontal plane.
 
@@ -191,7 +195,7 @@ def area_planecut_cylinder(L: float, D: float, h: float) -> float:
     return 2*L*np.sqrt(h*(D-h))
 
 
-def area_planecut_cover_ellipse(H: float, D: float, h: float) -> float:
+def area_planecut_cover_ellipse(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
     """This function computes area of a top surface formed by truncation of
     elliptic cover by horizontal plane.
 
@@ -211,7 +215,7 @@ def area_planecut_cover_ellipse(H: float, D: float, h: float) -> float:
     return np.pi*H/D*(h*D-h**2)
 
 
-def area_planecut_cover_circle(D: float, h: float) -> float:
+def area_planecut_cover_circle(D: Numeric, h: Numeric) -> Numeric:
     """This function computes area of a top surface formed by truncation of
     circular cover by horizontal plane. This is considered as a special case
     of elliptic cover wiht H = D/2.
@@ -230,7 +234,7 @@ def area_planecut_cover_circle(D: float, h: float) -> float:
     return area_planecut_cover_ellipse(D/2, D, h)
 
 
-def area_planecut_cover_cone(H: float, D: float, h: float) -> float:
+def area_planecut_cover_cone(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
     """_summary_
 
     Parameters
@@ -255,7 +259,7 @@ def area_planecut_cover_cone(H: float, D: float, h: float) -> float:
         "Plane cut area for this type of covers is not supported yet")
 
 
-def area_planecut_cover_torus(H: float, D: float, h: float) -> float:
+def area_planecut_cover_torus(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
     """_summary_
 
     Parameters
@@ -281,8 +285,8 @@ def area_planecut_cover_torus(H: float, D: float, h: float) -> float:
 
 
 def area_planecut_section_horiz_general(
-        H_left: float, L: float, H_right: float, D: float, h: float,
-        left_cov: Callable, right_cov: Callable) -> float:
+        H_left: Numeric, L: Numeric, H_right: Numeric, D: Numeric, h: Numeric,
+        left_cov: Callable, right_cov: Callable) -> Numeric:
     """This function performs computations of area for top surface formed by truncation of
     horizontal section with two covers by horizontal plane. Computations are performed in
     a general manner.
@@ -322,7 +326,7 @@ def area_planecut_section_horiz_general(
 
 
 def area_planecut_section_horiz_ellipses(
-        H_left: float, L: float, H_right: float, D: float, h: float) -> float:
+        H_left: Numeric, L: Numeric, H_right: Numeric, D: Numeric, h: Numeric) -> Numeric:
     """This function performs computations of area formed by horizontal truncation of
     horizontal section with two elliptic covers. Considered as special case.
 
@@ -357,7 +361,10 @@ def area_planecut_section_horiz_ellipses(
 # -----------------------------------------------------------------------------
 
 
-def volume_cylinder_trunc(L: float, D: float, h: float) -> float:
+def volume_cylinder_trunc(
+        L: Numeric,
+        D: Numeric,
+        h: Numeric) -> Numeric:
     """This function computes volume of horizontal cylinder truncated by a horizontal
     plane.
 
@@ -378,7 +385,7 @@ def volume_cylinder_trunc(L: float, D: float, h: float) -> float:
     return L*A
 
 
-def volume_cover_elliptic_trunc(H: float, D: float, h: float) -> float:
+def volume_cover_elliptic_trunc(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
     """This function computes volume of semi-ellipsoid truncated by a horizontal
     plane.
 
@@ -398,7 +405,7 @@ def volume_cover_elliptic_trunc(H: float, D: float, h: float) -> float:
     return np.pi*H/D*(D*h**2/2-h**3/3)
 
 
-def volume_cover_circle_trunc(D: float, h: float) -> float:
+def volume_cover_circle_trunc(D: Numeric, h: Numeric) -> Numeric:
     """This function computes volume of semi-sphere truncated by a horizontal
     plane. This is considered as a special case of semi-ellipsoid with H = D/2.
 
@@ -416,7 +423,7 @@ def volume_cover_circle_trunc(D: float, h: float) -> float:
     return volume_cover_elliptic_trunc(D/2, D, h)
 
 
-def volume_cover_cone_trunc(H: float, D: float, h: float):
+def volume_cover_cone_trunc(H: Numeric, D: Numeric, h: Numeric):
     """_summary_
 
     Parameters
@@ -437,7 +444,7 @@ def volume_cover_cone_trunc(H: float, D: float, h: float):
         "Volume for this type of covers is not supported yet")
 
 
-def volume_cover_torus_trunc(H: float, D: float, h: float):
+def volume_cover_torus_trunc(H: Numeric, D: Numeric, h: Numeric):
     """_summary_
 
     Parameters
@@ -462,9 +469,17 @@ def volume_Utube_trunc():
     pass
 
 
-def volume_section_horiz_general(H_left: float, L: float, H_right: float, D: float,
-                                 h: float, left_cov: Callable, right_cov: Callable
-                                 ) -> float:
+def volume_section_horiz_general(
+    H_left: Numeric,
+    L: Numeric,
+    H_right: Numeric,
+    D: Numeric,
+    h: Numeric,
+    left_cov: Callable[
+        [Numeric, Numeric, Numeric], Numeric],
+    right_cov: Callable[
+        [Numeric, Numeric, Numeric], Numeric]
+) -> Numeric:
     """This function computes volume of horizontal section with two covers truncated by
     horizontal plane. Computations are performed in a general manner.
 
@@ -498,8 +513,12 @@ def volume_section_horiz_general(H_left: float, L: float, H_right: float, D: flo
     return V
 
 
-def volume_section_horiz_ellipses(H_left: float, L: float, H_right: float,
-                                  D: float, h: float) -> float:
+def volume_section_horiz_ellipses(
+        H_left: Numeric,
+        L: Numeric,
+        H_right: Numeric,
+        D: Numeric,
+        h: Numeric) -> Numeric:
     """This function computes volume of horizontal section with two elliptic covers
     truncated by horizontal plane.
 
@@ -533,7 +552,9 @@ def volume_section_horiz_ellipses(H_left: float, L: float, H_right: float,
 
 
 def graduate(
-        h_min: float, h_max: float, vol_of_lvl: Callable, N: int = 50) -> tuple[Iterable]:
+        h_min: Numeric, h_max: Numeric, vol_of_lvl: Callable[[Numeric], Numeric],
+        N: int = 50
+) -> tuple[Numeric, Numeric]:
     """This function computes volume values that correspond to level values ranging from
     min to max possible value for element with provided volume dependency on level.
 
@@ -555,10 +576,10 @@ def graduate(
     """
     h = np.linspace(h_min, h_max, N)
     V = vol_of_lvl(h)
-    return h, V  # type: ignore
+    return h, V
 
 
-def inverse_graduate(V_target: float, h: Iterable[float], V: Iterable[float]) -> float:
+def inverse_graduate(V_target: Numeric, h: Numeric, V: Numeric) -> Numeric:
     """This function performs computations to detemine level value that corresponds to
     target volume. Computations are performed by means of linear interpolation over
     arrays of levels and volumes (see function for graduation).
@@ -576,7 +597,7 @@ def inverse_graduate(V_target: float, h: Iterable[float], V: Iterable[float]) ->
     -------
         Interpolated value of level that corresponds to V_target
     """
-    # pyrightcries anout types, but everything should be fine with iterables
+    # pyright cries anout types, but everything should be fine with iterables
     return np.interp(V_target, V, h)  # type: ignore
 
 
