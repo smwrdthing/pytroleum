@@ -4,6 +4,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from typing import Callable, Iterable
 from interfaces import ControlVolume
+from opdata import FlowData
 
 
 class Conductor(ABC):
@@ -14,15 +15,18 @@ class Conductor(ABC):
     def __init__(self) -> None:
         self.sink: ControlVolume | None = None
         self.source: ControlVolume | None = None
+        self.conditions = FlowData()  # FlowData entry with default parameters
 
-    def connect_as_sink(self, convolume: ControlVolume):
-        self.sink = convolume
+    def connect_source(self, convolume: ControlVolume) -> None:
+        if self not in convolume.outlets:
+            self.source = convolume
 
-    def connect_as_source(self, convolume: ControlVolume):
-        self.source = convolume
+    def connect_sink(self, convolume: ControlVolume) -> None:
+        if self not in convolume.inlets:
+            self.sink = convolume
 
     @abstractmethod
-    def advance(self):
+    def advance(self) -> None:
         return
 
 
@@ -44,7 +48,7 @@ class CentrifugalPump(Conductor):
     def __init__(self) -> None:
         super().__init__()
 
-    def advance(self):
+    def advance(self) -> None:
         pass
 
 
@@ -68,7 +72,7 @@ class OverPass(Conductor):
     def __init__(self) -> None:
         super().__init__()
 
-    def advance(self):
+    def advance(self) -> None:
         pass
 
 
