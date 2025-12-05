@@ -23,7 +23,6 @@ class OperationData(ABC):
     temperature: NDArray
     density: NDArray
     energy_specific: NDArray
-    molar_composition: NDArray
 
     # Fields for transport properties
     dynamic_viscosity: NDArray
