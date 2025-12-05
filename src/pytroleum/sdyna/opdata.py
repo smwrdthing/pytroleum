@@ -19,7 +19,6 @@ class OperationData(ABC):
 
     # Thermodynamic parameters
     pressure: NDArray
-    volume: NDArray
     temperature: NDArray
     density: NDArray
     energy_specific: NDArray
@@ -34,6 +33,7 @@ class StateData(OperationData):
     mass: NDArray
     energy: NDArray
     level: NDArray
+    volume: NDArray
 
 
 @dataclass
