@@ -9,6 +9,8 @@ if TYPE_CHECKING:
 else:
     from CoolProp.CoolProp import AbstractState
 
+type Numeric = float | NDArray
+
 
 @dataclass
 class OperationData(ABC):
