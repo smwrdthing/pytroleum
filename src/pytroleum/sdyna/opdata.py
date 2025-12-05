@@ -111,7 +111,6 @@ def fabric_state(
         equation_of_state,
         pressure,
         volume,
-
         temperature,
         density,
         energy_specific,
