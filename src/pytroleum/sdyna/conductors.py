@@ -4,7 +4,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from typing import Callable, Iterable
 from interfaces import ControlVolume
-from opdata import FlowData
+import opdata as opd
 
 
 class Conductor(ABC):
@@ -15,7 +15,9 @@ class Conductor(ABC):
     def __init__(self) -> None:
         self.sink: ControlVolume | None = None
         self.source: ControlVolume | None = None
-        self.conditions = FlowData()  # FlowData entry with default parameters
+
+    def specify_flow(self, flow: opd.FlowData):
+        self.flow = flow
 
     def connect_source(self, convolume: ControlVolume) -> None:
         if self not in convolume.outlets:

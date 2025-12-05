@@ -21,7 +21,7 @@ from numpy.typing import NDArray
 type Numeric = float | NDArray
 
 
-def area_cs_circle_trunc(D: Numeric, h: Numeric) -> Numeric:
+def area_cs_circle_trunc(diameter: Numeric, level: Numeric) -> Numeric:
     """This function computes area of circle which is truncated with horizontal
     straight line. Formula obtained by the integration of the following function
     from zero to h:
@@ -30,39 +30,43 @@ def area_cs_circle_trunc(D: Numeric, h: Numeric) -> Numeric:
 
     Parameters
     ----------
-    D
+    diameter
         Circle diameter.
 
-    h
+    level
         Level of truncation.
 
     Returns
     -------
-    A
+    area
         Area of truncated circle.
     """
 
     # This one does not require decorator for vectorization, as it is relatively simple,
     # regular numpy broadcasting applies
 
-    y = h/D  # convenience variable, dimensionless level
-    A = D**2/2*(np.arcsin(np.sqrt(y))-(1-2*y)*np.sqrt(y*(1-y)))
+    y = level/diameter  # convenience variable, dimensionless level
+    area = diameter**2/2*(np.arcsin(np.sqrt(y))-(1-2*y)*np.sqrt(y*(1-y)))
 
-    return A
+    return area
 
 
-def area_cs_cover_ellipse(H: Numeric, x: Numeric, D: Numeric, h: Numeric) -> Numeric:
+def area_cs_cover_ellipse(
+        length_semiaxis: Numeric,
+        axial_position: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """_summary_
 
     Parameters
     ----------
-    H
+    length_semiaxis
         _description_
-    D
+    diameter
         _description_
-    x
+    axial_position
         _description_
-    h
+    level
         _description_
 
     Returns
@@ -78,37 +82,44 @@ def area_cs_cover_ellipse(H: Numeric, x: Numeric, D: Numeric, h: Numeric) -> Num
         "Cross-sectional area for this type of covers is not supported yet")
 
 
-def area_cs_cover_circle(x: Numeric, D: Numeric, h: Numeric) -> Numeric:
+def area_cs_cover_circle(
+        axial_position: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """Computations for special case of elliptic cover with H = D/2
 
     Parameters
     ----------
-    D
+    axial_position
         _description_
-    x
+    diameter
         _description_
-    h
+    level
         _description_
 
     Returns
     -------
         _description_
     """
-    return area_cs_cover_ellipse(D/2, D, x, h)
+    return area_cs_cover_ellipse(diameter/2, axial_position, diameter, level)
 
 
-def area_cs_cover_cone(H: Numeric, x: Numeric, D: Numeric, h: Numeric) -> Numeric:
+def area_cs_cover_cone(
+        length_semiaxis: Numeric,
+        axial_position: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """_summary_
 
     Parameters
     ----------
-    H
+    length_semiaxis
         _description_
-    D
+    axial_position
         _description_
-    x
+    diameter
         _description_
-    h
+    level
         _description_
 
     Returns
@@ -124,18 +135,22 @@ def area_cs_cover_cone(H: Numeric, x: Numeric, D: Numeric, h: Numeric) -> Numeri
         "Cross-sectional area for this type of covers is not supported yet")
 
 
-def area_cs_cover_torus(H: Numeric, D: Numeric, x: Numeric, h: Numeric) -> Numeric:
+def area_cs_cover_torus(
+        length_semiaxis: Numeric,
+        axial_position: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """_summary_
 
     Parameters
     ----------
-    H
+    length_semiaxis
         _description_
-    D
+    axial_position
         _description_
-    x
+    diameter
         _description_
-    h
+    level
         _description_
 
     Returns
@@ -151,20 +166,20 @@ def area_cs_cover_torus(H: Numeric, D: Numeric, x: Numeric, h: Numeric) -> Numer
         "Cross-sectional area for this type of covers is not supported yet")
 
 
-def area_cs_Utube_trunc(D_t: Numeric) -> Numeric:
+def area_cs_Utube_trunc(diameter: Numeric) -> Numeric:
     """This function computes cross-sectional area of the U-shaped tube in the middle
     region far apart from start/end of tube.
 
     Parameters
     ----------
-    D_t
+    diameter
         U-tube representative diameter.
 
     Returns
     -------
         Cross-sectional area of the U-shaped tube (far apart from start/end of tube).
     """
-    return 2*np.pi*(D_t/2)**2/4  # explicit formula for clarity
+    return 2*np.pi*(diameter/2)**2/4  # explicit formula for clarity
 
 
 # -----------------------------------------------------------------------------
@@ -172,19 +187,19 @@ def area_cs_Utube_trunc(D_t: Numeric) -> Numeric:
 # -----------------------------------------------------------------------------
 
 
-def area_planecut_cylinder(L: Numeric, D: Numeric, h: Numeric) -> Numeric:
+def area_planecut_cylinder(length: Numeric, diameter: Numeric, level: Numeric) -> Numeric:
     """ This function computes area of a top surface formed by truncation of
     horizontal cylinder by a horizontal plane.
 
     Parameters
     ----------
-    L
+    length
         Length of cylinder.
 
-    D
+    diameter
         Diameter of cylinder.
 
-    h
+    level
         Level of truncation.
 
     Returns
@@ -192,58 +207,64 @@ def area_planecut_cylinder(L: Numeric, D: Numeric, h: Numeric) -> Numeric:
         Area of surface obtained with truncation of horizontal cylinder by
         horizontal plane.
     """
-    return 2*L*np.sqrt(h*(D-h))
+    return 2*length*np.sqrt(level*(diameter-level))
 
 
-def area_planecut_cover_ellipse(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
+def area_planecut_cover_ellipse(
+        length_semiaxis: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """This function computes area of a top surface formed by truncation of
     elliptic cover by horizontal plane.
 
     Parameters
     ----------
-    H
+    length_semiaxis
         Height of cover.
-    D
+    diameter
         Diameter of cover's base.
-    h
+    level
         Level of truncation.
 
     Returns
     -------
         Area of a surface formed by truncation of elliptic cover by horizontal plane.
     """
-    return np.pi*H/D*(h*D-h**2)
+    return np.pi*length_semiaxis/diameter*(level*diameter-level**2)
 
 
-def area_planecut_cover_circle(D: Numeric, h: Numeric) -> Numeric:
+def area_planecut_cover_circle(diameter: Numeric, level: Numeric) -> Numeric:
     """This function computes area of a top surface formed by truncation of
     circular cover by horizontal plane. This is considered as a special case
     of elliptic cover wiht H = D/2.
 
     Parameters
     ----------
-    D
+    diameter
         Diameter of cover's base.
-    h
+    level
         Level of truncation.
 
     Returns
     -------
         Area of a surface formed by truncation of circular cover and horizontal plane
     """
-    return area_planecut_cover_ellipse(D/2, D, h)
+    return area_planecut_cover_ellipse(diameter/2, diameter, level)
 
 
-def area_planecut_cover_cone(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
+def area_planecut_cover_cone(
+        length_semiaxis: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """_summary_
 
     Parameters
     ----------
-    H
+    length_semiaxis
         _description_
-    D
+    diameter
         _description_
-    h
+    level
         _description_
 
     Returns
@@ -259,16 +280,19 @@ def area_planecut_cover_cone(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
         "Plane cut area for this type of covers is not supported yet")
 
 
-def area_planecut_cover_torus(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
+def area_planecut_cover_torus(
+        length_semiaxis: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """_summary_
 
     Parameters
     ----------
-    H
+    length_semiaxis
         _description_
-    D
+    diameter
         _description_
-    h
+    level
         _description_
 
     Returns
@@ -285,62 +309,70 @@ def area_planecut_cover_torus(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
 
 
 def area_planecut_section_horiz_general(
-        H_left: Numeric, L: Numeric, H_right: Numeric, D: Numeric, h: Numeric,
-        left_cov: Callable, right_cov: Callable) -> Numeric:
+        length_semiaxis_left: Numeric,
+        length_cylinder: Numeric,
+        length_semiaxis_right: Numeric,
+        diameter: Numeric,
+        level: Numeric,
+        area_cover_left_fn: Callable[[Numeric, Numeric, Numeric], Numeric],
+        area_cover_right_fn: Callable[[Numeric, Numeric, Numeric], Numeric]) -> Numeric:
     """This function performs computations of area for top surface formed by truncation of
     horizontal section with two covers by horizontal plane. Computations are performed in
     a general manner.
 
     Parameters
     ----------
-    H_left
+    length_semiaxis_left
         Left cover length.
-    L
+    length_cylinder
         Cylindrical part length.
-    H_right
+    length_semiaxis_right
         Right cover length.
-    D
+    diameter
         Diameter of section.
-    h
+    level
         Truncation level.
-    left_cov
+    left_cover_area
         Function for planecut area of left cover with (H,D,h) signature.
-    right_cov
+    right_cover_area
         Function for planecut area of right cover with (H,D,h) signature.
 
     Returns
     -------
-    A_planecut_section
+    area_section
         Area formed by horizontal truncation of horizontal section with two specified
         covers.
     """
 
-    A_planecut_left_cover = left_cov(H_left, D, h)
-    A_planecut_cylinder = area_planecut_cylinder(L, D, h)
-    A_planecut_right_cover = left_cov(H_left, D, h)
+    A_cover_left = area_cover_left_fn(length_semiaxis_left, diameter, level)
+    A_cover_right = area_cover_right_fn(length_semiaxis_right, diameter, level)
+    A_cylinder = area_planecut_cylinder(length_cylinder, diameter, level)
 
-    A_planecut_section = (
-        A_planecut_left_cover+A_planecut_cylinder+A_planecut_right_cover)
+    area_section = A_cover_left+A_cylinder+A_cover_right
 
-    return A_planecut_section
+    return area_section
 
 
 def area_planecut_section_horiz_ellipses(
-        H_left: Numeric, L: Numeric, H_right: Numeric, D: Numeric, h: Numeric) -> Numeric:
+        length_semiaxis_left: Numeric,
+        length_cylinder: Numeric,
+        length_semiaxis_right: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """This function performs computations of area formed by horizontal truncation of
     horizontal section with two elliptic covers. Considered as special case.
 
     Parameters
     ----------
-    H_left
+    length_semiaxis_left
         Left cover length.
-    L
+    length_cylinder
         Cylindrical part length.
-    H_right
+    length_semiaxis_right
         Right cover length.
-    D
+    diameter
         Diameter of section.
-    h
+    level
         Truncation level.
 
     Returns
@@ -350,9 +382,13 @@ def area_planecut_section_horiz_ellipses(
         covers.
     """
     A_planecut_section = area_planecut_section_horiz_general(
-        H_left, L, H_right, D, h,
-        left_cov=area_planecut_cover_ellipse,
-        right_cov=area_planecut_cover_ellipse)
+        length_semiaxis_left,
+        length_cylinder,
+        length_semiaxis_right,
+        diameter,
+        level,
+        area_cover_left_fn=area_planecut_cover_ellipse,
+        area_cover_right_fn=area_planecut_cover_ellipse)
     return A_planecut_section
 
 
@@ -362,77 +398,86 @@ def area_planecut_section_horiz_ellipses(
 
 
 def volume_cylinder_trunc(
-        L: Numeric,
-        D: Numeric,
-        h: Numeric) -> Numeric:
+        length: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """This function computes volume of horizontal cylinder truncated by a horizontal
     plane.
 
     Parameters
     ----------
-    L
+    length
         Length of cylinder.
-    D
+    diameter
         Diameter of cylinder.
-    h
+    level
         Truncation level.
 
     Returns
     -------
         Volume of truncated horizontal cylinder.
     """
-    A = area_cs_circle_trunc(D, h)
-    return L*A
+    return length*area_cs_circle_trunc(diameter, level)
 
 
-def volume_cover_elliptic_trunc(H: Numeric, D: Numeric, h: Numeric) -> Numeric:
+def volume_cover_elliptic_trunc(
+        length_semiaxis: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """This function computes volume of semi-ellipsoid truncated by a horizontal
     plane.
 
     Parameters
     ----------
-    H
+    length_semiaxis
         Length of semi-ellipsoid axis.
-    D
+    diameter
         Base diameter.
-    h
+    level
         Truncation level.
 
     Returns
     -------
         Volume of semi-ellipsoid truncated by a horizontal plane.
     """
-    return np.pi*H/D*(D*h**2/2-h**3/3)
+    return np.pi*length_semiaxis/diameter*(diameter*level**2/2-level**3/3)
 
 
-def volume_cover_circle_trunc(D: Numeric, h: Numeric) -> Numeric:
+def volume_cover_circle_trunc(diameter: Numeric, level: Numeric) -> Numeric:
     """This function computes volume of semi-sphere truncated by a horizontal
     plane. This is considered as a special case of semi-ellipsoid with H = D/2.
 
     Parameters
     ----------
-    D
+    diameter
         Base diameter.
-    h
+    level
         Truncation level.
 
     Returns
     -------
         Volume of semi-sphere truncated by a horizontal plane.
     """
-    return volume_cover_elliptic_trunc(D/2, D, h)
+    return volume_cover_elliptic_trunc(diameter/2, diameter, level)
 
 
-def volume_cover_cone_trunc(H: Numeric, D: Numeric, h: Numeric):
+def volume_cover_cone_trunc(
+        length_semiaxis: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """_summary_
 
     Parameters
     ----------
-    H
+    length_semiaxis
         _description_
-    D
+    diameter
         _description_
-    h
+    level
+        _description_
+
+    Returns
+    -------
         _description_
 
     Raises
@@ -444,16 +489,19 @@ def volume_cover_cone_trunc(H: Numeric, D: Numeric, h: Numeric):
         "Volume for this type of covers is not supported yet")
 
 
-def volume_cover_torus_trunc(H: Numeric, D: Numeric, h: Numeric):
+def volume_cover_torus_trunc(
+        length_semiaxis: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """_summary_
 
     Parameters
     ----------
-    H
+    length_semiaxis
         _description_
-    D
+    diameter
         _description_
-    h
+    level
         _description_
 
     Raises
@@ -466,18 +514,19 @@ def volume_cover_torus_trunc(H: Numeric, D: Numeric, h: Numeric):
 
 
 def volume_Utube_trunc():
-    pass
+    raise NotImplementedError(
+        "Volume for this element is not supported yet")
 
 
 def volume_section_horiz_general(
-    H_left: Numeric,
-    L: Numeric,
-    H_right: Numeric,
-    D: Numeric,
-    h: Numeric,
-    left_cov: Callable[
+    length_semiaxis_left: Numeric,
+    length_cylinder: Numeric,
+    length_semiaxis_right: Numeric,
+    diameter: Numeric,
+    level: Numeric,
+    volume_cover_left_fn: Callable[
         [Numeric, Numeric, Numeric], Numeric],
-    right_cov: Callable[
+    volume_cover_right_fn: Callable[
         [Numeric, Numeric, Numeric], Numeric]
 ) -> Numeric:
     """This function computes volume of horizontal section with two covers truncated by
@@ -485,54 +534,56 @@ def volume_section_horiz_general(
 
     Parameters
     ----------
-    H_left
+    length_semiaxis_left
         Left cover length.
-    L
+    length_cylinder
         Cylindrical part length.
-    H_right
+    length_semiaxis_right
         Right cover length.
-    D
+    diameter
         Diameter of section.
-    h
+    level
         Truncation level.
-    left_cov
+    volume_cover_left_fn
         Function for volume of left cover with (H,D,h) signature.
-    right_cov
+    volume_cover_right_fn
         Function for volume of right cover with (H,D,h) signature.
 
     Returns
     -------
+    volume_section
         Volume of horizontal section with specified covers truncated by horizontal plane.
     """
-    V_cylinder_trunc = volume_cylinder_trunc(L, D, h)
-    V_left_cover_trunc = left_cov(H_left, D, h)
-    V_right_cover_trunc = right_cov(H_right, D, h)
+    V_cylinder = volume_cylinder_trunc(length_cylinder, diameter, level)
+    V_left_cover = volume_cover_left_fn(length_semiaxis_left, diameter, level)
+    V_right_cover = volume_cover_right_fn(
+        length_semiaxis_right, diameter, level)
 
-    V = V_cylinder_trunc + V_left_cover_trunc + V_right_cover_trunc
+    volume_section = V_cylinder + V_left_cover + V_right_cover
 
-    return V
+    return volume_section
 
 
 def volume_section_horiz_ellipses(
-        H_left: Numeric,
-        L: Numeric,
-        H_right: Numeric,
-        D: Numeric,
-        h: Numeric) -> Numeric:
+        length_semiaxis_left: Numeric,
+        length_cylinder: Numeric,
+        length_semiaxis_right: Numeric,
+        diameter: Numeric,
+        level: Numeric) -> Numeric:
     """This function computes volume of horizontal section with two elliptic covers
     truncated by horizontal plane.
 
     Parameters
     ----------
-    H_left
+    length_semiaxis_left
         Left cover length.
-    L
+    length_cylinder
         Cylindrical part length.
-    H_right
+    length_semiaxis_right
         Right cover length.
-    D
+    diameter
         Diameter of section.
-    h
+    level
         Truncation level.
 
     Returns
@@ -540,10 +591,15 @@ def volume_section_horiz_ellipses(
     V
         Volume of horizontal section with elliptic covers truncated by horizontal plane.
     """
-    V = volume_section_horiz_general(H_left, L, H_right, D, h,
-                                     left_cov=volume_cover_elliptic_trunc,
-                                     right_cov=volume_cover_elliptic_trunc)
-    return V
+    volume_section = volume_section_horiz_general(
+        length_semiaxis_left,
+        length_cylinder,
+        length_semiaxis_right,
+        diameter,
+        level,
+        volume_cover_left_fn=volume_cover_elliptic_trunc,
+        volume_cover_right_fn=volume_cover_elliptic_trunc)
+    return volume_section
 
 
 # -----------------------------------------------------------------------------
@@ -552,8 +608,10 @@ def volume_section_horiz_ellipses(
 
 
 def graduate(
-        h_min: Numeric, h_max: Numeric, vol_of_lvl: Callable[[Numeric], Numeric],
-        N: int = 50
+        level_min: Numeric,
+        level_max: Numeric,
+        volume_fn: Callable[[Numeric], Numeric],
+        number_of_points: int = 50
 ) -> tuple[Numeric, Numeric]:
     """This function computes volume values that correspond to level values ranging from
     min to max possible value for element with provided volume dependency on level.
@@ -571,26 +629,30 @@ def graduate(
 
     Returns
     -------
+    (level, volume)
         Tuple of arrays, first array correspond to generated levels, second to computed
         volumes.
     """
-    h = np.linspace(h_min, h_max, N)
-    V = vol_of_lvl(h)
-    return h, V
+    level = np.linspace(level_min, level_max, number_of_points)
+    volume = volume_fn(level)
+    return level, volume
 
 
-def inverse_graduate(V_target: Numeric, h: Numeric, V: Numeric) -> Numeric:
+def inverse_graduate(
+        volume_target: Numeric,
+        level_graduated: Numeric,
+        volume_graduated: Numeric) -> Numeric:
     """This function performs computations to detemine level value that corresponds to
     target volume. Computations are performed by means of linear interpolation over
     arrays of levels and volumes (see function for graduation).
 
     Parameters
     ----------
-    V_target
+    volume_target
         Target value of volume for which level should be determined.
-    h
+    level_graduated
         Array of levels ranging from min to max possible value of level.
-    V
+    volume_graduated
         Array of volumes corresponding to provided array of levels.
 
     Returns
@@ -598,7 +660,8 @@ def inverse_graduate(V_target: Numeric, h: Numeric, V: Numeric) -> Numeric:
         Interpolated value of level that corresponds to V_target
     """
     # pyright cries anout types, but everything should be fine with iterables
-    return np.interp(V_target, V, h)  # type: ignore
+    # type: ignore
+    return np.interp(volume_target, volume_graduated, level_graduated)
 
 
 if __name__ == '__main__':

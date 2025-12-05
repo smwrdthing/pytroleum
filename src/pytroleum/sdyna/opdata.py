@@ -15,35 +15,35 @@ class OperationData(ABC):
     # Maybe will be extended to store more
 
     # EOS interfaces for phases
-    eos: list[AbstractState]
+    equation_of_state: list[AbstractState]
 
     # Thermodynamic parameters
-    p: NDArray
-    V: NDArray
-    T: NDArray
-    rho: NDArray
-    u: NDArray
-    x: NDArray
+    pressure: NDArray
+    volume: NDArray
+    temperature: NDArray
+    density: NDArray
+    energy_specific: NDArray
+    molar_composition: NDArray
 
     # Fields for transport properties
-    mu: NDArray
-    lam: NDArray
+    dynamic_vicosity: NDArray
+    thermal_conductivity: NDArray
 
 
 @dataclass
 class StateData(OperationData):
-    m: NDArray
-    E: NDArray
-    h: NDArray
+    mass: NDArray
+    energy: NDArray
+    level: NDArray
 
 
 @dataclass
 class FlowData(OperationData):
     # This will be used for stream description in Conductors,
     # so we need elevation, velocity and specific energy of stream.
-    w: NDArray
-    j: NDArray
-    G: NDArray
-    Q: NDArray
-    J: NDArray
-    z: float = 0
+    velocity: NDArray
+    energy_specific_flow: NDArray
+    mass_flowrate: NDArray
+    volume_flowrate: NDArray
+    energy_flow: NDArray
+    elevation: float = 0

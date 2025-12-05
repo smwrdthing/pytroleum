@@ -5,7 +5,7 @@ import CoolProp.constants as CoolConst
 from abc import ABC, abstractmethod
 from interfaces import Conductor
 from typing import Callable
-from opdata import StateData
+import opdata as opd
 import pytroleum.meter as meter
 from pytroleum.meter import Numeric
 
@@ -18,7 +18,6 @@ class ControlVolume(ABC):
         self.outlets: list[Conductor] = []
         self.inlets: list[Conductor] = []
         self.volume: Numeric = np.inf
-        self.conditions = StateData()
 
     # Introduce custom decorator for iterable inputs
     def connect_inlet(self, conductor: Conductor) -> None:
@@ -32,16 +31,23 @@ class ControlVolume(ABC):
             conductor.connect_source(self)
             self.outlets.append(conductor)
 
+    def specify_state(self, state: opd.StateData):
+        self.state = state
+
     def matter_spec_energy(self):
-        self.conditions.u = self.conditions.E/self.conditions.m
+        self.state.energy_specific = self.state.energy/self.state.mass
 
     def matter_temperature(self):
         T = []
-        for eos, p, u in zip(self.conditions.eos, self.conditions.p, self.conditions.u):
+
+        for eos, p, u in zip(
+                self.state.equation_of_state,
+                self.state.pressure,
+                self.state.energy_specific):
             eos.update(CoolConst.PUmass_INPUTS, p, u)
             T.append(eos.T())
         T = np.array(T)
-        self.conditions.T = T
+        self.state.temperature = T
 
     @abstractmethod
     def advance(self) -> None:
@@ -76,33 +82,40 @@ class SectionHorizontal(ControlVolume):
 
     # Class for horizontal section
 
-    def __init__(self, D: Numeric, L: Numeric, H_left: Numeric, H_right: Numeric,
+    def __init__(self,
+                 diameter: Numeric,
+                 length_cylinder: Numeric,
+                 length_left_semiaxis: Numeric,
+                 length_right_semiaxis: Numeric,
                  volume_modificator: Callable[[Numeric | Numeric], Numeric]) -> None:
         super().__init__()
-        self.D = D
-        self.H_left, self.L, self.H_right = H_left, L, H_right
-
+        self.diameter = diameter
+        self.length_left_semiaxis = length_left_semiaxis
+        self.length_cylinder = length_cylinder
+        self.length_right_semiaxis = length_right_semiaxis
         self.volume_modificator = volume_modificator
-        self.volume_pure = self.volume_with_level(D)
-        self.volume = self.volume_pure-self.volume_modificator(D)
+        self.volume_pure = self.volume_with_level(diameter)
+        self.volume = self.volume_pure-self.volume_modificator(diameter)
         # Graduation is needed for level
-        self.grad_levels, self.grad_volumes = meter.graduate(
-            0, D, self.volume_with_level)
+        self.level_graduated, self.volume_graduated = meter.graduate(
+            0, diameter, self.volume_with_level)
 
-    def volume_with_level(self, h: Numeric) -> Numeric:
-        V_pure = meter.volume_section_horiz_ellipses(
-            self.H_left, self.L, self.H_right, self.D, h)
-        V_modif = self.volume_modificator(h)
+    def volume_with_level(self, level: Numeric) -> Numeric:
+        V_pure = meter.volume_section_horiz_ellipses(self.length_left_semiaxis,
+                                                     self.length_cylinder,
+                                                     self.length_right_semiaxis,
+                                                     self.diameter, level)
+        V_modif = self.volume_modificator(level)
         V = V_pure+V_modif
         return V
 
     def level_with_volume(self, volume: Numeric) -> Numeric:
-        return meter.inverse_graduate(volume, self.grad_levels, self.grad_volumes)
+        return meter.inverse_graduate(volume, self.level_graduated, self.volume_graduated)
 
-    def matter_level(self, h: Numeric) -> Numeric:
-        V_cumulative = np.cumsum(self.conditions.V[::-1])
+    def matter_level(self) -> Numeric:
+        V_cumulative = np.cumsum(self.state.volume[::-1])
         h = meter.inverse_graduate(
-            V_cumulative, self.grad_levels, self.grad_volumes)
+            V_cumulative, self.level_graduated, self.volume_graduated)
         return h
 
     def advance(self):
@@ -114,11 +127,14 @@ class SectionVertical(ControlVolume):
     # Class for vertical section, not really needed right now, might be useful later for
     # tests and other equipment?
 
-    def __init__(self, D: Numeric, H: Numeric, mod: Numeric) -> None:
+    def __init__(self,
+                 diameter: Numeric,
+                 height: Numeric,
+                 volume_modificator: Numeric) -> None:
         super().__init__()
-        self.D = D
-        self.H = H
-        self.mod = mod
+        self.diameter = diameter
+        self.height = height
+        self.volume_modificator = volume_modificator
 
     def advance(self):
         pass
