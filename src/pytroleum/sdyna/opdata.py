@@ -26,7 +26,7 @@ class OperationData(ABC):
     molar_composition: NDArray
 
     # Fields for transport properties
-    dynamic_vicosity: NDArray
+    dynamic_viscosity: NDArray
     thermal_conductivity: NDArray
 
 
