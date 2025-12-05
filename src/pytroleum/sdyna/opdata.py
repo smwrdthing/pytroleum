@@ -1,9 +1,10 @@
 import numpy as np
 import CoolProp.constants as CoolConst
+from scipy.constants import g
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from numpy.typing import NDArray
-from typing import Iterable, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 if TYPE_CHECKING:
     from ..tdyna.CoolStub import AbstractState  # type: ignore
 else:
