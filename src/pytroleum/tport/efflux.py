@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.typing import DTypeLike, NDArray
+from numpy.typing import NDArray
 
 # TODO :
 # 1. Fix types (applies to other parts of project too)
@@ -7,95 +7,119 @@ from numpy.typing import DTypeLike, NDArray
 # 3. Generalisation of lumpded parameters models for
 #    flow rate computations?
 
+type Numeric = float | NDArray
 
-def incompressible(A_orifice: float, A_pipe: float, C: float, rho: float,
-                   p1: float, p2: float, pressure_recovery: bool = False) -> float:
+
+def incompressible(
+        area_of_orifice: Numeric,
+        area_of_pipe: Numeric,
+        discharge_coefficient: Numeric,
+        density: Numeric,
+        upstream_pressure: Numeric,
+        donwstream_pressure: Numeric,
+        pressure_recovery: bool = False) -> Numeric:
     """This function computes flow rate for incompressible flow through orifice.
     Well-known orifice equation is employed for calualtions.
 
     Parameters
     ----------
-    A_orifice
+    area_of_orifice
         Area of orifice.
-    A_pipe
+    area_of_pipe
         Area of pipe.
-    C
+    discharge_coefficient
         Discharge coefficient.
-    rho
+    density
         Density of fluid.
-    p1
+    upstream_pressure
         Upstream pressure (before orifice).
-    p2
+    donwstream_pressure
         Downstream pressure (after orifice).
     pressure_recovery, optional
         Variable to specify presence  of pressure recovery, by default False.
 
     Returns
     -------
+    mass_flow_rate
         Mass flow rate of incompressible fluid through orifice.
     """
 
-    sign = np.sign(p1-p2)
-    dp = np.abs(p1-p2)
-    alph = A_orifice/A_pipe
+    sign = np.sign(upstream_pressure-donwstream_pressure)
+    pressure_diff = np.abs(upstream_pressure-donwstream_pressure)
+    area_frac = area_of_orifice/area_of_pipe
 
-    Q = sign*C*A_orifice*np.sqrt(2*dp/rho/(1-alph**2))
+    volume_flow_rate = (
+        sign*discharge_coefficient *
+        area_of_orifice * np.sqrt(2*pressure_diff/density/(1-area_frac**2))
+    )
     if pressure_recovery:
-        Q = Q/np.sqrt(1-alph)
+        volume_flow_rate = volume_flow_rate/np.sqrt(1-area_frac)
 
-    G = rho*Q
+    mass_flow_rate = density*volume_flow_rate
 
-    return G
+    return mass_flow_rate
 
 
-def compressible(A: float, C: float, k: float, R: float, rho1: float, rho2: float,
-                 T1: float, T2: float, p1: float, p2: float) -> float:
+def compressible(
+        area: Numeric,
+        discharge_coefficient: Numeric,
+        adiabatic_index: Numeric,
+        gas_constant: Numeric,
+        upstream_density: Numeric,
+        downstream_density: Numeric,
+        upstream_temperature: Numeric,
+        downstream_temperature: Numeric,
+        upstream_pressure: Numeric,
+        downstream_pressure: Numeric) -> Numeric:
     """This function computes flow rate for compressible flow through orifice.
     Equation for adiabatic flow through nozzle is employed for calculations.
 
     Parameters
     ----------
-    A
+    area
         Area of orifice/contriction/nozzle.
-    C
+    discharge_coefficient
         Discharge coefficient.
-    k
+    adiabatic_index
         Adiabatic index (cp/cv).
-    R
+    gas_constant
         Gas constant.
-    rho1
+    upstream_density
         Upstream density.
-    rho2
+    downstream_density
         Downstream density.
-    T1
+    upstream_temperature
         Upstream temperature.
-    T2
+    downstream_temperature
         Downstream temperature.
-    p1
+    upstream_pressure
         Upstream pressure.
-    p2
+    downstream_pressure
         Downstream pressure.
 
     Returns
     -------
+    mass_flow_rate
         Mass flow rate of compressible fluid through orifice.
     """
 
-    sign = np.sign(p1-p2)
-    beta_crit = (2/(k+1))**(k/(k-1))
-    beta = (p2/p1)**sign
+    sign = np.sign(upstream_pressure-downstream_pressure)
+    beta_crit = (2/(adiabatic_index+1))**(adiabatic_index/(adiabatic_index-1))
+    beta = (downstream_pressure/upstream_pressure)**sign
 
     # should be ok, np. internal broadcasting will handle this
     beta[beta < beta_crit] = beta_crit
 
-    rho = rho1*(sign >= 0) + rho2*(sign < 0)
-    T = T1*(sign >= 0) + T2*(sign < 0)
+    rho = upstream_density*(sign >= 0) + downstream_density*(sign < 0)
+    temperature = (
+        upstream_temperature * (sign >= 0) + downstream_temperature*(sign < 0))
 
-    G = sign*C*A*rho*np.sqrt(
-        2*k/(k-1)*R*T*(beta**(2/k)-beta**((k+1)/k))
+    mass_flow_rate = sign*discharge_coefficient*area*rho*np.sqrt(
+        2*adiabatic_index/(adiabatic_index-1)*gas_constant*temperature*(
+            beta ** (2/adiabatic_index)-beta**((adiabatic_index+1)/adiabatic_index))
     )
 
-    return G
+    return mass_flow_rate
 
 
 if __name__ == '__main__':
