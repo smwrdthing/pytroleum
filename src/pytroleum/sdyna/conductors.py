@@ -13,8 +13,7 @@ class Conductor(ABC):
 
     @abstractmethod
     def __init__(self) -> None:
-        self.sink: ControlVolume | None = None
-        self.source: ControlVolume | None = None
+        return
 
     def specify_flow(self, flow: opd.FlowData):
         self.flow = flow
