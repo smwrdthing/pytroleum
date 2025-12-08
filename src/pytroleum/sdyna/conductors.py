@@ -42,8 +42,69 @@ class Valve(Conductor):
 
     # Subclass to represent Valve
 
-    def __init__(self) -> None:
+    def __init__(self,
+                 diameter_pipe: float,
+                 diameter_valve: float,
+                 elevation: float,
+                 discharge_coefficient: float,
+                 opening=0) -> None:
         super().__init__()
+        self.diameter_pipe = diameter_pipe
+        self.diameter_valve = diameter_valve
+
+        self.dishcarge_coefficient = discharge_coefficient
+        self.elevation = elevation
+
+        self.opening = opening
+
+        self.controller: PropIntDiff | StartStop | None = None
+
+    # getter/setter for pipe diameter  ---------------------------------------------------
+    @property
+    def diameter_pipe(self):
+        return self._diameter_pipe
+
+    @diameter_pipe.setter
+    def diameter_pipe(self, new_diameter_pipe):
+        self._diameter_pipe = new_diameter_pipe
+        self._area_pipe = np.pi*new_diameter_pipe**2/4
+    # ------------------------------------------------------------------------------------
+
+    # getter/setter for valve diameter ---------------------------------------------------
+    @property
+    def diameter_valve(self):
+        return self._diameter_valve
+
+    @diameter_valve.setter
+    def diameter_valve(self, new_diameter_valve):
+        self._diameter_valve = new_diameter_valve
+        self._area_valve = np.pi*new_diameter_valve**2/4
+    # ------------------------------------------------------------------------------------
+
+    # getter/setter for pipe area  -------------------------------------------------------
+    @property
+    def area_pipe(self):
+        return self._area_pipe
+
+    @area_pipe.setter
+    def area_pipe(self, new_area_pipe):
+        self._area_pipe = new_area_pipe
+        self._diameter_pipe = np.sqrt(4*new_area_pipe/np.pi)
+    # ------------------------------------------------------------------------------------
+
+    # getter/setter for valve area -------------------------------------------------------
+    @property
+    def area_valve(self):
+        return self._area_valve
+
+    @area_valve.setter
+    def area_valve(self, new_area_vale):
+        self._area_valve = new_area_vale
+        self._diameter_valve = np.sqrt(4*new_area_vale/np.pi)
+    # ------------------------------------------------------------------------------------
+
+    def compute_mass_flow_rate(self):
+        pass
 
     def advance(self):
         pass
