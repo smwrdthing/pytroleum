@@ -86,8 +86,8 @@ class SectionHorizontal(ControlVolume):
 
     def __init__(self,
                  diameter: Numeric,
-                 length_cylinder: Numeric,
                  length_left_semiaxis: Numeric,
+                 length_cylinder: Numeric,
                  length_right_semiaxis: Numeric,
                  volume_modificator: Callable[[Numeric], Numeric]) -> None:
         super().__init__()
