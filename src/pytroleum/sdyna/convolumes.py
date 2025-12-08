@@ -97,7 +97,7 @@ class SectionHorizontal(ControlVolume):
         self.length_right_semiaxis = length_right_semiaxis
         self.volume_modificator = volume_modificator
         self.volume_pure = self.volume_with_level(diameter)
-        self.volume = self.volume_pure-self.volume_modificator(diameter)
+        self.volume = self.volume_pure+self.volume_modificator(diameter)
         # Graduation is needed for level
         self.level_graduated, self.volume_graduated = meter.graduate(
             0, diameter, self.volume_with_level)
