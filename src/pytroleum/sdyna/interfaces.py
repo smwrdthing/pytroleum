@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Protocol, runtime_checkable
+from pytroleum.sdyna.opdata import StateData, FlowData
 
 
 @runtime_checkable
@@ -9,6 +10,7 @@ class ControlVolume(Protocol):
 
     outlets: list[Conductor]
     inlets: list[Conductor]
+    state: StateData
 
     def __init__(self) -> None:
         ...
@@ -30,6 +32,7 @@ class Conductor(Protocol):
 
     source: ControlVolume
     sink: ControlVolume
+    flow: FlowData
 
     def __init__(self) -> None:
         ...
