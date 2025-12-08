@@ -66,10 +66,10 @@ def compressible(
         adiabatic_index: Numeric,
         gas_constant: Numeric,
         upstream_density: Numeric,
-        downstream_density: Numeric,
         upstream_temperature: Numeric,
-        downstream_temperature: Numeric,
         upstream_pressure: Numeric,
+        downstream_density: Numeric,
+        downstream_temperature: Numeric,
         downstream_pressure: Numeric) -> Numeric:
     """This function computes flow rate for compressible flow through orifice.
     Equation for adiabatic flow through nozzle is employed for calculations.
@@ -86,14 +86,14 @@ def compressible(
         Gas constant.
     upstream_density
         Upstream density.
-    downstream_density
-        Downstream density.
     upstream_temperature
         Upstream temperature.
-    downstream_temperature
-        Downstream temperature.
     upstream_pressure
         Upstream pressure.
+    downstream_density
+        Downstream density.
+    downstream_temperature
+        Downstream temperature.
     downstream_pressure
         Downstream pressure.
 
