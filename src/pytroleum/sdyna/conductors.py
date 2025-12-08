@@ -52,7 +52,7 @@ class Valve(Conductor):
         self.diameter_pipe = diameter_pipe
         self.diameter_valve = diameter_valve
 
-        self.dishcarge_coefficient = discharge_coefficient
+        self.discharge_coefficient = discharge_coefficient
         self.elevation = elevation
 
         self.opening = opening
