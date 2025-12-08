@@ -24,13 +24,13 @@ class ControlVolume(ABC):
     # Introduce custom decorator for iterable inputs
     def connect_inlet(self, conductor: Conductor) -> None:
         if conductor not in self.inlets:
-            conductor.connect_sink(self)
+            conductor.sink = self
             self.inlets.append(conductor)
 
     # Introduce custom decorator for iterable inputs
     def connect_outlet(self, conductor: Conductor) -> None:
         if conductor not in self.outlets:
-            conductor.connect_source(self)
+            conductor.source = self
             self.outlets.append(conductor)
 
     def specify_state(self, state: opd.StateData):
