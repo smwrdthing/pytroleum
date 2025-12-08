@@ -20,10 +20,12 @@ class Conductor(ABC):
 
     def connect_source(self, convolume: ControlVolume) -> None:
         if self not in convolume.outlets:
+            convolume.outlets.append(self)
             self.source = convolume
 
     def connect_sink(self, convolume: ControlVolume) -> None:
         if self not in convolume.inlets:
+            convolume.inlets.append(self)
             self.sink = convolume
 
     @abstractmethod
