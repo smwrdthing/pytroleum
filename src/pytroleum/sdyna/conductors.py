@@ -3,8 +3,8 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Callable, Iterable
-from interfaces import ControlVolume
-import opdata as opd
+import pytroleum.sdyna.opdata as opd
+from pytroleum.sdyna.interfaces import ControlVolume
 
 
 class Conductor(ABC):
