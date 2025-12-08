@@ -111,7 +111,6 @@ def fabric_state(
         equation_of_state,
         pressure,
         volume,
-
         temperature,
         density,
         energy_specific,
@@ -165,17 +164,3 @@ def fabric_flow(
     )
 
     return flow
-
-
-stopd = StateData(
-    equation_of_state=[AbstractState("HEOS", "air")],
-    pressure=np.array([1e5, 1e5, 1e5]),
-    volume=np.array([1, 1, 1]),
-    temperature=np.array([300, 300, 300]),
-    density=np.array([1, 800, 1000]),
-    dynamic_viscosity=np.array([1.1e-5, 6e-3, 1e-3]),
-    energy=np.array([2e6, 10e6, 12e6]),
-    mass=np.array([122, 1000, 755]),
-    energy_specific=np.array([1.66e5, 1.22e3, 14e3]),
-    level=np.array([2, 1, 0.6]),
-    thermal_conductivity=np.array([1, 11, 1]))
