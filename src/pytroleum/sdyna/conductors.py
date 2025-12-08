@@ -104,7 +104,47 @@ class Valve(Conductor):
     # ------------------------------------------------------------------------------------
 
     def compute_mass_flow_rate(self):
-        pass
+
+        # It was implemented somewhat like this in legacy, but here we should find better
+        # way to handle multiphase situation and facilitate ODE system solution. Code is
+        # brought here in this form for preliminary considerations and should be
+        # reimplemented with smart utilization of phase ransparency idea
+
+        upstream_state = self.source.state
+        downstream_state = self.sink.state
+
+        mass_flowrate_liquid = efflux.incompressible(
+            self.area_valve,
+            self.area_pipe,
+            self.discharge_coefficient,
+            upstream_state.density[1:],
+            upstream_state.pressure[1:],
+            downstream_state.pressure[1:]
+        )
+
+        mass_flowrate_gas = efflux.compressible(
+            self.area_valve,
+            self.discharge_coefficient,
+
+            # eos makes storing k and R excessive
+            upstream_state.equation_of_state[0].cvmass(
+            ) / upstream_state.equation_of_state[0].cpmass(),
+            upstream_state.equation_of_state[0].gas_constant(),
+
+            upstream_state.density[0],
+            upstream_state.temperature[0],
+            upstream_state.pressure[0],
+            downstream_state.density[0],
+            downstream_state.temperature[0],
+            downstream_state.pressure[0]
+        )
+
+        # Array re-collection always seemed clunky to me
+        mass_flowrate = np.array(
+            [*mass_flowrate_liquid, *mass_flowrate_gas])  # type: ignore
+        #  Union with float causes issues
+
+        self.flow.mass_flowrate = mass_flowrate
 
     def advance(self):
         pass
