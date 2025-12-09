@@ -45,7 +45,7 @@ class FlowData(OperationData):
     # so we need elevation, velocity and specific energy of stream.
     velocity: NDArray
     energy_specific_flow: NDArray
-    mass_flowrate: NDArray
+    mass_flow_rate: NDArray
     volume_flowrate: NDArray
     energy_flow: NDArray
     elevation: float = 0
