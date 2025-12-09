@@ -17,7 +17,7 @@ class Conductor(ABC):
     # Abstract base class for conductor
 
     @abstractmethod
-    def __init__(self, phase_index: float,
+    def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         if source is None:
@@ -51,7 +51,7 @@ class Valve(Conductor):
 
     # Subclass to represent Valve
 
-    def __init__(self, phase_index: float,
+    def __init__(self, phase_index: int,
                  diameter_pipe: float,
                  diameter_valve: float,
                  elevation: float,
@@ -165,7 +165,7 @@ class CentrifugalPump(Conductor):
 
     # Subclass ro representcentrifugal pump
 
-    def __init__(self, phase_index: float,
+    def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         super().__init__(phase_index, source, sink)
@@ -179,7 +179,7 @@ class UnderPass(Conductor):
     # Subclass to represent passage at the bottom of section formed by crest of weir and
     # internal wall of vessel
 
-    def __init__(self, phase_index: float,
+    def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         super().__init__(phase_index, source, sink)
@@ -193,7 +193,7 @@ class OverPass(Conductor):
     # Subclass to represent passage at the top of section formed by crest of weir and
     # internal wall of vessel
 
-    def __init__(self, phase_index: float,
+    def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         super().__init__(phase_index, source, sink)
@@ -206,7 +206,7 @@ class FurnaceHeatConduti(Conductor):
 
     # Subcalss to represent heat flux from furnace
 
-    def __init__(self, phase_index: float,
+    def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         super().__init__(phase_index, source, sink)
@@ -219,7 +219,7 @@ class PhaseInterface(Conductor):
 
     # Subclass to represent interfacial interactinos
 
-    def __init__(self, phase_index: float,
+    def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         super().__init__(phase_index, source, sink)
