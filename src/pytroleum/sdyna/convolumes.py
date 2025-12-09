@@ -103,16 +103,18 @@ class SectionHorizontal(ControlVolume):
             0, diameter, self.volume_with_level)
 
     def volume_with_level(self, level: Numeric) -> Numeric:
-        volume_pure = meter.volume_section_horiz_ellipses(self.length_left_semiaxis,
-                                                          self.length_cylinder,
-                                                          self.length_right_semiaxis,
-                                                          self.diameter, level)
+        volume_pure = meter.volume_section_horiz_ellipses(
+            self.length_left_semiaxis,
+            self.length_cylinder,
+            self.length_right_semiaxis,
+            self.diameter, level)
         volume_modificator = self.volume_modificator(level)
         volume = volume_pure+volume_modificator
         return volume
 
     def level_with_volume(self, volume: Numeric) -> Numeric:
-        return meter.inverse_graduate(volume, self.level_graduated, self.volume_graduated)
+        return meter.inverse_graduate(
+            volume, self.level_graduated, self.volume_graduated)
 
     def matter_level(self) -> Numeric:
         volume_of_matter_cumulative = np.cumsum(self.state.volume[::-1])
