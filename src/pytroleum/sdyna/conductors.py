@@ -17,7 +17,7 @@ class Conductor(ABC):
     # Abstract base class for conductor
 
     @abstractmethod
-    def __init__(self,
+    def __init__(self, phase_index: float,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         if source is None:
@@ -50,7 +50,7 @@ class Valve(Conductor):
 
     # Subclass to represent Valve
 
-    def __init__(self,
+    def __init__(self, phase_index: float,
                  diameter_pipe: float,
                  diameter_valve: float,
                  elevation: float,
@@ -58,7 +58,7 @@ class Valve(Conductor):
                  opening=0,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None,) -> None:
-        super().__init__(source, sink)
+        super().__init__(phase_index, source, sink)
         self.diameter_pipe = diameter_pipe
         self.diameter_valve = diameter_valve
 

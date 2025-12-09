@@ -31,6 +31,7 @@ class Conductor(Protocol):
 
     # Interface for conductor
 
+    phase_index: float
     source: ControlVolume
     sink: ControlVolume
     flow: FlowData
