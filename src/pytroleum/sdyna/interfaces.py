@@ -37,7 +37,9 @@ class Conductor(Protocol):
     flow: FlowData
     controller: PropIntDiff | StartStop | None
 
-    def __init__(self) -> None:
+    def __init__(self, phase_index: float,
+                 source: ControlVolume | None,
+                 sink: ControlVolume | None) -> None:
         ...
 
     def connect_source(self, convolume: ControlVolume) -> None:
