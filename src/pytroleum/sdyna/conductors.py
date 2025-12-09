@@ -17,8 +17,15 @@ class Conductor(ABC):
     # Abstract base class for conductor
 
     @abstractmethod
-    def __init__(self) -> None:
-        return
+    def __init__(self,
+                 source: ControlVolume | None = None,
+                 sink: ControlVolume | None = None) -> None:
+        if source is None:
+            from pytroleum.sdyna.convolumes import Atmosphere
+            self.source = Atmosphere()
+        if sink is None:
+            from pytroleum.sdyna.convolumes import Atmosphere
+            self.sink = Atmosphere()
 
     def specify_flow(self, flow: opd.FlowData):
         self.flow = flow
@@ -47,8 +54,10 @@ class Valve(Conductor):
                  diameter_valve: float,
                  elevation: float,
                  discharge_coefficient: float,
-                 opening=0) -> None:
-        super().__init__()
+                 opening=0,
+                 source: ControlVolume | None = None,
+                 sink: ControlVolume | None = None,) -> None:
+        super().__init__(source, sink)
         self.diameter_pipe = diameter_pipe
         self.diameter_valve = diameter_valve
 
@@ -205,3 +214,7 @@ class PhaseInterface(Conductor):
 
     def advance(self):
         pass
+
+
+if __name__ == "__main__":
+    vlv = Valve(100e-3, 80e-3, 1, 0.61, 0)
