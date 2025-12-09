@@ -26,6 +26,7 @@ class Conductor(ABC):
         if sink is None:
             from pytroleum.sdyna.convolumes import Atmosphere
             self.sink = Atmosphere()
+        self.controller: PropIntDiff | StartStop | None = None
 
     def specify_flow(self, flow: opd.FlowData):
         self.flow = flow
