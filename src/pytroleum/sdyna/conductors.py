@@ -165,8 +165,10 @@ class CentrifugalPump(Conductor):
 
     # Subclass ro representcentrifugal pump
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, phase_index: float,
+                 source: ControlVolume | None = None,
+                 sink: ControlVolume | None = None) -> None:
+        super().__init__(phase_index, source, sink)
 
     def advance(self) -> None:
         pass
@@ -177,8 +179,10 @@ class UnderPass(Conductor):
     # Subclass to represent passage at the bottom of section formed by crest of weir and
     # internal wall of vessel
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, phase_index: float,
+                 source: ControlVolume | None = None,
+                 sink: ControlVolume | None = None) -> None:
+        super().__init__(phase_index, source, sink)
 
     def advance(self):
         pass
@@ -189,8 +193,10 @@ class OverPass(Conductor):
     # Subclass to represent passage at the top of section formed by crest of weir and
     # internal wall of vessel
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, phase_index: float,
+                 source: ControlVolume | None = None,
+                 sink: ControlVolume | None = None) -> None:
+        super().__init__(phase_index, source, sink)
 
     def advance(self) -> None:
         pass
@@ -200,8 +206,10 @@ class FurnaceHeatConduti(Conductor):
 
     # Subcalss to represent heat flux from furnace
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, phase_index: float,
+                 source: ControlVolume | None = None,
+                 sink: ControlVolume | None = None) -> None:
+        super().__init__(phase_index, source, sink)
 
     def advance(self):
         pass
@@ -211,8 +219,10 @@ class PhaseInterface(Conductor):
 
     # Subclass to represent interfacial interactinos
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, phase_index: float,
+                 source: ControlVolume | None = None,
+                 sink: ControlVolume | None = None) -> None:
+        super().__init__(phase_index, source, sink)
 
     def advance(self):
         pass
