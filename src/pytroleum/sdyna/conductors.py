@@ -1,15 +1,13 @@
 # Conductors here
-
-import numpy as np
-from numpy.typing import NDArray
 from abc import ABC, abstractmethod
-from typing import Callable, Iterable
-import pytroleum.sdyna.opdata as opd
+import numpy as np
 import pytroleum.tport.efflux as efflux
+from pytroleum.sdyna.opdata import FlowData
 from pytroleum.sdyna.interfaces import ControlVolume
 from pytroleum.sdyna.controllers import PropIntDiff, StartStop
 
-type Numeric = float | NDArray
+from typing import Callable, Iterable
+from numpy import float64
 
 
 class Conductor(ABC):

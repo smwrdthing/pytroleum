@@ -1,7 +1,8 @@
 # Control volumes here
 from __future__ import annotations
+from abc import ABC, abstractmethod
 import numpy as np
-from numpy.typing import NDArray
+from scipy.constants import g
 import CoolProp.constants as CoolConst
 from abc import ABC, abstractmethod
 from typing import Callable
@@ -9,7 +10,11 @@ from pytroleum.sdyna.interfaces import Conductor
 from pytroleum.sdyna import opdata as opd
 from pytroleum import meter
 
-type Numeric = float | NDArray
+from typing import Callable, overload
+from numpy.typing import NDArray
+from numpy import float64
+from pytroleum.sdyna.interfaces import Conductor
+from pytroleum.sdyna.opdata import StateData
 
 
 class ControlVolume(ABC):
