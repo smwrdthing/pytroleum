@@ -49,21 +49,22 @@ class Valve(Conductor):
 
     # Subclass to represent Valve
 
-    def __init__(self, phase_index: int,
-                 diameter_pipe: float,
-                 diameter_valve: float,
-                 elevation: float,
-                 discharge_coefficient: float,
-                 opening=0,
-                 source: ControlVolume | None = None,
-                 sink: ControlVolume | None = None,) -> None:
+    def __init__(
+            self, phase_index: int,
+            diameter_pipe: float | float64,
+            diameter_valve: float | float64,
+            elevation: float | float64,
+            discharge_coefficient: float | float64,
+            opening: float | float64 = 0,
+            source: ControlVolume | None = None,
+            sink: ControlVolume | None = None) -> None:
+
         super().__init__(phase_index, source, sink)
+
         self.diameter_pipe = diameter_pipe
         self.diameter_valve = diameter_valve
-
         self.discharge_coefficient = discharge_coefficient
         self.elevation = elevation
-
         self.opening = opening
 
         self.controller: PropIntDiff | StartStop | None = None
