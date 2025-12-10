@@ -1,14 +1,10 @@
 import numpy as np
-from typing import Callable, Iterable, overload
-from numpy.typing import NDArray
-# Apply vectorization with decorators. Either enforce input arguments type conversion
-# or straight up use np.vectorize; second approach destroysdocstrings
 
-# TODO :
-#  1. docstrings
-#  2. functions for U-shaped tube
-#  3. some more convenience functions
-#  4. functions for other geometries (long-term goal)
+from typing import Any, NoReturn, Callable, overload
+from numpy.typing import NDArray
+from numpy import float64
+
+# All type hints should be implemented with @overload decorator!
 
 # !DISCLAIMER! : All functions work with SI units!
 
@@ -17,11 +13,19 @@ from numpy.typing import NDArray
 # CROSS-SECTIONAL AREA COMPUTATIONS
 # -----------------------------------------------------------------------------
 
-# types generally should be defined somewhere else, should fix later
-type Numeric = float | NDArray
+@overload
+def area_cs_circle_trunc(
+        diameter: float | float64, level: float | float64) -> float | float64:
+    ...
 
 
-def area_cs_circle_trunc(diameter: Numeric, level: Numeric) -> Numeric:
+@overload
+def area_cs_circle_trunc(
+        diameter: float | float64, level: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def area_cs_circle_trunc(diameter, level):
     """This function computes area of circle which is truncated with horizontal
     straight line. Formula obtained by the integration of the following function
     from zero to h:
@@ -52,10 +56,10 @@ def area_cs_circle_trunc(diameter: Numeric, level: Numeric) -> Numeric:
 
 
 def area_cs_cover_ellipse(
-        length_semiaxis: Numeric,
-        axial_position: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis,
+        axial_position,
+        diameter,
+        level):
     """_summary_
 
     Parameters
@@ -83,9 +87,9 @@ def area_cs_cover_ellipse(
 
 
 def area_cs_cover_circle(
-        axial_position: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        axial_position,
+        diameter,
+        level):
     """Computations for special case of elliptic cover with H = D/2
 
     Parameters
@@ -101,14 +105,15 @@ def area_cs_cover_circle(
     -------
         _description_
     """
-    return area_cs_cover_ellipse(diameter/2, axial_position, diameter, level)
+    raise NotImplementedError(
+        "Cross-sectional area for this type of covers is not supported yet")
 
 
 def area_cs_cover_cone(
-        length_semiaxis: Numeric,
-        axial_position: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis,
+        axial_position,
+        diameter,
+        level):
     """_summary_
 
     Parameters
@@ -136,10 +141,10 @@ def area_cs_cover_cone(
 
 
 def area_cs_cover_torus(
-        length_semiaxis: Numeric,
-        axial_position: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis,
+        axial_position,
+        diameter,
+        level):
     """_summary_
 
     Parameters
@@ -166,7 +171,7 @@ def area_cs_cover_torus(
         "Cross-sectional area for this type of covers is not supported yet")
 
 
-def area_cs_Utube_trunc(diameter: Numeric) -> Numeric:
+def area_cs_Utube_trunc(diameter: float | float64):
     """This function computes cross-sectional area of the U-shaped tube in the middle
     region far apart from start/end of tube.
 
@@ -186,8 +191,23 @@ def area_cs_Utube_trunc(diameter: Numeric) -> Numeric:
 # PLANE CUT AREA COMPUTATIONS
 # -----------------------------------------------------------------------------
 
+@overload
+def area_planecut_cylinder(
+        length: float | float64,
+        diameter: float | float64,
+        level: float | float64) -> float | float64:
+    ...
 
-def area_planecut_cylinder(length: Numeric, diameter: Numeric, level: Numeric) -> Numeric:
+
+@overload
+def area_planecut_cylinder(
+        length: float | float64,
+        diameter: float | float64,
+        level: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def area_planecut_cylinder(length, diameter, level):
     """ This function computes area of a top surface formed by truncation of
     horizontal cylinder by a horizontal plane.
 
@@ -210,10 +230,23 @@ def area_planecut_cylinder(length: Numeric, diameter: Numeric, level: Numeric) -
     return 2*length*np.sqrt(level*(diameter-level))
 
 
+@overload
 def area_planecut_cover_ellipse(
-        length_semiaxis: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis: float | float64,
+        diameter: float | float64,
+        level: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def area_planecut_cover_ellipse(
+        length_semiaxis: float | float64,
+        diameter: float | float64,
+        level: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def area_planecut_cover_ellipse(length_semiaxis, diameter, level):
     """This function computes area of a top surface formed by truncation of
     elliptic cover by horizontal plane.
 
@@ -233,7 +266,19 @@ def area_planecut_cover_ellipse(
     return np.pi*length_semiaxis/diameter*(level*diameter-level**2)
 
 
-def area_planecut_cover_circle(diameter: Numeric, level: Numeric) -> Numeric:
+@overload
+def area_planecut_cover_circle(
+        diameter: float | float64, level: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def area_planecut_cover_circle(
+        diameter: float | float64, level: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def area_planecut_cover_circle(diameter, level):
     """This function computes area of a top surface formed by truncation of
     circular cover by horizontal plane. This is considered as a special case
     of elliptic cover wiht H = D/2.
@@ -253,9 +298,9 @@ def area_planecut_cover_circle(diameter: Numeric, level: Numeric) -> Numeric:
 
 
 def area_planecut_cover_cone(
-        length_semiaxis: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis,
+        diameter,
+        level):
     """_summary_
 
     Parameters
@@ -281,9 +326,9 @@ def area_planecut_cover_cone(
 
 
 def area_planecut_cover_torus(
-        length_semiaxis: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis,
+        diameter,
+        level):
     """_summary_
 
     Parameters
@@ -308,14 +353,39 @@ def area_planecut_cover_torus(
         "Plane cut area for this type of covers is not supported yet")
 
 
+@overload
 def area_planecut_section_horiz_general(
-        length_semiaxis_left: Numeric,
-        length_cylinder: Numeric,
-        length_semiaxis_right: Numeric,
-        diameter: Numeric,
-        level: Numeric,
-        area_cover_left_fn: Callable[[Numeric, Numeric, Numeric], Numeric],
-        area_cover_right_fn: Callable[[Numeric, Numeric, Numeric], Numeric]) -> Numeric:
+    length_semiaxis_left: float | float64,
+    length_cylinder: float | float64,
+    length_semiaxis_right: float | float64,
+    diameter: float | float64,
+    level: float | float64,
+    area_cover_left_fn: Callable[
+        [float | float64, float | float64, float | float64], float | float64],
+    area_cover_right_fn: Callable[
+        [float | float64, float | float64, float | float64], float | float64]
+) -> float | float64:
+    ...
+
+
+@overload
+def area_planecut_section_horiz_general(
+    length_semiaxis_left: float | float64,
+    length_cylinder: float | float64,
+    length_semiaxis_right: float | float64,
+    diameter: float | float64,
+    level: NDArray[float64],
+    area_cover_left_fn: Callable[
+        [float | float64, float | float64, NDArray[float64]], NDArray[float64]],
+    area_cover_right_fn: Callable[
+        [float | float64, float | float64, NDArray[float64]], NDArray[float64]]
+) -> NDArray[float64]:
+    ...
+
+
+def area_planecut_section_horiz_general(
+        length_semiaxis_left, length_cylinder, length_semiaxis_right,
+        diameter, level, area_cover_left_fn, area_cover_right_fn):
     """This function performs computations of area for top surface formed by truncation of
     horizontal section with two covers by horizontal plane. Computations are performed in
     a general manner.
@@ -353,12 +423,29 @@ def area_planecut_section_horiz_general(
     return area_section
 
 
+@overload
 def area_planecut_section_horiz_ellipses(
-        length_semiaxis_left: Numeric,
-        length_cylinder: Numeric,
-        length_semiaxis_right: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis_left: float | float64,
+        length_cylinder: float | float64,
+        length_semiaxis_right: float | float64,
+        diameter: float | float64,
+        level: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def area_planecut_section_horiz_ellipses(
+        length_semiaxis_left: float | float64,
+        length_cylinder: float | float64,
+        length_semiaxis_right: float | float64,
+        diameter: float | float64,
+        level: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def area_planecut_section_horiz_ellipses(
+        length_semiaxis_left, length_cylinder, length_semiaxis_right,
+        diameter, level):
     """This function performs computations of area formed by horizontal truncation of
     horizontal section with two elliptic covers. Considered as special case.
 
@@ -396,11 +483,19 @@ def area_planecut_section_horiz_ellipses(
 # VOLUME COMPUTATIONS
 # -----------------------------------------------------------------------------
 
+@overload
+def volume_cylinder_trunc(length: float | float64, diameter: float | float64,
+                          level: float | float64) -> float | float64:
+    ...
 
-def volume_cylinder_trunc(
-        length: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+
+@overload
+def volume_cylinder_trunc(length: float | float64, diameter: float | float64,
+                          level: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def volume_cylinder_trunc(length, diameter, level):
     """This function computes volume of horizontal cylinder truncated by a horizontal
     plane.
 
@@ -420,10 +515,23 @@ def volume_cylinder_trunc(
     return length*area_cs_circle_trunc(diameter, level)
 
 
+@overload
 def volume_cover_elliptic_trunc(
-        length_semiaxis: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis: float | float64,
+        diameter: float | float64,
+        level: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def volume_cover_elliptic_trunc(
+        length_semiaxis: float | float64,
+        diameter: float | float64,
+        level: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def volume_cover_elliptic_trunc(length_semiaxis, diameter, level):
     """This function computes volume of semi-ellipsoid truncated by a horizontal
     plane.
 
@@ -443,7 +551,19 @@ def volume_cover_elliptic_trunc(
     return np.pi*length_semiaxis/diameter*(diameter*level**2/2-level**3/3)
 
 
-def volume_cover_circle_trunc(diameter: Numeric, level: Numeric) -> Numeric:
+@overload
+def volume_cover_circle_trunc(
+        diameter: float | float64, level: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def volume_cover_circle_trunc(
+        diameter: float | float64, level: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def volume_cover_circle_trunc(diameter, level):
     """This function computes volume of semi-sphere truncated by a horizontal
     plane. This is considered as a special case of semi-ellipsoid with H = D/2.
 
@@ -462,9 +582,9 @@ def volume_cover_circle_trunc(diameter: Numeric, level: Numeric) -> Numeric:
 
 
 def volume_cover_cone_trunc(
-        length_semiaxis: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis,
+        diameter,
+        level):
     """_summary_
 
     Parameters
@@ -490,9 +610,9 @@ def volume_cover_cone_trunc(
 
 
 def volume_cover_torus_trunc(
-        length_semiaxis: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis,
+        diameter,
+        level):
     """_summary_
 
     Parameters
@@ -518,17 +638,40 @@ def volume_Utube_trunc():
         "Volume for this element is not supported yet")
 
 
+@overload
 def volume_section_horiz_general(
-    length_semiaxis_left: Numeric,
-    length_cylinder: Numeric,
-    length_semiaxis_right: Numeric,
-    diameter: Numeric,
-    level: Numeric,
+    length_semiaxis_left: float | float64,
+    length_cylinder: float | float64,
+    length_semiaxis_right: float | float64,
+    diameter: float | float64,
+    level: float | float64,
     volume_cover_left_fn: Callable[
-        [Numeric, Numeric, Numeric], Numeric],
+        [float | float64, float | float64, float | float64], float | float64],
     volume_cover_right_fn: Callable[
-        [Numeric, Numeric, Numeric], Numeric]
-) -> Numeric:
+        [float | float64, float | float64, float | float64], float | float64]
+):
+    ...
+
+
+@overload
+def volume_section_horiz_general(
+    length_semiaxis_left: float | float64,
+    length_cylinder: float | float64,
+    length_semiaxis_right: float | float64,
+    diameter: float | float64,
+    level: float | float64,
+    volume_cover_left_fn: Callable[
+        [float | float64, float | float64, NDArray[float64]], NDArray[float64]],
+    volume_cover_right_fn: Callable[
+        [float | float64, float | float64, NDArray[float64]], NDArray[float64]]
+):
+    ...
+
+
+def volume_section_horiz_general(
+    length_semiaxis_left, length_cylinder, length_semiaxis_right,
+    diameter, level, volume_cover_left_fn, volume_cover_right_fn
+):
     """This function computes volume of horizontal section with two covers truncated by
     horizontal plane. Computations are performed in a general manner.
 
@@ -564,12 +707,32 @@ def volume_section_horiz_general(
     return volume_section
 
 
+@overload
 def volume_section_horiz_ellipses(
-        length_semiaxis_left: Numeric,
-        length_cylinder: Numeric,
-        length_semiaxis_right: Numeric,
-        diameter: Numeric,
-        level: Numeric) -> Numeric:
+        length_semiaxis_left: float | float64,
+        length_cylinder: float | float64,
+        length_semiaxis_right: float | float64,
+        diameter: float | float64,
+        level: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def volume_section_horiz_ellipses(
+        length_semiaxis_left: float | float64,
+        length_cylinder: float | float64,
+        length_semiaxis_right: float | float64,
+        diameter: float | float64,
+        level: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def volume_section_horiz_ellipses(
+        length_semiaxis_left,
+        length_cylinder,
+        length_semiaxis_right,
+        diameter,
+        level):
     """This function computes volume of horizontal section with two elliptic covers
     truncated by horizontal plane.
 
@@ -608,11 +771,11 @@ def volume_section_horiz_ellipses(
 
 
 def graduate(
-        level_min: Numeric,
-        level_max: Numeric,
-        volume_fn: Callable[[Numeric], Numeric],
+        level_min: float | float64,
+        level_max: float | float64,
+        volume_fn: Callable[[NDArray[float64]], NDArray[float64]],
         number_of_points: int = 50
-) -> tuple[Numeric, Numeric]:
+) -> tuple[NDArray[float64], NDArray[float64]]:
     """This function computes volume values that correspond to level values ranging from
     min to max possible value for element with provided volume dependency on level.
 
@@ -638,10 +801,23 @@ def graduate(
     return level, volume
 
 
+@overload
 def inverse_graduate(
-        volume_target: Numeric,
-        level_graduated: Numeric,
-        volume_graduated: Numeric) -> Numeric:
+        volume_target: float | float64,
+        level_graduated: NDArray[float64],
+        volume_graduated: NDArray[float64]) -> float | float64:
+    ...
+
+
+@overload
+def inverse_graduate(
+        volume_target: NDArray[float64],
+        level_graduated: NDArray[float64],
+        volume_graduated: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def inverse_graduate(volume_target, level_graduated, volume_graduated):
     """This function performs computations to detemine level value that corresponds to
     target volume. Computations are performed by means of linear interpolation over
     arrays of levels and volumes (see function for graduation).
@@ -659,8 +835,6 @@ def inverse_graduate(
     -------
         Interpolated value of level that corresponds to V_target
     """
-    # pyright cries anout types, but everything should be fine with iterables
-    # type: ignore
     return np.interp(volume_target, volume_graduated, level_graduated)
 
 
