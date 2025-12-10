@@ -4,10 +4,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy.constants import g
 import CoolProp.constants as CoolConst
-from abc import ABC, abstractmethod
-from typing import Callable
-from pytroleum.sdyna.interfaces import Conductor
-from pytroleum.sdyna import opdata as opd
 from pytroleum import meter
 
 from typing import Callable, overload
