@@ -1,4 +1,5 @@
 # Interfaces for Equation of State
+import numpy as np
 
 from typing import TYPE_CHECKING, Iterable
 
@@ -96,7 +97,6 @@ def factory_hydrocarbs(composition: dict[str, float], backend: str = 'PR',
 
 if __name__ == "__main__":
 
-    import numpy as np
     import matplotlib.pyplot as plt
 
     # Let's see if this makes sense
