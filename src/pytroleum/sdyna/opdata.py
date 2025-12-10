@@ -7,8 +7,20 @@ from numpy.typing import NDArray
 from typing import TYPE_CHECKING, Callable
 if TYPE_CHECKING:
     from ..tdyna.CoolStub import AbstractState  # type: ignore
+    # TODO : figure why pyright complains about stub file being
+    #        impossible to resolve from source
 else:
     from CoolProp.CoolProp import AbstractState
+
+# NOTE & TODO
+# NDArray is imposed by default to handle possible multiphase situations
+#
+# Following convention is introduced for  such cases:
+# Data is stored in the density-ascending order for multiphase situations,
+# so vapor data comes first, then lightest liquid and so on, until we reach
+# heaviest liquid
+#
+# This should be mentioned in documentations/docstrings
 
 
 @dataclass
