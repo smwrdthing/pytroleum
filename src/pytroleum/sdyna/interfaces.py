@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import Protocol, runtime_checkable
+from numpy.typing import NDArray
+from numpy import float64
 from pytroleum.sdyna.opdata import StateData, FlowData
 from pytroleum.sdyna.controllers import PropIntDiff, StartStop
 
