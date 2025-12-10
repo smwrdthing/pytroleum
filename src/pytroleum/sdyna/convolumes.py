@@ -19,7 +19,7 @@ class ControlVolume(ABC):
     def __init__(self) -> None:
         self.outlets: list[Conductor] = []
         self.inlets: list[Conductor] = []
-        self.volume: Numeric = np.inf
+        self.volume: float | float64 = np.inf
 
     # Introduce custom decorator for iterable inputs
     def connect_inlet(self, conductor: Conductor) -> None:
@@ -33,7 +33,7 @@ class ControlVolume(ABC):
             conductor.source = self
             self.outlets.append(conductor)
 
-    def specify_state(self, state: opd.StateData):
+    def specify_state(self, state: StateData) -> None:
         self.state = state
 
     def matter_spec_energy(self):
@@ -64,7 +64,7 @@ class Atmosphere(ControlVolume):
     def __init__(self) -> None:
         super().__init__()
 
-    def advance(self):
+    def advance(self) -> None:
         return
 
 
@@ -76,20 +76,43 @@ class Reservoir(ControlVolume):
     def __init__(self) -> None:
         super().__init__()
 
-    def advance(self):
+    def advance(self) -> None:
         pass
 
 
 class SectionHorizontal(ControlVolume):
 
     # Class for horizontal section
+    @overload
+    def __init__(
+        self,
+        length_left_semiaxis: float | float64,
+        length_cylinder: float | float64,
+        length_right_semiaxis: float | float64,
+        diameter: float | float64,
+        volume_modificator: Callable[[float | float64], float | float64]
+    ) -> None:
+        ...
 
-    def __init__(self,
-                 diameter: Numeric,
-                 length_left_semiaxis: Numeric,
-                 length_cylinder: Numeric,
-                 length_right_semiaxis: Numeric,
-                 volume_modificator: Callable[[Numeric], Numeric]) -> None:
+    @overload
+    def __init__(
+        self,
+        length_left_semiaxis: float | float64,
+        length_cylinder: float | float64,
+        length_right_semiaxis: float | float64,
+        diameter: float | float64,
+        volume_modificator: Callable[[NDArray[float64]], NDArray[float64]]
+    ) -> None:
+        ...
+
+    def __init__(
+            self,
+            length_left_semiaxis,
+            length_cylinder,
+            length_right_semiaxis,
+            diameter,
+            volume_modificator
+    ):
         super().__init__()
         self.diameter = diameter
         self.length_left_semiaxis = length_left_semiaxis
@@ -100,9 +123,19 @@ class SectionHorizontal(ControlVolume):
         self.volume = self.volume_pure+self.volume_modificator(diameter)
         # Graduation is needed for level
         self.level_graduated, self.volume_graduated = meter.graduate(
-            0, diameter, self.volume_with_level)
+            0, diameter, self.compute_volume_with_level)
+        self.volume_graduated = (
+            self.volume_graduated + self.volume_modificator(self.level_graduated))
 
-    def volume_with_level(self, level: Numeric) -> Numeric:
+    @overload
+    def compute_volume_with_level(self, level: float | float64) -> float | float64:
+        ...
+
+    @overload
+    def compute_volume_with_level(self, level: NDArray[float64]) -> NDArray[float64]:
+        ...
+
+    def compute_volume_with_level(self, level):
         volume_pure = meter.volume_section_horiz_ellipses(
             self.length_left_semiaxis,
             self.length_cylinder,
@@ -112,9 +145,16 @@ class SectionHorizontal(ControlVolume):
         volume = volume_pure+volume_modificator
         return volume
 
-    def level_with_volume(self, volume: Numeric) -> Numeric:
-        return meter.inverse_graduate(
-            volume, self.level_graduated, self.volume_graduated)
+    @overload
+    def compute_level_with_volume(self, volume: float | float64) -> float | float64:
+        ...
+
+    @overload
+    def compute_level_with_volume(self, volume: NDArray[float64]) -> NDArray[float64]:
+        ...
+
+    def compute_level_with_volume(self, volume):
+        return meter.inverse_graduate(volume, self.level_graduated, self.volume_graduated)
 
     def matter_level(self) -> Numeric:
         volume_of_matter_cumulative = np.cumsum(self.state.volume[::-1])
@@ -131,10 +171,30 @@ class SectionVertical(ControlVolume):
     # Class for vertical section, not really needed right now, might be useful later for
     # tests and other equipment?
 
-    def __init__(self,
-                 diameter: Numeric,
-                 height: Numeric,
-                 volume_modificator: Numeric) -> None:
+    @overload
+    def __init__(
+            self,
+            diameter: float | float64,
+            height: float | float64,
+            volume_modificator: Callable[[float | float64], float | float64]
+    ) -> None:
+        ...
+
+    @overload
+    def __init__(
+            self,
+            diameter: float | float64,
+            height: float | float64,
+            volume_modificator: Callable[[NDArray[float64]], NDArray[float64]]
+    ) -> None:
+        ...
+
+    def __init__(
+            self,
+            diameter,
+            height,
+            volume_modificator
+    ):
         super().__init__()
         self.diameter = diameter
         self.height = height
