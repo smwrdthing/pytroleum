@@ -295,4 +295,5 @@ class PhaseInterface(Conductor):
 
 
 if __name__ == "__main__":
-    vlv = Valve(100e-3, 80e-3, 1, 0.61, 0)
+    vlv = Valve(0, 100e-3, 80e-3, 1, 0.61, 0)
+    print(vlv.diameter_pipe*1e3)
