@@ -1,23 +1,70 @@
 import numpy as np
+
+from typing import overload
 from numpy.typing import NDArray
+from numpy import float64
 
 # TODO :
-# 1. Fix types (applies to other parts of project too)
-# 2. More models for flow rate with lumped parameters
-# 3. Generalisation of lumpded parameters models for
-#    flow rate computations?
+# Generalisation of lumpded parameters models for
+# flow rate computations?
 
-type Numeric = float | NDArray
+
+@overload
+def incompressible(
+        area_of_orifice: float | float64,
+        area_of_pipe: float | float64,
+        discharge_coefficient: float | float64,
+        density: float | float64,
+        upstream_pressure: float | float64,
+        donwstream_pressure: float | float64,
+        pressure_recovery: bool = False) -> float | float64:
+    ...
+
+
+@overload
+def incompressible(
+        area_of_orifice: float | float64,
+        area_of_pipe: float | float64,
+        discharge_coefficient: float | float64,
+        density: NDArray[float64],
+        upstream_pressure: float | float64,
+        donwstream_pressure: float | float64,
+        pressure_recovery: bool = False) -> NDArray[float64]:
+    ...
+
+
+@overload
+def incompressible(
+        area_of_orifice: float | float64,
+        area_of_pipe: float | float64,
+        discharge_coefficient: float | float64,
+        density: float | float64,
+        upstream_pressure: NDArray[float64],
+        donwstream_pressure: float | float64,
+        pressure_recovery: bool = False) -> NDArray[float64]:
+    ...
+
+
+@overload
+def incompressible(
+        area_of_orifice: float | float64,
+        area_of_pipe: float | float64,
+        discharge_coefficient: float | float64,
+        density: float | float64,
+        upstream_pressure: float | float64,
+        donwstream_pressure: NDArray[float64],
+        pressure_recovery: bool = False) -> NDArray[float64]:
+    ...
 
 
 def incompressible(
-        area_of_orifice: Numeric,
-        area_of_pipe: Numeric,
-        discharge_coefficient: Numeric,
-        density: Numeric,
-        upstream_pressure: Numeric,
-        donwstream_pressure: Numeric,
-        pressure_recovery: bool = False) -> Numeric:
+        area_of_orifice,
+        area_of_pipe,
+        discharge_coefficient,
+        density,
+        upstream_pressure,
+        donwstream_pressure,
+        pressure_recovery=False):
     """This function computes flow rate for incompressible flow through orifice.
     Well-known orifice equation is employed for calualtions.
 
@@ -60,17 +107,62 @@ def incompressible(
     return mass_flow_rate
 
 
+@overload
 def compressible(
-        area: Numeric,
-        discharge_coefficient: Numeric,
-        adiabatic_index: Numeric,
-        gas_constant: Numeric,
-        upstream_density: Numeric,
-        upstream_temperature: Numeric,
-        upstream_pressure: Numeric,
-        downstream_density: Numeric,
-        downstream_temperature: Numeric,
-        downstream_pressure: Numeric) -> Numeric:
+        area: float | float64,
+        discharge_coefficient: float | float64,
+        adiabatic_index: float | float64,
+        gas_constant: float | float64,
+        upstream_density: float | float64,
+        upstream_temperature: float | float64,
+        upstream_pressure: float | float64,
+        downstream_density: float | float64,
+        downstream_temperature: float | float64,
+        downstream_pressure: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def compressible(
+        area: float | float64,
+        discharge_coefficient: float | float64,
+        adiabatic_index: float | float64,
+        gas_constant: float | float64,
+        upstream_density: NDArray[float64],
+        upstream_temperature: NDArray[float64],
+        upstream_pressure: NDArray[float64],
+        downstream_density: float | float64,
+        downstream_temperature: float | float64,
+        downstream_pressure: float | float64) -> NDArray[float64]:
+    ...
+
+
+@overload
+def compressible(
+        area: float | float64,
+        discharge_coefficient: float | float64,
+        adiabatic_index: float | float64,
+        gas_constant: float | float64,
+        upstream_density: float | float64,
+        upstream_temperature: float | float64,
+        upstream_pressure: float | float64,
+        downstream_density: NDArray[float64],
+        downstream_temperature: NDArray[float64],
+        downstream_pressure: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def compressible(
+        area,
+        discharge_coefficient,
+        adiabatic_index,
+        gas_constant,
+        upstream_density,
+        upstream_temperature,
+        upstream_pressure,
+        downstream_density,
+        downstream_temperature,
+        downstream_pressure):
     """This function computes flow rate for compressible flow through orifice.
     Equation for adiabatic flow through nozzle is employed for calculations.
 
