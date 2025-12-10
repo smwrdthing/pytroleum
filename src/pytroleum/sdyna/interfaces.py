@@ -14,6 +14,8 @@ class ControlVolume(Protocol):
     outlets: list[Conductor]
     inlets: list[Conductor]
     state: StateData
+    net_flow_rate_mass: NDArray[float64]
+    net_flow_rate_energy: NDArray[float64]
 
     def __init__(self) -> None:
         ...
