@@ -41,20 +41,45 @@ class ControlVolume(ABC):
     def specify_state(self, state: StateData) -> None:
         self.state = state
 
-    def matter_spec_energy(self):
+    # NOTE
+    # methods for advancment are listed in the order of intended sequential execution
+
+    def compute_fluid_energy_specific(self) -> None:
         self.state.energy_specific = self.state.energy/self.state.mass
 
-    def matter_temperature(self):
+    def compute_fluid_temperature(self) -> None:
+        # density does not depend much on pressure, so vapor
+        # pressure might be used as value for system's pressure
+        pressure_system = self.state.pressure[0]
         T = []
 
-        for eos, p, u in zip(
-                self.state.equation_of_state,
-                self.state.pressure,
-                self.state.energy_specific):
-            eos.update(CoolConst.PUmass_INPUTS, p, u)
+        for eos, u in zip(self.state.equation_of_state, self.state.energy_specific):
+            # update algortihm, this is not going to work (PUmass is not supported)
+            eos.update(CoolConst.PUmass_INPUTS, pressure_system, u)
             T.append(eos.T())
         T = np.array(T)
         self.state.temperature = T
+
+    def compute_liquid_density(self) -> None:
+        # eos should be valid for current state from pressure-energy
+        # computations, so we can read values without an update
+        for phase_index, eos in enumerate(self.state.equation_of_state[1:], start=1):
+            self.state.density[phase_index] = eos.rhomass()
+
+    def compute_fluid_volume(self) -> None:
+        self.state.volume[1:] = self.state.mass[1:]/self.state.density[1:]
+        self.state.volume[0] = self.volume - np.sum(self.state.volume[1:])
+
+    def compute_vapor_density(self) -> None:
+        self.state.density[0] = self.state.mass[0]/self.state.volume[0]
+
+    def compute_vapor_pressure(self) -> None:
+        self.state.equation_of_state[0].update(
+            CoolConst.DmassT_INPUTS, self.state.density[0], self.state.temperature[0])
+        self.state.pressure[0] = self.state.equation_of_state[0].p()
+
+    # This is as far as common routines go, to get other parameters details about liquid
+    # spatial distribution should be known
 
     @abstractmethod
     def advance(self) -> None:
@@ -161,14 +186,32 @@ class SectionHorizontal(ControlVolume):
     def compute_level_with_volume(self, volume):
         return meter.inverse_graduate(volume, self.level_graduated, self.volume_graduated)
 
-    def matter_level(self) -> Numeric:
-        volume_of_matter_cumulative = np.cumsum(self.state.volume[::-1])
-        level_of_matter = meter.inverse_graduate(
-            volume_of_matter_cumulative, self.level_graduated, self.volume_graduated)
-        return level_of_matter
+    def compute_fluid_level(self) -> None:
+        # This might look nasty, but I think doing it in place
+        # more elegant than trying to break it down
+        self.state.level = self.compute_level_with_volume(
+            np.flip(np.cumsum(np.flip(self.state.volume))))
 
-    def advance(self):
-        pass
+    def compute_liquid_pressure(self):
+        layers_thickness = -np.diff(self.state.level[1:], append=0)
+        individual_hydrostatic_head = self.state.density[1:]*g*layers_thickness
+        cumulative_hydrostatic_head = np.cumsum(individual_hydrostatic_head)
+        self.state.pressure[1:] = (
+            self.state.pressure[0] + cumulative_hydrostatic_head)
+
+    def compute_secondary_parameters(self) -> None:
+        self.compute_fluid_energy_specific()
+        self.compute_fluid_temperature()
+        self.compute_liquid_density()
+        self.compute_fluid_volume()
+        self.compute_vapor_density()
+        self.compute_vapor_pressure()
+        self.compute_vapor_pressure()
+        self.compute_fluid_level()
+        self.compute_liquid_pressure()
+
+    def advance(self) -> None:
+        self.compute_secondary_parameters()
 
 
 class SectionVertical(ControlVolume):

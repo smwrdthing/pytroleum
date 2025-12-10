@@ -122,41 +122,108 @@ class Valve(Conductor):
         upstream_state = self.source.state
         downstream_state = self.sink.state
 
-        mass_flowrate_liquid = efflux.incompressible(
-            self.area_valve,
-            self.area_pipe,
-            self.discharge_coefficient,
-            upstream_state.density[1:],
-            upstream_state.pressure[1:],
-            downstream_state.pressure[1:]
+        valve_opening = 1
+        if self.controller is not None:
+            # controller for valve is adjusted to return value between 0 and 1,
+            # this value is interpreted as an opening of valve without any transform
+            valve_opening = self.controller.signal
+
+        if self.phase_index > 0:  # conductor deals with liquid phase
+
+            # This relies heavily on data storage conventions employed for control
+            # volumes. This is needed to account for hydrostatic head contributions.
+            # If one does not want to compute them - flat pressure profile can be
+            # recorded instead of cumulative-sum based pressure profile, buth this
+            # should be handled in convolumes
+
+            upstream_pressure = np.interp(
+                self.elevation,
+                [0, *np.flip(upstream_state.level)],
+                [*np.flip(upstream_state.pressure),
+                 upstream_state.pressure[0]]
+            )
+
+            downstream_pressure = np.interp(
+                self.elevation,
+                [0, *np.flip(downstream_state.level)],
+                [*np.flip(downstream_state.pressure),
+                 downstream_state.pressure[0]]
+            )
+            mass_flow_rate = efflux.incompressible(
+                self.area_valve*valve_opening,
+                self.area_pipe,
+                self.discharge_coefficient,
+                upstream_state.density[self.phase_index],
+                upstream_pressure,
+                downstream_pressure
+            )
+        else:  # conductor deals with vapor phase
+
+            mass_flow_rate = efflux.compressible(
+                self.area_valve*valve_opening,
+                self.discharge_coefficient,
+
+                # eos makes storing k and R excessive
+                upstream_state.equation_of_state[self.phase_index].cvmass() /
+                upstream_state.equation_of_state[self.phase_index].cpmass(),
+                upstream_state.equation_of_state[self.phase_index].gas_constant(
+                ),
+
+                upstream_state.density[self.phase_index],
+                upstream_state.temperature[self.phase_index],
+                upstream_state.pressure[self.phase_index],
+                downstream_state.density[self.phase_index],
+                downstream_state.temperature[self.phase_index],
+                downstream_state.pressure[self.phase_index]
+            )
+
+        self.flow.mass_flow_rate[self.phase_index] = mass_flow_rate
+
+    def compute_energy_flux(self):
+        # j = (u+p/rho+w^2/2)*G
+        if self.flow.mass_flow_rate >= 0:
+            donor = self.source.state
+        else:
+            donor = self.sink.state
+
+        # NOTE this violates DRY, find better way to do this later
+        valve_opening = 1
+        if self.controller is not None:
+            valve_opening = self.controller.signal
+
+        # NOTE I am inclined to make FlowData fields scalar now hmm, should thin this
+        # through better, pretty large change. Try to write as if single value kept for
+        # FlowData and see what happens
+        #
+        # On the other hand we have a pretty solid reason to keep array interfaces : inlet
+        # flow rates are multiphase. This thing alone probably stumps all the reasoning
+        # I suppose... Add to it opportunity to account for flow
+
+        (
+            self.flow.energy_specific[self.phase_index],
+            self.flow.temperature[self.phase_index],
+            self.flow.density[self.phase_index],
+        ) = (
+            donor.energy_specific[self.phase_index],
+            donor.temperature[self.phase_index],
+            donor.density[self.phase_index]
         )
-
-        mass_flowrate_gas = efflux.compressible(
-            self.area_valve,
-            self.discharge_coefficient,
-
-            # eos makes storing k and R excessive
-            upstream_state.equation_of_state[0].cvmass(
-            ) / upstream_state.equation_of_state[0].cpmass(),
-            upstream_state.equation_of_state[0].gas_constant(),
-
-            upstream_state.density[0],
-            upstream_state.temperature[0],
-            upstream_state.pressure[0],
-            downstream_state.density[0],
-            downstream_state.temperature[0],
-            downstream_state.pressure[0]
+        self.flow.pressure[self.phase_index] = np.interp(
+            self.elevation,
+            [0, *np.flip(donor.level)],
+            [*np.flip(donor.pressure), donor.pressure[0]]
         )
-
-        # Array re-collection always seemed clunky to me
-        mass_flowrate = np.array(
-            [*mass_flowrate_liquid, *mass_flowrate_gas])  # type: ignore
-        #  Union with float causes issues
-
-        self.flow.mass_flowrate = mass_flowrate
+        self.flow.velocity[self.phase_index] = (self.flow.mass_flow_rate /
+                                                self.flow.density /
+                                                (self.area_valve*valve_opening))
+        self.flow.energy_specific_flow = (self.flow.energy_specific +
+                                          self.flow.pressure/self.flow.density +
+                                          self.flow.velocity**2/2)
+        self.flow.energy_flow = self.flow.energy_specific_flow*self.flow.mass_flow_rate
 
     def advance(self):
-        pass
+        self.compute_mass_flow_rate()
+        self.compute_energy_flux()
 
 
 class CentrifugalPump(Conductor):
