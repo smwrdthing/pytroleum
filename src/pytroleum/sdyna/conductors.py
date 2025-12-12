@@ -251,13 +251,211 @@ class UnderPass(Conductor):
     # Subclass to represent passage at the bottom of section formed by crest of weir and
     # internal wall of vessel
 
-    def __init__(self, phase_index: int,
-                 source: ControlVolume | None = None,
-                 sink: ControlVolume | None = None) -> None:
-        super().__init__(phase_index, source, sink)
+    def __init__(self,
+                 edge_level: float | float64,
+                 discharge_coefficient: float | float64,
+                 locking_offset: float | float64 = 0,
+                 source: Section | None = None,
+                 sink: Section | None = None) -> None:
+
+        super().__init__(0, source, sink)
+
+        self.edge_level = edge_level
+        # NOTE implement as property later?
+        self.locking_offset = locking_offset
+        self.locking_level = self.edge_level+self.locking_offset
+        self.discharge_coefficinet = discharge_coefficient
+        self.is_locked: bool = False
+
+        # Initiate here?
+        self._common_level_graduated = None
+        self._common_volume_graduated = None
+
+        # For type checker only
+        self.source: Section
+        self.sink: Section
+
+    def check_if_locked(self):
+        self.is_locked = False
+        criterila_level = max(
+            self.sink.state.level[1], self.source.state.level[1])
+        if criterila_level > self.locking_level:
+            self.is_locked = True
+
+    def equal_level_distribution(self):
+
+        liquid_common_volume = (
+            self.source.state.volume[1:]+self.sink.state.volume[1:])
+        liquid_total_volume = np.sum(liquid_common_volume)
+
+        # To make this stuff work graduated levels should correspond in neghbouring
+        # sections, for more complicated cases there are workarounds, which can be
+        # implemented too, but for now we do this
+        common_level_graduated = self.source.level_graduated
+        common_volume_graduated = self.source.volume_graduated+self.sink.volume_graduated
+
+        # We get desired level via interpolation then
+        liquid_common_level = np.interp(
+            liquid_total_volume, common_volume_graduated, common_level_graduated)
+
+        # return shape is like that for consistency with balance algorithm
+        return liquid_common_level, liquid_common_level
+
+    def _hydrostatic_balance_objective(
+            self, levels: tuple[float, float], disbalance: float | float64 = 0) -> tuple:
+
+        # Reading inputs
+        source_level, sink_level = levels
+
+        # Processing
+        source_volume_with_level = (
+            self.source.compute_volume_with_level(source_level))
+        sink_volume_with_level = (
+            self.sink.compute_volume_with_level(sink_level))
+        total_volume_with_level = source_volume_with_level+sink_volume_with_level
+        liquid_common_volume = (
+            self.source.state.volume[1:]+self.sink.state.volume[1:])
+        liquid_total_volume = np.sum(liquid_common_volume)
+        liquid_reference_density = 0.5*(
+            self.source.state.density[1:]+self.sink.state.density[1:])
+
+        # Should be entirely internal stuff
+        self._liquid_volume_fractions = liquid_common_volume/liquid_total_volume
+        self._liquid_pseudo_density = np.sum(
+            liquid_reference_density*self._liquid_volume_fractions)
+
+        # Pressure exerted on the bottom of source section (pseudo-pure liquid - based)
+        source_vapor_volume = (
+            self.source.volume - source_volume_with_level)
+        source_vapor_density = self.source.state.mass[0]/source_vapor_volume
+
+        # This stuff is a good approximation at best, so no reason to sweat CoolProp's
+        # EoS here to get pressure, ideal gas should do, especially considering pressure
+        # difference is of interest, errors should cancel out anyways
+        source_vapor_pressure = (
+            source_vapor_density*R*self.source.state.temperature[0] /
+            self.source.state.equation_of_state[0].molar_mass())
+        source_liquid_pressure = self._liquid_pseudo_density*g*source_level
+        source_total_pressure = source_vapor_pressure+source_liquid_pressure
+
+        # Pressure exerted on the bottom of sink section (pseudo-pure liquid - based)
+        sink_vapor_volume = (
+            self.sink.volume-sink_volume_with_level)
+        sink_vapor_density = self.sink.state.mass[0]/sink_vapor_volume
+        sink_vapor_pressure = (
+            sink_vapor_density*R*self.sink.state.temperature[0] /
+            self.sink.state.equation_of_state[0].molar_mass())
+        sink_liquid_pressure = self._liquid_pseudo_density*g*sink_level
+        sink_total_pressure = sink_vapor_pressure+sink_liquid_pressure
+
+        # Balance-based residual
+        pressure_difference = source_total_pressure-sink_total_pressure
+        residual_balance = pressure_difference + disbalance
+
+        # Conservation-based residual
+        residual_conservation = liquid_total_volume-total_volume_with_level
+
+        return residual_balance, residual_conservation
+
+    def hydrostatic_balance_distribution(
+            self, level_guesse: tuple[float, float] | None = None,
+            disbalance: float | float64 = 0) -> tuple:
+
+        if level_guesse is None:
+            level_guesse = (
+                self.source.state.level[1], self.sink.state.level[1])
+
+        solution = newton(
+            lambda levels: self._hydrostatic_balance_objective(
+                levels, disbalance),
+            level_guesse)
+
+        liquid_level_source = solution[0]
+        liquid_level_sink = solution[1]
+
+        return liquid_level_source, liquid_level_sink
+
+    def perform_distribution(self):
+        if self.is_locked:
+            new_levels = self.hydrostatic_balance_distribution()
+        else:
+            new_levels = self.equal_level_distribution()
+        liquid_total_level_source, liquid_total_level_sink = new_levels
+
+        liquid_total_volume_source = self.source.compute_volume_with_level(
+            liquid_total_level_source)
+        liquid_total_volume_sink = self.sink.compute_volume_with_level(
+            liquid_total_level_sink)
+
+        liquid_volume_source = liquid_total_volume_source*self._liquid_volume_fractions
+        liquid_volume_sink = liquid_total_volume_sink*self._liquid_volume_fractions
+
+        liquid_mass_source = self.source.state.density[1:]*liquid_volume_source
+        liquid_mass_sink = self.sink.state.density[1:]*liquid_volume_sink
+
+        # Proportional changes in liquid energy
+        liquid_energy_source = (
+            self.source.state.energy_specific[1:]*liquid_mass_source)
+        liquid_energy_sink = (
+            self.sink.state.energy_specific[1:]*liquid_mass_sink)
+
+        # Updating state variables accordingly
+        self.source.state.mass[1:] = liquid_mass_source
+        self.source.state.energy[1:] = liquid_energy_source
+        self.sink.state.mass[1:] = liquid_mass_sink
+        self.sink.state.energy[1:] = liquid_energy_sink
+
+    def compute_vapor_flow_rate(self):
+        if self.is_locked:
+            # All other stuff must be zero
+            self.flow.mass_flow_rate[self.phase_index] = 0
+            self.flow.energy_flow[self.phase_index] = 0
+            self.flow.velocity[self.phase_index] = 0
+            self.flow.energy_flow[self.phase_index] = 0
+        else:
+            # Actually compute flow
+            flow_area = meter.area_cs_circle_trunc(
+                self.source.diameter, self.edge_level)-meter.area_cs_circle_trunc(
+                    self.source.diameter, self.source.state.level[0])
+            flow_elevation = 0.5*(self.edge_level+self.source.state.level[0])
+            vapor_mass_flow_rate = efflux.compressible(
+                flow_area, self.discharge_coefficinet,
+                self.source.state.equation_of_state[0].cpmass() /
+                self.source.state.equation_of_state[0].cvmass(),
+                R/self.source.state.equation_of_state[0].molar_mass(),
+                self.source.state.density[0],
+                self.source.state.temperature[0],
+                self.source.state.pressure[0],
+                self.sink.state.density[0],
+                self.sink.state.temperature[0],
+                self.sink.state.pressure[0],
+            )
+            if vapor_mass_flow_rate >= 0:
+                donor = self.source.state
+            else:
+                donor = self.sink.state
+
+            energy_specific = donor.energy_specific[self.phase_index]
+            pressure = donor.pressure[self.phase_index]
+            density = donor.density[self.phase_index]
+            velocity = vapor_mass_flow_rate / density / flow_area
+
+            energy_specific_flow = (
+                g*flow_elevation + energy_specific + pressure/density + velocity**2/2)
+            energy_flow = energy_specific_flow*vapor_mass_flow_rate
+
+            self.flow.mass_flow_rate[self.phase_index] = vapor_mass_flow_rate
+            self.flow.energy_flow[self.phase_index] = energy_specific
+            self.flow.pressure[self.phase_index] = pressure
+            self.flow.density[self.phase_index] = density
+            self.flow.velocity[self.phase_index] = velocity
+            self.flow.energy_specific_flow[self.phase_index] = energy_specific_flow
+            self.flow.energy_flow[self.phase_index] = energy_flow
 
     def advance(self):
-        pass
+        self.check_if_locked()
+        self.perform_distribution()
+        self.compute_vapor_flow_rate()
 
 
 class OverPass(Conductor):
