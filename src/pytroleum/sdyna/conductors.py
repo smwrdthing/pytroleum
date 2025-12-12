@@ -39,6 +39,7 @@ class Conductor(ABC):
         # Possible TODO
         # default flow attribute in FlowData
 
+        if source is None:
             from pytroleum.sdyna.convolumes import Atmosphere
             self.source = Atmosphere()
         if sink is None:
