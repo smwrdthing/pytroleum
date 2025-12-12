@@ -31,6 +31,42 @@ class ControlVolume(Protocol):
 
 
 @runtime_checkable
+class Section(Protocol):
+
+    # Needed for type checking in conductors with embedded distribution logic
+
+    diameter: float | float64
+    outlets: list[Conductor]
+    inlets: list[Conductor]
+    state: StateData
+    net_flow_rate_mass: NDArray[float64]
+    net_flow_rate_energy: NDArray[float64]
+    volume: float | float64
+    level_graduated: NDArray[float64]
+    volume_graduated: NDArray[float64]
+
+    def __init__(self) -> None:
+        ...
+
+    def connect_inlet(self, conductor: Conductor):
+        ...
+
+    def connect_outlet(self, conductor: Conductor):
+        ...
+
+    @overload
+    def compute_volume_with_level(self, level: float | float64) -> float | float64:
+        ...
+
+    @overload
+    def compute_volume_with_level(self, level: NDArray[float64]) -> NDArray[float64]:
+        ...
+
+    def advance(self) -> None:
+        ...
+
+
+@runtime_checkable
 class Conductor(Protocol):
 
     # Interface for conductor
