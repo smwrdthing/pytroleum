@@ -22,7 +22,6 @@ class Conductor(ABC):
     def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
-        if source is None:
         ...
 
     @overload
@@ -144,7 +143,6 @@ class Valve(Conductor):
         upstream_state = self.source.state
         downstream_state = self.sink.state
 
-        valve_opening = 1
         if self.controller is not None:
             # direct assignment corresponds to controller signal interpretation
             self.opening = self.controller.signal
@@ -565,7 +563,7 @@ class FurnaceHeatConduti(Conductor):
 
 class PhaseInterface(Conductor):
 
-    # Subclass to represent interfacial interactinos
+    # Subclass to represent interfacial interactions
 
     def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
