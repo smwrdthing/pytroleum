@@ -460,16 +460,94 @@ class UnderPass(Conductor):
 
 class OverPass(Conductor):
 
+    # TODO : finish OverPass
+
     # Subclass to represent passage at the top of section formed by crest of weir and
     # internal wall of vessel
 
-    def __init__(self, phase_index: int,
-                 source: ControlVolume | None = None,
-                 sink: ControlVolume | None = None) -> None:
-        super().__init__(phase_index, source, sink)
+    def __init__(self,
+                 edge_level: float | float64,
+                 discharge_coefficient: float | float64,
+                 source: Section | None = None,
+                 sink: Section | None = None) -> None:
+
+        self.phase_index: list[int]
+
+        # Only vapor and lightest fluid passes
+        super().__init__([0, 1], source, sink)
+
+        self.source: Section
+        self.sink: Section
+
+        self.edge_level = edge_level
+        self.discharge_coefficinet = discharge_coefficient
+        self.is_reached: bool = False
+
+        # Possible TODO : recast into property, simplify total volume computations
+        self._vapor_flow_area = (
+            meter.area_cs_circle_trunc(self.source.diameter, self.source.diameter) -
+            meter.area_cs_circle_trunc(self.source.diameter, self.edge_level)
+        )
+
+    def check_if_reached(self):
+        self.is_reached = False
+        criterial_level = max(max(self.source.state.level),
+                              max(self.sink.state.level))
+        if criterial_level >= self.edge_level:
+            self.is_reached = True
+
+    def compute_vapor_flow(self):
+
+        phase_index = self.phase_index[0]
+
+        vapor_mass_flow_rate = efflux.compressible(
+            self._vapor_flow_area,
+            self.discharge_coefficinet,
+            self.source.state.equation_of_state[phase_index].cpmass() /
+            self.source.state.equation_of_state[phase_index].cvmass(),
+            R/self.source.state.equation_of_state[phase_index].molar_mass(),
+            self.source.state.density[phase_index],
+            self.source.state.temperature[phase_index],
+            self.source.state.pressure[phase_index],
+            self.sink.state.density[phase_index],
+            self.sink.state.temperature[phase_index],
+            self.sink.state.pressure[phase_index]
+        )
+
+        self.flow.mass_flow_rate[phase_index] = vapor_mass_flow_rate
+        self.flow
+
+    def compute_liquid_overflow(self):
+        # NOTE : for this to work other conductors must be resolved before, so
+        # order of execution must be enforced
+        phase_index = self.phase_index[1]  # lightest liquid
+        self.flow.mass_flow_rate[phase_index] = 0
+        if self.is_reached:
+            # collect net flow rates for source formed by other conductors
+            other_liquid_flow_rates_inlet = 0
+            other_liquid_flow_rates_outlet = 0
+            for inlet in self.source.inlets:
+                if inlet is not self:
+                    other_liquid_flow_rates_inlet += inlet.flow.mass_flow_rate[1:]
+            for outlet in self.source.outlets:
+                if outlet is not self:
+                    other_liquid_flow_rates_outlet += outlet.flow.mass_flow_rate[1:]
+
+            overflow_rate = self.source.state.density[1]*np.sum(
+                (other_liquid_flow_rates_inlet-other_liquid_flow_rates_outlet) /
+                self.source.state.density)
+
+            if overflow_rate < 0:
+                # NOTE : assigining integer 0 potentially can lead to troubles if numpy
+                # will not resolve array elements' types correctly
+                overflow_rate = 0
+
+            self.flow.mass_flow_rate[phase_index] = overflow_rate
 
     def advance(self) -> None:
-        pass
+        self.check_if_reached()
+        self.compute_vapor_flow()
+        self.compute_liquid_overflow()
 
 
 class FurnaceHeatConduti(Conductor):
