@@ -4,9 +4,10 @@ from typing import overload
 from numpy.typing import NDArray
 from numpy import float64
 
-# TODO :
-# Generalisation of lumpded parameters models for
-# flow rate computations?
+# TODO (maybe?) :
+# 1. Those functions are a bit messy, throwing ton of arguments is rather complicated, try
+#    to find workaround?
+# 2. Generalisation of lumpded parameters models for flow rate computations?
 
 
 @overload
@@ -194,6 +195,9 @@ def compressible(
     mass_flow_rate
         Mass flow rate of compressible fluid through orifice.
     """
+
+    # TODO :
+    # rewrite to exclude density from consideration + adjust wherever this is used
 
     sign = np.sign(upstream_pressure-downstream_pressure)
     beta_crit = (2/(adiabatic_index+1))**(adiabatic_index/(adiabatic_index-1))
