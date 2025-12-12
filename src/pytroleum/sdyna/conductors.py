@@ -131,25 +131,11 @@ class Valve(Conductor):
 
         if self.phase_index > 0:  # conductor deals with liquid phase
 
-            # This relies heavily on data storage conventions employed for control
-            # volumes. This is needed to account for hydrostatic head contributions.
-            # If one does not want to compute them - flat pressure profile can be
-            # recorded instead of cumulative-sum based pressure profile, buth this
-            # should be handled in convolumes
+            upstream_pressure = compute_pressure_for_elevation(
+                self.elevation, upstream_state.level, upstream_state.pressure)
+            downstream_pressure = compute_pressure_for_elevation(
+                self.elevation, downstream_state.level, downstream_state.pressure)
 
-            upstream_pressure = np.interp(
-                self.elevation,
-                [0, *np.flip(upstream_state.level)],
-                [*np.flip(upstream_state.pressure),
-                 upstream_state.pressure[0]]
-            )
-
-            downstream_pressure = np.interp(
-                self.elevation,
-                [0, *np.flip(downstream_state.level)],
-                [*np.flip(downstream_state.pressure),
-                 downstream_state.pressure[0]]
-            )
             mass_flow_rate = efflux.incompressible(
                 self.area_valve*valve_opening,
                 self.area_pipe,
@@ -292,6 +278,23 @@ class PhaseInterface(Conductor):
 
     def advance(self):
         pass
+
+
+def compute_pressure_for_elevation(
+        elevation: float | float64,
+        levels_profile: NDArray[float64],
+        pressures_profile: NDArray[float64]) -> float | float64:
+
+    # Processing algorithm complies with introduced data storage convention for
+    # multiphase situation
+
+    pressure_on_elevation = np.interp(
+        elevation,
+        [0, *np.flip(levels_profile)],
+        [*np.flip(pressures_profile), pressures_profile[0]]
+    )
+
+    return pressure_on_elevation
 
 
 if __name__ == "__main__":
