@@ -232,7 +232,7 @@ if __name__ == '__main__':
     C = 0.61
 
     p1 = np.linspace(1e5, (20+1)*1e5, 500)
-    p2 = np.mean(p1)
+    p2 = 1/2*(np.max(p1)+np.min(p1))
     dp = p1-p2
 
     rho_inc = 1000
@@ -240,7 +240,7 @@ if __name__ == '__main__':
     G_inc_norm = G_inc/np.max(G_inc)
     v_inc = G_inc_norm/A/rho_inc
 
-    T_comp = 300, 300
+    T_comp = 300., 300.
     k = 1.4
     R = 287
     # constant values yiel crytical flow
@@ -248,8 +248,9 @@ if __name__ == '__main__':
     # however when rho = rho(p,T) behavior is more like incompressible
     # rho_comp = p1/R/T_comp[0], p2/R/T_comp[0]
 
-    G_comp = compressible(
-        A, C, k, R, *rho_comp, *T_comp, p1, p2)  # type: ignore
+    G_comp = compressible(A, C, k, R,
+                          rho_comp[0], T_comp[0], p1,  # type: ignore
+                          rho_comp[1], T_comp[1], p2)  # type: ignore
     G_comp_norm = G_comp/np.max(G_comp)
 
     fig, ax = plt.subplots(ncols=2)
