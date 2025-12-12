@@ -88,6 +88,7 @@ class Valve(Conductor):
         self.opening = opening
 
         self.controller: PropIntDiff | StartStop | None = None
+        self.phase_index: int
 
     # getter/setter for pipe diameter  ---------------------------------------------------
     @property
