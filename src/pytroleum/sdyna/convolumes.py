@@ -16,8 +16,6 @@ from pytroleum.sdyna.opdata import StateData
 
 class ControlVolume(ABC):
 
-    # Abstract base class for control volume
-
     def __init__(self) -> None:
         self.outlets: list[Conductor] = []
         self.inlets: list[Conductor] = []
@@ -25,13 +23,12 @@ class ControlVolume(ABC):
         self.net_flow_rate_mass = np.zeros(1)
         self.net_flow_rate_energy = np.zeros(1)
 
-    # Introduce custom decorator for iterable inputs
+    # TODO Introduce custom decorator for iterable inputs
     def connect_inlet(self, conductor: Conductor) -> None:
         if conductor not in self.inlets:
             conductor.sink = self
             self.inlets.append(conductor)
 
-    # Introduce custom decorator for iterable inputs
     def connect_outlet(self, conductor: Conductor) -> None:
         if conductor not in self.outlets:
             conductor.source = self
@@ -40,8 +37,7 @@ class ControlVolume(ABC):
     def specify_state(self, state: StateData) -> None:
         self.state = state
 
-    # NOTE
-    # methods for advancment are listed in the order of intended sequential execution
+    # NOTE methods are listed in the inteded execution order for advancement
 
     def compute_fluid_energy_specific(self) -> None:
         self.state.energy_specific = self.state.energy/self.state.mass
@@ -132,9 +128,6 @@ class Atmosphere(ControlVolume):
 
 class Reservoir(ControlVolume):
 
-    # Class to represent petroleum fluids reservoir. In context of dynamical system
-    # modelling imposes infinite volume and constant params (for now?)
-
     def __init__(self) -> None:
         super().__init__()
 
@@ -144,7 +137,6 @@ class Reservoir(ControlVolume):
 
 class SectionHorizontal(ControlVolume):
 
-    # Class for horizontal section
     @overload
     def __init__(
         self,
@@ -221,8 +213,6 @@ class SectionHorizontal(ControlVolume):
         return meter.inverse_graduate(volume, self.level_graduated, self.volume_graduated)
 
     def compute_fluid_level(self) -> None:
-        # This might look nasty, but I think doing it in place
-        # more elegant than trying to break it down
         self.state.level = self.compute_level_with_volume(
             np.flip(np.cumsum(np.flip(self.state.volume))))
 
@@ -249,9 +239,6 @@ class SectionHorizontal(ControlVolume):
 
 
 class SectionVertical(ControlVolume):
-
-    # Class for vertical section, not really needed right now, might be useful later for
-    # tests and other equipment?
 
     @overload
     def __init__(
