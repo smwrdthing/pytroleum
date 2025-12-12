@@ -74,9 +74,9 @@ class Valve(Conductor):
             self, phase_index: int,
             diameter_pipe: float | float64,
             diameter_valve: float | float64,
-            elevation: float | float64,
             discharge_coefficient: float | float64,
             opening: float | float64 = 0,
+            elevation: float | float64 = 0,
             source: ControlVolume | None = None,
             sink: ControlVolume | None = None) -> None:
 
