@@ -531,9 +531,10 @@ class OverPass(Conductor):
         self.compute_liquid_overflow()
 
 
-class FurnaceHeatConduti(Conductor):
+class FurnacePolynomial(Conductor):
 
-    # Subcalss to represent heat flux from furnace
+    # Subclass to represent heat flux from furnace with polynomial
+    # approximation of furnace heat_flux(fuel_flow_rate)-like characteristic
 
     def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
