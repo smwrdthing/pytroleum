@@ -2,11 +2,12 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import numpy as np
-from scipy.constants import g
 import CoolProp.constants as CoolConst
+from scipy.constants import g
 from pytroleum import meter
+from pytroleum.tdyna.eos import factory_eos
 
-from typing import Callable, overload
+from typing import TYPE_CHECKING, Callable, overload
 from numpy.typing import NDArray
 from numpy import float64
 from pytroleum.sdyna.interfaces import Conductor
