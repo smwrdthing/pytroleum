@@ -203,8 +203,9 @@ def compressible(
     beta_crit = (2/(adiabatic_index+1))**(adiabatic_index/(adiabatic_index-1))
     beta = (downstream_pressure/upstream_pressure)**sign
 
-    # should be ok, np. internal broadcasting will handle this
-    beta[beta < beta_crit] = beta_crit
+    # following is equivalent to beta[beta < beta_crit] = beta_crit
+    # but encompasses all relevant data types simultaneously
+    beta = beta*(beta > beta_crit) + beta_crit*(beta <= beta_crit)
 
     rho = upstream_density*(sign >= 0) + downstream_density*(sign < 0)
     temperature = (
