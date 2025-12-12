@@ -1,12 +1,17 @@
 # Conductors here
 from abc import ABC, abstractmethod
 import numpy as np
-import pytroleum.tport.efflux as efflux
+from scipy.constants import g, R
+from scipy.optimize import newton
+import CoolProp.constants as CoolConst
+from pytroleum import meter
+from pytroleum.tport import efflux
 from pytroleum.sdyna.opdata import FlowData
-from pytroleum.sdyna.interfaces import ControlVolume
+from pytroleum.sdyna.interfaces import ControlVolume, Section
 from pytroleum.sdyna.controllers import PropIntDiff, StartStop
 
-from typing import Callable, Iterable
+from typing import Callable, Iterable, overload
+from numpy.typing import NDArray
 from numpy import float64
 
 
