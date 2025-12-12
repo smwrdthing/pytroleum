@@ -49,7 +49,10 @@ class ControlVolume(ABC):
         T = []
 
         for eos, u in zip(self.state.equation_of_state, self.state.energy_specific):
-            # update algortihm, this is not going to work (PUmass is not supported)
+            # NOTE :
+            # update algortihm, this is not going to work for mixtures
+            # (PUmass is not supported, only PT, PQ, QT) do finite-difference
+            # approximation with partial derivative of internal energy
             eos.update(CoolConst.PUmass_INPUTS, pressure_system, u)
             T.append(eos.T())
         T = np.array(T)
