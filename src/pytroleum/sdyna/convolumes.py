@@ -90,6 +90,29 @@ class Atmosphere(ControlVolume):
     def __init__(self) -> None:
         super().__init__()
 
+        # Possible TODO :
+        # Implement selector-method to set standard temperature and pressure for
+        # specified STP refernce
+        self._standard_temperature = 20+273.15
+        self._standard_pressure = 101_330
+        eos_air = factory_eos({"air": 1}, with_state=(
+            CoolConst.PT_INPUTS, self._standard_pressure, self._standard_temperature))
+
+        self.specify_state(
+            StateData(
+                equation_of_state=[eos_air],
+                pressure=np.array([self._standard_pressure]),
+                temperature=np.array([self._standard_temperature]),
+                density=np.array([eos_air.rhomass()]),
+                energy_specific=np.array([eos_air.umass()]),
+                dynamic_viscosity=np.array([eos_air.viscosity()]),
+                thermal_conductivity=np.array([eos_air.conductivity()]),
+                mass=np.array([np.inf]),
+                energy=np.array([np.inf]),
+                level=np.array([np.inf]),
+                volume=np.array([np.inf]))
+        )
+
     def advance(self) -> None:
         return
 
