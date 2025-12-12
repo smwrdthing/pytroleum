@@ -125,9 +125,8 @@ class Valve(Conductor):
 
         valve_opening = 1
         if self.controller is not None:
-            # controller for valve is adjusted to return value between 0 and 1,
-            # this value is interpreted as an opening of valve without any transform
-            valve_opening = self.controller.signal
+            # direct assignment corresponds to controller signal interpretation
+            self.opening = self.controller.signal
 
         if self.phase_index > 0:  # conductor deals with liquid phase
 
@@ -137,7 +136,7 @@ class Valve(Conductor):
                 self.elevation, downstream_state.level, downstream_state.pressure)
 
             mass_flow_rate = efflux.incompressible(
-                self.area_valve*valve_opening,
+                self.area_valve*self.opening,
                 self.area_pipe,
                 self.discharge_coefficient,
                 upstream_state.density[self.phase_index],
@@ -147,7 +146,7 @@ class Valve(Conductor):
         else:  # conductor deals with vapor phase
 
             mass_flow_rate = efflux.compressible(
-                self.area_valve*valve_opening,
+                self.area_valve*self.opening,
                 self.discharge_coefficient,
 
                 # eos makes storing k and R excessive
