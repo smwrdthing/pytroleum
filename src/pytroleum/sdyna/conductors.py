@@ -18,12 +18,27 @@ from numpy import float64
 class Conductor(ABC):
 
     # Abstract base class for conductor
-
-    @abstractmethod
+    @overload
     def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         if source is None:
+        ...
+
+    @overload
+    def __init__(self, phase_index: list[int],
+                 source: ControlVolume | None = None,
+                 sink: ControlVolume | None = None) -> None:
+        ...
+
+    @abstractmethod
+    def __init__(self, phase_index,
+                 source=None,
+                 sink=None) -> None:
+
+        # Possible TODO
+        # default flow attribute in FlowData
+
             from pytroleum.sdyna.convolumes import Atmosphere
             self.source = Atmosphere()
         if sink is None:
