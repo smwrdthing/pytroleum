@@ -230,9 +230,9 @@ class SectionHorizontal(ControlVolume):
         self.compute_fluid_volume()
         self.compute_vapor_density()
         self.compute_vapor_pressure()
-        self.compute_vapor_pressure()
         self.compute_fluid_level()
         self.compute_liquid_pressure()
+        self.compute_net_flow_rates()
 
     def advance(self) -> None:
         self.compute_secondary_parameters()
