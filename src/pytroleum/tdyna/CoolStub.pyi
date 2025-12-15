@@ -182,7 +182,7 @@ class AbstractState:
     def delta(self) -> float:
         ...
 
-    def first_partial_deriv(self) -> float:
+    def first_partial_deriv(self, of_key: int, wrt_key: int, const_key: int) -> float:
         ...
 
     def first_saturation_deriv(self) -> float:
