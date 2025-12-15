@@ -42,27 +42,34 @@ class ControlVolume(ABC):
     def compute_fluid_energy_specific(self) -> None:
         self.state.energy_specific = self.state.energy/self.state.mass
 
-    def compute_fluid_temperature(self) -> None:
-        # density does not depend much on pressure, so vapor
-        # pressure might be used as value for system's pressure
-        pressure_system = self.state.pressure[0]
-        T = []
+    # NOTE :
+    # All secondary parameters are computed with finite-difference approximation of
+    # respective differentials with additional reasonable assumptions for preformance and
+    # robustness reasons.
+    #
+    # In this case eos contains parameters from previous time step and aids computations
+    # for custom state object that should hold new values. We should update eos only at
+    # the very end of time step processing.
 
-        for eos, u in zip(self.state.equation_of_state, self.state.energy_specific):
-            # NOTE :
-            # update algortihm, this is not going to work for mixtures
-            # (PUmass is not supported, only PT, PQ, QT) do finite-difference
-            # approximation with partial derivative of internal energy
-            eos.update(CoolConst.PUmass_INPUTS, pressure_system, u)
-            T.append(eos.T())
-        T = np.array(T)
-        self.state.temperature = T
+    def compute_fluid_temperature(self) -> None:
+        temperature = []
+        for eos, energy_specific in zip(self.state.equation_of_state,
+                                        self.state.energy_specific):
+            partial_derivative_energy = eos.first_partial_deriv(
+                CoolConst.iUmass, CoolConst.iT, CoolConst.iP)
+            fluid_new_temperature = (
+                (energy_specific-eos.umass())/partial_derivative_energy + eos.T())
+            temperature.append(fluid_new_temperature)
+        self.state.temperature[:] = temperature
 
     def compute_liquid_density(self) -> None:
-        # eos should be valid for current state from pressure-energy
-        # computations, so we can read values without an update
-        for phase_index, eos in enumerate(self.state.equation_of_state[1:], start=1):
-            self.state.density[phase_index] = eos.rhomass()
+        liquid_density = []
+        for eos, new_T in zip(self.state.equation_of_state[1:], self.state.temperature):
+            density_partial_derivative = eos.first_partial_deriv(
+                CoolConst.iDmass, CoolConst.iT, CoolConst.iP)
+            fluid_new_density = eos.rhomass()+density_partial_derivative*(new_T-eos.T())
+            liquid_density.append(fluid_new_density)
+        self.state.density[1:] = liquid_density
 
     def compute_fluid_volume(self) -> None:
         self.state.volume[1:] = self.state.mass[1:]/self.state.density[1:]
@@ -72,9 +79,28 @@ class ControlVolume(ABC):
         self.state.density[0] = self.state.mass[0]/self.state.volume[0]
 
     def compute_vapor_pressure(self) -> None:
-        self.state.equation_of_state[0].update(
-            CoolConst.DmassT_INPUTS, self.state.density[0], self.state.temperature[0])
-        self.state.pressure[0] = self.state.equation_of_state[0].p()
+        # Vapor pressure should be computed from finite difference approximation too, as
+        # DmassT pair is not supported
+        vapor_eos = self.state.equation_of_state[0]
+
+        pressure_partial_derivative_wrt_temperatrue = (
+            vapor_eos.first_partial_deriv(CoolConst.iP, CoolConst.iT, CoolConst.iDmass))
+        pressure_partial_derivative_wrt_density = (
+            vapor_eos.first_partial_deriv(CoolConst.iP, CoolConst.iDmass, CoolConst.iT))
+
+        change_in_density = self.state.density[0]-vapor_eos.rhomass()
+        change_in_temperature = self.state.temperature[0] - vapor_eos.T()
+
+        new_vapor_pressure = vapor_eos.p() + (
+            pressure_partial_derivative_wrt_temperatrue*change_in_temperature +
+            pressure_partial_derivative_wrt_density*change_in_density)
+
+        self.state.pressure[0] = new_vapor_pressure
+
+    def update_equations_of_state(self):
+        for eos, new_T in zip(self.state.equation_of_state, self.state.temperature):
+            # Also check if internal energy is consistent for this approach
+            eos.update(CoolConst.PT_INPUTS, self.state.pressure[0], new_T)
 
     def compute_net_flow_rates(self):
         self.net_flow_rate_mass = np.zeros(1)
@@ -239,6 +265,7 @@ class SectionHorizontal(ControlVolume):
 
     def advance(self) -> None:
         self.compute_secondary_parameters()
+        self.update_equations_of_state()
 
 
 class SectionVertical(ControlVolume):
