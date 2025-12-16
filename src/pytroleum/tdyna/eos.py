@@ -63,7 +63,6 @@ class AbstractStateImitator(ABC):
         self._density: float
         self._mass_specific_energy: float
         self._molar_mass: float
-        self._vapor_quality: float
 
     def molar_mass(self):
         return self._molar_mass
