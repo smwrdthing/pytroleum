@@ -311,28 +311,9 @@ class CrudeOilRefernceData:
         self.mean_density = 0.5*(self.density[0]+self.density[1])
 
 
-# Constants
-MOLE_FRACTION_SUM_TOL = 1e-3
-GENERIC_HYDROCARBS = {
-    # Hydrocarbons
-    'METHANE',
-    'ETHANE',
-    'PROPANE',
-    'ISOBUTANE',
-    'N-BUTANE',
-    'ISOPENTANE',
-    'N-PENTANE',
-
-    # Contaminants/Others
-    'NITROGEN',
-    'CARBONMONOXIDE',
-    'CARBONDIOXIDE',
-    'HYDROGENSULFIDE'
-}
-
-
-def factory_eos(composition: dict[str, float], backend: str = 'HEOS',
-                with_state: None | Iterable = None) -> AbstractState:
+def factory_eos(
+        composition: dict[str, float], backend: str = 'HEOS',
+        with_state: None | Iterable = None) -> AbstractState:
 
     # should work both for mixtures and pures
     names = '&'.join(list(composition.keys()))
