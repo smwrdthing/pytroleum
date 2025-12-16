@@ -232,7 +232,7 @@ class CrudeOilReferenced(AbstractStateImitator):
         self._prepare_viscosity_model()
 
     def _prepare_density_model(self):
-        self._compressibility_isobaric = -1/self.reference.mean_density*(
+        self._expansivity_isobaric = -1/self.reference.mean_density*(
             self.reference.density[1]-self.reference.density[0])/(
                 self.reference.temperature[1]-self.reference.temperature[0])
 
@@ -246,9 +246,8 @@ class CrudeOilReferenced(AbstractStateImitator):
     def _calculate_density(self):
         self._density = (
             self.reference.density[0] -
-            self._compressibility_isobaric * self.reference.mean_density *
-            (self._temperature-self.reference.temperature[0])
-        )
+            self._expansivity_isobaric * self.reference.mean_density *
+            (self._temperature-self.reference.temperature[0]))
 
     def _calculate_viscosity(self):
         self._dynamic_viscosity = self._viscosity_model_coeff*np.exp(
@@ -260,21 +259,39 @@ class CrudeOilReferenced(AbstractStateImitator):
     def _calculate_heat_capacity_isochoric(self):
         return super()._calculate_heat_capacity_isochoric()
 
-    def _calculate_mass_specific_energy(self):
-        return super()._calculate_mass_specific_energy()
+    def _calculate_mass_specific_energy(self) -> None:
+        self._mass_specific_energy = self._heat_capacity_isochoric*self._temperature
 
     def first_partial_deriv(
             self, of_parameter_key: int,
             with_respect_to_key: int,
-            holding_const_key: int):
-        pass
+            holding_const_key: int) -> float | None:
+
+        supported_derivative = self._valid_partial_derivative(
+            of_parameter_key, with_respect_to_key, holding_const_key)
+
+        if supported_derivative:
+            if of_parameter_key == CoolConst.iUmass:
+                # expansivity influence manisfests only for large pressures
+                return self._heat_capacity_isochoric
+            if of_parameter_key == CoolConst.iDmass:
+                return -self._expansivity_isobaric*self._density
+        else:
+            raise KeyError(_MESSAGE_UNSUPPORTED_DERIVATIVE)
 
     def update(self, input_pair_key: int,
                first_keyed_parameter: float,
                second_keyed_parameter: float) -> None:
 
-        super().update(input_pair_key, first_keyed_parameter, second_keyed_parameter)
-        # other properties?
+        # It is more explicit we perform validation here
+        if self._valid_input_pair(input_pair_key):
+            self._pressure = first_keyed_parameter
+            self._temperature = second_keyed_parameter
+        else:
+            raise KeyError(_MESSAGE_UNSUPPORTED_INPUT_PAIR)
+        self._calculate_mass_specific_energy()
+        self._calculate_density()
+        self._calculate_viscosity()
 
 
 @dataclass
