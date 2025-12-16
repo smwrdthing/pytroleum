@@ -77,6 +77,27 @@ class AbstractStateImitator(ABC):
     def get_mole_fractions(self) -> Iterable[float]:
         return self._mole_fractions
 
+    # All imitators should contain implemented partial derivatives for
+    # energy and density along with procedures for parameters refreshment with
+    # PT inputs.
+
+    def _valid_input_pair(self, pair_key):
+        return pair_key == CoolConst.PT_INPUTS
+
+    def _valid_partial_derivative(
+            self, of_parameter_key: int,
+            with_respect_to_key: int, holding_const_key: int) -> bool:
+
+        # NOTE : logic should be checked later
+
+        are_valid_keys = (
+            (of_parameter_key == CoolConst.iUmass or
+             of_parameter_key == CoolConst.iDmass) and
+            with_respect_to_key == CoolConst.iT and
+            holding_const_key == CoolConst.iP)
+
+        return are_valid_keys
+
     @abstractmethod
     def first_partial_deriv(
             self, of_parameter_key: int,
