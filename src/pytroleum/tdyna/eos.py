@@ -151,33 +151,7 @@ class AbstractStateImitator(ABC):
     def update(self, input_pair_key: int,
                first_keyed_parameter: float,
                second_keyed_parameter: float) -> None:
-
-        # Assignments can be done in base class, specific calculations must
-        # be carried out in specific subclasses
-
-        if input_pair_key == CoolConst.PT_INPUTS:
-            self._pressure = first_keyed_parameter
-            self._temperature = second_keyed_parameter
-
-        elif input_pair_key == CoolConst.PUmass_INPUTS:
-            self._pressure = first_keyed_parameter
-            self._mass_specific_energy = second_keyed_parameter
-
-        elif input_pair_key == CoolConst.DmassT_INPUTS:
-            self._density = first_keyed_parameter
-            self._temperature = second_keyed_parameter
-
-        elif input_pair_key == CoolConst.PQ_INPUTS:
-            self._pressure = first_keyed_parameter
-            self._vapor_quality = second_keyed_parameter
-
-        elif input_pair_key == CoolConst.QT_INPUTS:
-            self._vapor_quality = first_keyed_parameter
-            self._temperature = second_keyed_parameter
-
-        else:
-            msg = "Provided input pair is not supporetd yet"
-            raise NotImplementedError(msg)
+        return
 
 
 class CrudeOilHardcoded(AbstractStateImitator):
