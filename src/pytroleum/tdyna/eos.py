@@ -17,6 +17,9 @@ import CoolProp.constants as CoolConst
 # Specifically neqsim is very promising, definitely try to incorporate,
 # algorithms from thermo might be useful too
 
+_MESSAGE_UNSUPPORTED_DERIVATIVE = "Specified partial derivative is not supported"
+_MESSAGE_UNSUPPORTED_INPUT_PAIR = "Provided input pair is not supported"
+
 
 class AbstractStateImitator(ABC):
 
