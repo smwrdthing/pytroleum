@@ -44,7 +44,6 @@ class AbstractStateImitator(ABC):
         self._temperature: float
         self._density: float
         self._mass_specific_energy: float
-        self._mass_specific_energy_ideal: float
         self._molar_mass: float
         self._vapor_quality: float
 
