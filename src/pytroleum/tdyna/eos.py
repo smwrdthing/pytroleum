@@ -394,6 +394,41 @@ def factory_natgas(composition: dict[str, float], backend: str = 'PR',
     return hcmix
 
 
+def factory_crude_oil():
+    pass
+
+
+@overload
+def api_to_specific(api_gravity: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def api_to_specific(api_gravity: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def api_to_specific(api_gravity):
+    # Important NOTE : oil's specific gravity is relative to water
+    specific_gravity = 141.5/(api_gravity+131.5)
+    return specific_gravity
+
+
+@overload
+def specific_to_api(specific_gravity: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def specific_to_api(specific_gravity: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def specific_to_api(specific_gravity):
+    api_gravity = 141.5/specific_gravity-131.5
+    return api_gravity
+
+
 if __name__ == "__main__":
 
     import numpy as np
