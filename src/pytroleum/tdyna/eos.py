@@ -1,6 +1,10 @@
 # Interfaces for Equation of State
-
-from typing import TYPE_CHECKING, Iterable
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Iterable, overload
+from numpy import float64
+from numpy.typing import NDArray
 
 if TYPE_CHECKING:
     from CoolStub import AbstractState
