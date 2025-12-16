@@ -56,7 +56,6 @@ class AbstractStateImitator(ABC):
         self._mole_fractions: Iterable[float]
 
         self._heat_capacity_isochoric: float
-        self._heat_capacity_isobaric: float
         self._dynamic_viscosity: float
         self._pressure: float
         self._temperature: float
@@ -69,9 +68,6 @@ class AbstractStateImitator(ABC):
 
     def cvmass(self):
         return self._heat_capacity_isochoric
-
-    def cpmass(self):
-        return self._heat_capacity_isobaric
 
     def p(self):
         return self._pressure
@@ -140,29 +136,17 @@ class AbstractStateImitator(ABC):
     def _calculate_viscosity(self):
         return
 
-    def _calculate_conductivity(self):
-        return
-
-    def _calculate_heat_capacity_isobaric(self):
-        return
-
     def _calculate_heat_capacity_isochoric(self):
         return
 
     def _calculate_mass_specific_energy(self):
         return
 
-    def _calculate_mass_specific_energy_ideal(self):
-        return
-
     def _run_calculations(self):
         self._calculate_density()
         self._calculate_viscosity()
-        self._calculate_conductivity()
-        self._calculate_heat_capacity_isobaric()
         self._calculate_heat_capacity_isochoric()
         self._calculate_mass_specific_energy()
-        self._calculate_mass_specific_energy_ideal()
 
     @abstractmethod
     def update(self, input_pair_key: int,
