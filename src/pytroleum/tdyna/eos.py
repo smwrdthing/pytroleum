@@ -17,6 +17,24 @@ import CoolProp.constants as CoolConst
 # Specifically neqsim is very promising, definitely try to incorporate,
 # algorithms from thermo might be useful too
 
+MOLE_FRACTION_SUM_TOL = 1e-3
+GENERIC_HYDROCARBS = {
+    # Hydrocarbons
+    'METHANE',
+    'ETHANE',
+    'PROPANE',
+    'ISOBUTANE',
+    'N-BUTANE',
+    'ISOPENTANE',
+    'N-PENTANE',
+
+    # Contaminants/Others
+    'NITROGEN',
+    'CARBONMONOXIDE',
+    'CARBONDIOXIDE',
+    'HYDROGENSULFIDE'
+}
+CRUDE_OIL = "CrudeOil", "CRUDEOIL"
 _MESSAGE_UNSUPPORTED_DERIVATIVE = "Specified partial derivative is not supported"
 _MESSAGE_UNSUPPORTED_INPUT_PAIR = "Provided input pair is not supported"
 
