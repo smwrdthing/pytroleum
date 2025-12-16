@@ -290,6 +290,7 @@ class CrudeOilReferenced(AbstractStateImitator):
             self._temperature = second_keyed_parameter
         else:
             raise KeyError(_MESSAGE_UNSUPPORTED_INPUT_PAIR)
+        self._calculate_heat_capacity_isochoric()
         self._calculate_mass_specific_energy()
         self._calculate_density()
         self._calculate_viscosity()
