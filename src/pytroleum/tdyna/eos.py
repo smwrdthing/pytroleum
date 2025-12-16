@@ -123,31 +123,24 @@ class AbstractStateImitator(ABC):
     def _calculate_density(self):
         return
 
-    @abstractmethod
     def _calculate_viscosity(self):
         return
 
-    @abstractmethod
     def _calculate_conductivity(self):
         return
 
-    @abstractmethod
     def _calculate_heat_capacity_isobaric(self):
         return
 
-    @abstractmethod
     def _calculate_heat_capacity_isochoric(self):
         return
 
-    @abstractmethod
     def _calculate_mass_specific_energy(self):
         return
 
-    @abstractmethod
     def _calculate_mass_specific_energy_ideal(self):
         return
 
-    @abstractmethod
     def _run_calculations(self):
         self._calculate_density()
         self._calculate_viscosity()
