@@ -68,9 +68,6 @@ class AbstractStateImitator(ABC):
     def umass(self):
         return self._mass_specific_energy
 
-    def umass_ideal(self):
-        return self._mass_specific_energy_ideal
-
     def set_mole_fractions(self, mole_fractions: Iterable[float]):
         self._mole_fractions = mole_fractions
 
