@@ -382,33 +382,43 @@ def factory_crude_oil():
     pass
 
 
+def density_to_specific_gravity(density: float, temperature: float = 15+273.15) -> float:
+    return density/CP.PropsSI("DMASS", "T", temperature, "P", 1e5, "water")
+
+
+def density_to_api_gravity(density: float, temperature: float = 15+273.15) -> float:
+    specific = density_to_specific_gravity(density, temperature)
+    api = specific_to_api_gravity(specific)
+    return api
+
+
 @overload
-def api_to_specific(api_gravity: float | float64) -> float | float64:
+def api_to_specific_gravity(api_gravity: float | float64) -> float | float64:
     ...
 
 
 @overload
-def api_to_specific(api_gravity: NDArray[float64]) -> NDArray[float64]:
+def api_to_specific_gravity(api_gravity: NDArray[float64]) -> NDArray[float64]:
     ...
 
 
-def api_to_specific(api_gravity):
+def api_to_specific_gravity(api_gravity):
     # Important NOTE : oil's specific gravity is relative to water
     specific_gravity = 141.5/(api_gravity+131.5)
     return specific_gravity
 
 
 @overload
-def specific_to_api(specific_gravity: float | float64) -> float | float64:
+def specific_to_api_gravity(specific_gravity: float | float64) -> float | float64:
     ...
 
 
 @overload
-def specific_to_api(specific_gravity: NDArray[float64]) -> NDArray[float64]:
+def specific_to_api_gravity(specific_gravity: NDArray[float64]) -> NDArray[float64]:
     ...
 
 
-def specific_to_api(specific_gravity):
+def specific_to_api_gravity(specific_gravity):
     api_gravity = 141.5/specific_gravity-131.5
     return api_gravity
 
