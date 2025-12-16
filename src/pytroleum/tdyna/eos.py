@@ -168,14 +168,14 @@ class CrudeOilHardcoded(AbstractStateImitator):
         super().__init__(self._BACKEND, CRUDE_OIL[0])
         self._density = self._DENSITY
         self._dynamic_viscosity = self._DYNAMIC_VISCOSITY
-        self._heat_capacity_isobaric = self._HEAT_CAPACITY
         self._heat_capacity_isochoric = self._HEAT_CAPACITY
-        self._heat_capacity = self._HEAT_CAPACITY
+        self._heat_capacity_isobaric = self._HEAT_CAPACITY
 
     def default(self) -> None:
         self._density = self._DENSITY
         self._dynamic_viscosity = self._DYNAMIC_VISCOSITY
-        self._heat_capacity = self._HEAT_CAPACITY
+        self._heat_capacity_isochoric = self._HEAT_CAPACITY
+        self._heat_capacity_isobaric = self._HEAT_CAPACITY
 
     def change(self, new_density: float | None = None,
                new_visocsity: float | None = None,
@@ -185,40 +185,36 @@ class CrudeOilHardcoded(AbstractStateImitator):
         if new_visocsity is not None:
             self._dynamic_viscosity = new_visocsity
         if new_heat_capacity is not None:
-            self._heat_capacity = new_heat_capacity
+            self._heat_capacity_isochoric = new_heat_capacity
+            self._heat_capacity_isobaric = new_heat_capacity
+
+    def _calculate_mass_specific_energy(self):
+        self._mass_specific_energy = self._heat_capacity_isochoric*self._temperature
 
     def first_partial_deriv(
             self, of_parameter_key: int,
-            with_respect_to_key: int, holding_const_key: int) -> float | float64:
+            with_respect_to_key: int,
+            holding_const_key: int) -> float | None:
 
-        # Important NOTE :
-        # We are developing this primarly for dynamic modelling now, so we need
-        # only a limited subset of partial derivatives. This might look a bit ugly,
-        # but it grants universal approach for all phases in sdyna.
-        #
-        # We need partial derivative of internal energy wrt temperature for constant
-        # pressure and partial derivative of density wrt temperature for constant pressure
+        supported_derivative = self._valid_partial_derivative(
+            of_parameter_key, with_respect_to_key, holding_const_key)
 
-        msg = "Specified partial derivative is not supported"
-
-        if holding_const_key != CoolConst.iP:
-            raise KeyError(msg)
-        if with_respect_to_key != CoolConst.iT:
-            raise KeyError(msg)
-        if of_parameter_key == CoolConst.iDmass:
-            # Assume constant density for hardcoded crude oil (i. e. const density)
-            return 0
-        elif of_parameter_key == CoolConst.iUmass:
-            return self._heat_capacity
+        if supported_derivative:
+            if of_parameter_key == CoolConst.iUmass:
+                return self._heat_capacity_isochoric
+            if of_parameter_key == CoolConst.iDmass:
+                return 0
         else:
-            raise KeyError(msg)
+            raise KeyError(_MESSAGE_UNSUPPORTED_DERIVATIVE)
 
     def update(self, input_pair_key: int, first_keyed_parameter: float,
                second_keyed_parameter: float):
         # shouldn't do anything crazy for this particular class, all parameters should
         # remain const
-        super().update(input_pair_key, first_keyed_parameter, second_keyed_parameter)
-        return
+        if self._valid_input_pair(input_pair_key):
+            self._pressure = first_keyed_parameter
+            self._temperature = second_keyed_parameter
+        self._calculate_mass_specific_energy()
 
 
 class CrudeOilReferenced(AbstractStateImitator):
