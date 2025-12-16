@@ -130,23 +130,23 @@ class AbstractStateImitator(ABC):
 
         return
 
-    def _calculate_density(self):
+    def _compute_density(self):
         return
 
-    def _calculate_viscosity(self):
+    def _compute_viscosity(self):
         return
 
-    def _calculate_heat_capacity_isochoric(self):
+    def _compute_heat_capacity_isochoric(self):
         return
 
-    def _calculate_mass_specific_energy(self):
+    def _compute_mass_specific_energy(self):
         return
 
-    def _run_calculations(self):
-        self._calculate_density()
-        self._calculate_viscosity()
-        self._calculate_heat_capacity_isochoric()
-        self._calculate_mass_specific_energy()
+    def _run_computations(self):
+        self._compute_density()
+        self._compute_viscosity()
+        self._compute_heat_capacity_isochoric()
+        self._compute_mass_specific_energy()
 
     @abstractmethod
     def update(self, input_pair_key: int,
@@ -189,7 +189,7 @@ class CrudeOilHardcoded(AbstractStateImitator):
             self._heat_capacity_isochoric = new_heat_capacity
             self._heat_capacity_isobaric = new_heat_capacity
 
-    def _calculate_mass_specific_energy(self):
+    def _compute_mass_specific_energy(self):
         self._mass_specific_energy = self._heat_capacity_isochoric*self._temperature
 
     def first_partial_deriv(
@@ -215,7 +215,7 @@ class CrudeOilHardcoded(AbstractStateImitator):
         if self._valid_input_pair(input_pair_key):
             self._pressure = first_keyed_parameter
             self._temperature = second_keyed_parameter
-        self._calculate_mass_specific_energy()
+        self._compute_mass_specific_energy()
 
 
 class CrudeOilReferenced(AbstractStateImitator):
@@ -226,11 +226,27 @@ class CrudeOilReferenced(AbstractStateImitator):
 
     _BACKEND: str = "CrudeOilReferenced"
 
+    # Maybe move this to dataclass for reference parameters?
+    _DEFAULT_PRESSURE = 101_330
+    _DEFAULT_TEMPERATURE = 15+273.15
+
     def __init__(self, reference: CrudeOilRefernceData) -> None:
         super().__init__(self._BACKEND, CRUDE_OIL[0])
         self.reference = reference
         self._prepare_density_model()
         self._prepare_viscosity_model()
+
+        # Set default state and compute parameters
+        self._pressure = self._DEFAULT_PRESSURE
+        self._temperature = self._DEFAULT_TEMPERATURE
+        self._compute_density()
+        self._compute_viscosity()
+
+        self._compute_specific_gravity()
+        self._compute_api_gravity()
+
+        self._compute_heat_capacity_isochoric()
+        self._compute_mass_specific_energy()
 
     def _prepare_density_model(self):
         self._expansivity_isobaric = -1/self.reference.mean_density*(
@@ -244,23 +260,35 @@ class CrudeOilReferenced(AbstractStateImitator):
         self._viscosity_model_coeff = mu1*np.exp(
             self._viscosity_model_power/T1)
 
-    def _calculate_density(self):
+    # NOTE :
+    # methods for specific and api gravity computations are only called once during
+    # initialization with appropriate default temperature for correltions to work
+
+    def _compute_specific_gravity(self, temperature=15+273.15):
+        self._specific_gravity = density_to_specific_gravity(
+            self._density, temperature)
+
+    def _compute_api_gravity(self):
+        self._api_gravity = specific_to_api_gravity(self._specific_gravity)
+
+    def _compute_density(self):
         self._density = (
             self.reference.density[0] -
             self._expansivity_isobaric * self.reference.mean_density *
             (self._temperature-self.reference.temperature[0]))
 
-    def _calculate_viscosity(self):
+    def _compute_viscosity(self):
         self._dynamic_viscosity = self._viscosity_model_coeff*np.exp(
             self._viscosity_model_power/self._temperature)
 
-    def _calculate_heat_capacity_isobaric(self):
-        return super()._calculate_heat_capacity_isobaric()
+    def _compute_heat_capacity_isochoric(self) -> None:
+        # Correlations with hardcoded coefficients for now, refine later
+        temperature_celcius = self._temperature - 273.15
+        self._heat_capacity_isochoric = (
+            (2*temperature_celcius-1429)*self._specific_gravity +
+            2.67*temperature_celcius + 3049)
 
-    def _calculate_heat_capacity_isochoric(self):
-        return super()._calculate_heat_capacity_isochoric()
-
-    def _calculate_mass_specific_energy(self) -> None:
+    def _compute_mass_specific_energy(self) -> None:
         self._mass_specific_energy = self._heat_capacity_isochoric*self._temperature
 
     def first_partial_deriv(
@@ -290,10 +318,12 @@ class CrudeOilReferenced(AbstractStateImitator):
             self._temperature = second_keyed_parameter
         else:
             raise KeyError(_MESSAGE_UNSUPPORTED_INPUT_PAIR)
-        self._calculate_heat_capacity_isochoric()
-        self._calculate_mass_specific_energy()
-        self._calculate_density()
-        self._calculate_viscosity()
+        # When temperature and pressure are updated we can update values
+        # for heat capacity, mass-soecific energy, density and viscosity
+        self._compute_heat_capacity_isochoric()
+        self._compute_mass_specific_energy()
+        self._compute_density()
+        self._compute_viscosity()
 
 
 @dataclass
