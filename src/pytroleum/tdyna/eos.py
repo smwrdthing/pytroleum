@@ -9,24 +9,288 @@ else:
 import CoolProp.CoolProp as CP
 import CoolProp.constants as CoolConst
 
-# Realised we don't need subclass for hydrocarbon mixture interface definition at all.
-# in this case we're good to go with factory function. Though code for AbstractState
-# subclassing is retained in case of future needs
-#
-# How to subclass AbstractState appropriately:
-# class CertainState(AbstractState):
+# Large TODO : common facade for different thermodynamic libraries
+# Specifically neqsim is very promising, definitely try to incorporate,
+# algorithms from thermo might be useful too
 
-#     def __new__(cls, backend: str = 'HEOS', fluids: str):
-#         # Must define __new__ instead of __init__ due to some cython shenanigans.
 
-#         instance = super().__new__(cls, backend, '&'.join(
-#             cls.__generic_hc_names))
+class AbstractStateImitator(ABC):
 
-#         return instance
+    # NOTE :
+    # Main purpose is to represent petroleum fluids with CoolProp-like interface,
+    # Should support PUmass and DmassT inputs for dynamic modelling
+    #
+    # Should read some papers on petroleum fluids modelling
 
-#     def __init__(self, backend: str, fluids: str):
-#         # call signature here, should repeat one in __new__ to silence pylance
-#         pass
+    def __init__(self, backend: str | None, fluid: str | None) -> None:
+
+        self._backend = backend
+        self._fluid = fluid
+
+        self._molar_mass: float
+        self._mole_fractions: Iterable[float]
+
+        self._heat_capacity_isochoric: float
+        self._heat_capacity_isobaric: float
+        self._dynamic_viscosity: float
+        self._pressure: float
+        self._temperature: float
+        self._density: float
+        self._mass_specific_energy: float
+        self._mass_specific_energy_ideal: float
+        self._molar_mass: float
+        self._vapor_quality: float
+
+    def molar_mass(self):
+        return self._molar_mass
+
+    def cvmass(self):
+        return self._heat_capacity_isochoric
+
+    def cpmass(self):
+        return self._heat_capacity_isobaric
+
+    def p(self):
+        return self._pressure
+
+    def T(self):
+        return self._temperature
+
+    def rhomass(self):
+        return self._density
+
+    def umass(self):
+        return self._mass_specific_energy
+
+    def umass_ideal(self):
+        return self._mass_specific_energy_ideal
+
+    def set_mole_fractions(self, mole_fractions: Iterable[float]):
+        self._mole_fractions = mole_fractions
+
+    def get_mole_fractions(self) -> Iterable[float]:
+        return self._mole_fractions
+
+    @abstractmethod
+    def first_partial_deriv(
+            self, of_parameter_key: int,
+            with_respect_to_key: int,
+            holding_const_key: int
+    ) -> float:
+        return 0
+
+    @abstractmethod
+    def _calculate_density(self):
+        return
+
+    @abstractmethod
+    def _calculate_viscosity(self):
+        return
+
+    @abstractmethod
+    def _calculate_conductivity(self):
+        return
+
+    @abstractmethod
+    def _calculate_heat_capacity_isobaric(self):
+        return
+
+    @abstractmethod
+    def _calculate_heat_capacity_isochoric(self):
+        return
+
+    @abstractmethod
+    def _calculate_mass_specific_energy(self):
+        return
+
+    @abstractmethod
+    def _calculate_mass_specific_energy_ideal(self):
+        return
+
+    @abstractmethod
+    def _run_calculations(self):
+        self._calculate_density()
+        self._calculate_viscosity()
+        self._calculate_conductivity()
+        self._calculate_heat_capacity_isobaric()
+        self._calculate_heat_capacity_isochoric()
+        self._calculate_mass_specific_energy()
+        self._calculate_mass_specific_energy_ideal()
+
+    @abstractmethod
+    def update(self, input_pair_key: int,
+               first_keyed_parameter: float,
+               second_keyed_parameter: float) -> None:
+
+        # Assignments can be done in base class, specific calculations must
+        # be carried out in specific subclasses
+
+        if input_pair_key == CoolConst.PT_INPUTS:
+            self._pressure = first_keyed_parameter
+            self._temperature = second_keyed_parameter
+
+        elif input_pair_key == CoolConst.PUmass_INPUTS:
+            self._pressure = first_keyed_parameter
+            self._mass_specific_energy = second_keyed_parameter
+
+        elif input_pair_key == CoolConst.DmassT_INPUTS:
+            self._density = first_keyed_parameter
+            self._temperature = second_keyed_parameter
+
+        elif input_pair_key == CoolConst.PQ_INPUTS:
+            self._pressure = first_keyed_parameter
+            self._vapor_quality = second_keyed_parameter
+
+        elif input_pair_key == CoolConst.QT_INPUTS:
+            self._vapor_quality = first_keyed_parameter
+            self._temperature = second_keyed_parameter
+
+        else:
+            msg = "Provided input pair is not supporetd yet"
+            raise NotImplementedError(msg)
+
+
+class CrudeOilHardcoded(AbstractStateImitator):
+
+    # NOTE :
+    # This is to model crude oil with constant parameters
+
+    _BACKEND: str = "CrudeOilHardcoded"
+    _DENSITY: float = 830
+    _DYNAMIC_VISCOSITY: float = 6e-3
+    _HEAT_CAPACITY: float = 2300
+
+    def __init__(self) -> None:
+        super().__init__(self._BACKEND, CRUDE_OIL[0])
+        self._density = self._DENSITY
+        self._dynamic_viscosity = self._DYNAMIC_VISCOSITY
+        self._heat_capacity_isobaric = self._HEAT_CAPACITY
+        self._heat_capacity_isochoric = self._HEAT_CAPACITY
+        self._heat_capacity = self._HEAT_CAPACITY
+
+    def default(self) -> None:
+        self._density = self._DENSITY
+        self._dynamic_viscosity = self._DYNAMIC_VISCOSITY
+        self._heat_capacity = self._HEAT_CAPACITY
+
+    def change(self, new_density: float | None = None,
+               new_visocsity: float | None = None,
+               new_heat_capacity: float | None = None) -> None:
+        if new_density is not None:
+            self._density = new_density
+        if new_visocsity is not None:
+            self._dynamic_viscosity = new_visocsity
+        if new_heat_capacity is not None:
+            self._heat_capacity = new_heat_capacity
+
+    def first_partial_deriv(
+            self, of_parameter_key: int,
+            with_respect_to_key: int, holding_const_key: int) -> float | float64:
+
+        # Important NOTE :
+        # We are developing this primarly for dynamic modelling now, so we need
+        # only a limited subset of partial derivatives. This might look a bit ugly,
+        # but it grants universal approach for all phases in sdyna.
+        #
+        # We need partial derivative of internal energy wrt temperature for constant
+        # pressure and partial derivative of density wrt temperature for constant pressure
+
+        msg = "Specified partial derivative is not supported"
+
+        if holding_const_key != CoolConst.iP:
+            raise KeyError(msg)
+        if with_respect_to_key != CoolConst.iT:
+            raise KeyError(msg)
+        if of_parameter_key == CoolConst.iDmass:
+            # Assume constant density for hardcoded crude oil (i. e. const density)
+            return 0
+        elif of_parameter_key == CoolConst.iUmass:
+            return self._heat_capacity
+        else:
+            raise KeyError(msg)
+
+    def update(self, input_pair_key: int, first_keyed_parameter: float,
+               second_keyed_parameter: float):
+        # shouldn't do anything crazy for this particular class, all parameters should
+        # remain const
+        super().update(input_pair_key, first_keyed_parameter, second_keyed_parameter)
+        return
+
+
+class CrudeOilReferenced(AbstractStateImitator):
+
+    # NOTE :
+    # This is to model some crude oil properties with simple models when reference
+    # values are provided
+
+    _BACKEND: str = "CrudeOilReferenced"
+
+    def __init__(self, reference: CrudeOilRefernceData) -> None:
+        super().__init__(self._BACKEND, CRUDE_OIL[0])
+        self.reference = reference
+        self._prepare_density_model()
+        self._prepare_viscosity_model()
+
+    def _prepare_density_model(self):
+        self._compressibility_isobaric = -1/self.reference.mean_density*(
+            self.reference.density[1]-self.reference.density[0])/(
+                self.reference.temperature[1]-self.reference.temperature[0])
+
+    def _prepare_viscosity_model(self):
+        T1, T2 = self.reference.temperature
+        mu1, mu2 = self.reference.viscosity
+        self._viscosity_model_power = T1*T2/(T1-T2)*np.log(mu2/mu1)
+        self._viscosity_model_coeff = mu1*np.exp(
+            self._viscosity_model_power/T1)
+
+    def _calculate_density(self):
+        self._density = (
+            self.reference.density[0] -
+            self._compressibility_isobaric * self.reference.mean_density *
+            (self._temperature-self.reference.temperature[0])
+        )
+
+    def _calculate_viscosity(self):
+        self._dynamic_viscosity = self._viscosity_model_coeff*np.exp(
+            self._viscosity_model_power/self._temperature)
+
+    def _calculate_heat_capacity_isobaric(self):
+        return super()._calculate_heat_capacity_isobaric()
+
+    def _calculate_heat_capacity_isochoric(self):
+        return super()._calculate_heat_capacity_isochoric()
+
+    def _calculate_mass_specific_energy(self):
+        return super()._calculate_mass_specific_energy()
+
+    def first_partial_deriv(
+            self, of_parameter_key: int,
+            with_respect_to_key: int,
+            holding_const_key: int):
+        pass
+
+    def update(self, input_pair_key: int,
+               first_keyed_parameter: float,
+               second_keyed_parameter: float) -> None:
+
+        super().update(input_pair_key, first_keyed_parameter, second_keyed_parameter)
+        # other properties?
+
+
+@dataclass
+class CrudeOilRefernceData:
+
+    # NOTE :
+    # This is needed to hold reference data describing crude oil
+
+    temperature: tuple[float, float]
+    density: tuple[float, float]
+    viscosity: tuple[float, float]
+    mean_density: float | float64
+
+    def __post_init__(self):
+        self.mean_density = 0.5*(self.density[0]+self.density[1])
+
 
 # Constants
 MOLE_FRACTION_SUM_TOL = 1e-3
