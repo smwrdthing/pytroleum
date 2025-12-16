@@ -103,10 +103,23 @@ class AbstractStateImitator(ABC):
             self, of_parameter_key: int,
             with_respect_to_key: int,
             holding_const_key: int
-    ) -> float:
-        return 0
+    ) -> None:
 
-    @abstractmethod
+        # Important NOTE :
+        # We are developing this primarly for dynamic modelling now, so we need
+        # only a limited subset of partial derivatives. This might look a bit ugly,
+        # but it grants universal approach for all phases in sdyna.
+        #
+        # We need partial derivative of internal energy with respect to temperature for
+        # constant pressure and partial derivative of density with respect to temperature
+        # for constant pressure, so we only implement them, validation is abstracted out
+        # in separate method.
+
+        # We could put key validation here and call parent class method from subclasses,
+        # but I think calling validator in subclasses is more explicit
+
+        return
+
     def _calculate_density(self):
         return
 
