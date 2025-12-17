@@ -275,9 +275,11 @@ class UnderPass(Conductor):
         common_level_graduated = self.source.level_graduated
         common_volume_graduated = self.source.volume_graduated+self.sink.volume_graduated
 
+        self._liquid_volume_fractions = liquid_common_volume/liquid_total_volume
+
         # We get desired level via interpolation then
-        liquid_common_level = np.interp(
-            liquid_total_volume, common_volume_graduated, common_level_graduated)
+        liquid_common_level = meter.inverse_graduate(
+            liquid_total_volume, common_level_graduated, common_volume_graduated)
 
         # return shape is like that for consistency with balance algorithm
         return liquid_common_level, liquid_common_level
