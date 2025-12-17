@@ -125,22 +125,23 @@ class Atmosphere(ControlVolume):
     # Class for atmosphere representation. Should impose nominal infinite
     # volume and constant values for thermodynamic paramters
 
+    _STANDARD_TEMPERATURE = 20+273.15
+    _STANDARD_PRESSURE = 101_330
+
     def __init__(self) -> None:
         super().__init__()
 
         # Possible TODO :
         # Implement selector-method to set standard temperature and pressure for
         # specified STP refernce
-        self._standard_temperature = 20+273.15
-        self._standard_pressure = 101_330
         eos_air = factory_eos({"air": 1}, with_state=(
-            CoolConst.PT_INPUTS, self._standard_pressure, self._standard_temperature))
+            CoolConst.PT_INPUTS, self._STANDARD_PRESSURE, self._STANDARD_TEMPERATURE))
 
         self.specify_state(
             StateData(
                 equation_of_state=[eos_air],
-                pressure=np.array([self._standard_pressure]),
-                temperature=np.array([self._standard_temperature]),
+                pressure=np.array([self._STANDARD_PRESSURE]),
+                temperature=np.array([self._STANDARD_TEMPERATURE]),
                 density=np.array([eos_air.rhomass()]),
                 energy_specific=np.array([eos_air.umass()]),
                 dynamic_viscosity=np.array([eos_air.viscosity()]),
