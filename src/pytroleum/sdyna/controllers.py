@@ -39,6 +39,8 @@ class PropIntDiff:
 
         self.saturated: bool = False
 
+        self.polarity = 1
+
     def check_saturation(self):
 
         upperlim, lowerlim = max(self.saturation), min(self.saturation)
@@ -57,8 +59,7 @@ class PropIntDiff:
         if abs(rate) > self.ratelim:
             self.signal = self.history_signal+np.sign(rate)*self.ratelim*dt
 
-    def control(self, dt: float, probe: float, polarity: float = 1,
-                norm_by: float = 1):
+    def control(self, dt: float, probe: float, norm_by: float = 1):
 
         # Previous step values become history
         self.history_gain = self.gain
@@ -68,7 +69,7 @@ class PropIntDiff:
         self.history_signal = self.signal
 
         # Computing new error
-        self.error = polarity*(self.setpoint-probe)/norm_by
+        self.error = self.polarity*(self.setpoint-probe)/norm_by
 
         # Computing new signal
         self.gain = self.P*self.error
