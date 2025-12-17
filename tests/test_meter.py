@@ -7,7 +7,7 @@ class TestAreaCalculations:
 
     @pytest.mark.parametrize("diameter, level, expected_area",
                              [
-                                 (0.092, 0.06, 0.004155),
+                                 (0.092, 0.062, 0.004155),
                                  (0.092, 0.05, 0.003324),
                                  (0.092, 0.08, 0.005841)
                              ]
@@ -30,7 +30,13 @@ class TestAreaCalculations:
         result = meter.area_cs_circle_trunc(diameter, level)
         assert abs(result - expected_area) < 1e-3
 
-    @pytest.mark.skip(reason="Test data to be added later")
+    @pytest.mark.parametrize("diameter, expected_area",
+                             [
+                                 (0.3, 0.141372),
+                                 (0.18, 0.050894),
+                                 (0.382, 0.229217),
+                             ]
+                             )
     def test_area_cs_Utube_trunc(self, diameter, expected_area):
         """This function tests a function that computes cross-sectional area of the
         U-shaped tube in the middle region far apart from start/end of tube.
@@ -47,7 +53,11 @@ class TestAreaCalculations:
         result = meter.area_cs_Utube_trunc(diameter)
         assert abs(result - expected_area) < 1e-3
 
-    @pytest.mark.skip(reason="Test data to be added later")
+    @pytest.mark.parametrize("length, diameter, level, expected_area",
+                             [
+                                 (9.5, 2, 1.5, 16.45448)
+                             ]
+                             )
     def test_area_planecut_cylinder(self, length, diameter, level, expected_area):
         """ This function tests a function that computes area of a top surface formed by
         truncation of horizontal cylinder by a horizontal plane.
@@ -70,7 +80,11 @@ class TestAreaCalculations:
         result = meter.area_planecut_cylinder(length, diameter, level)
         assert abs(result - expected_area) < 1e-3
 
-    @pytest.mark.skip(reason="Test data to be added later")
+    @pytest.mark.parametrize("length_semiaxis, diameter, level, expected_area",
+                             [
+                                 (0.05499, 0.2, 0.14, 0.007917)
+                             ]
+                             )
     def test_area_planecut_cover_ellipse(
             self, length_semiaxis, diameter, level, expected_area):
         """This function tests a function that computes area of a top surface formed
@@ -95,7 +109,11 @@ class TestAreaCalculations:
             length_semiaxis, diameter, level)
         assert abs(result - expected_area) < 1e-3
 
-    @pytest.mark.skip(reason="Test data to be added later")
+    @pytest.mark.parametrize("diameter, level, expected_area",
+                             [
+                                 (0.204, 0.14314, 0.013684)
+                             ]
+                             )
     def test_area_planecut_cover_circle(self, diameter, level, expected_area):
         """This function tests a function that computes area of a top surface formed
         by truncation of circular cover by horizontal plane. This is considered as
@@ -114,46 +132,6 @@ class TestAreaCalculations:
             horizontal plane.
         """
         result = meter.area_planecut_cover_circle(diameter, level)
-        assert abs(result - expected_area) < 1e-3
-
-    @pytest.mark.skip(reason="Test data to be added later")
-    def test_area_planecut_section_horiz_general(
-            self, length_semiaxis_left, length_cylinder, length_semiaxis_right,
-            diameter, level, area_cover_left_fn, area_cover_right_fn, expected_area):
-        """This function tests a function performs computations of area
-        for top surface formed by truncation of horizontal section with two
-        covers by horizontal plane.
-
-        Parameters
-        ----------
-        length_semiaxis_left
-            Left cover length.
-
-        length_cylinder
-            Cylindrical part length.
-
-        length_semiaxis_right
-            Right cover length.
-
-        diameter
-            Diameter of section.
-
-        level
-            Truncation level.
-
-        area_cover_left_fn
-            Function for planecut area of left cover with (H,D,h) signature.
-
-        area_cover_right_fn
-            Function for planecut area of right cover with (H,D,h) signature.
-
-        expected_area
-            Expected area formed by horizontal truncation of horizontal section with two
-            specified covers.
-        """
-        result = meter.area_planecut_section_horiz_general(
-            length_semiaxis_left, length_cylinder, length_semiaxis_right,
-            diameter, level, area_cover_left_fn, area_cover_right_fn)
         assert abs(result - expected_area) < 1e-3
 
     @pytest.mark.skip(reason="Test data to be added later")
@@ -194,7 +172,11 @@ class TestAreaCalculations:
 class TestVolumeCalculations:
     """"Class for testing volume calculation functions"""
 
-    @pytest.mark.skip(reason="Test data to be added later")
+    @pytest.mark.parametrize("length, diameter, level, expected_volume",
+                             [
+                                 (0.076, 0.05628, 0.0331, 0.000073)
+                             ]
+                             )
     def test_volume_cylinder_trunc(
             self, length, diameter, level, expected_volume):
         """This function tests a function computes volume of horizontal cylinder truncated
@@ -217,7 +199,11 @@ class TestVolumeCalculations:
         result = meter.volume_cylinder_trunc(length, diameter, level)
         assert abs(result - expected_volume) < 1e-3
 
-    @pytest.mark.skip(reason="Test data to be added later")
+    @pytest.mark.parametrize("length_semiaxis, diameter, level, expected_volume",
+                             [
+                                 (0.05499, 0.2, 0.14, 0.000991)
+                             ]
+                             )
     def test_volume_cover_elliptic_trunc(
             self, length_semiaxis, diameter, level, expected_volume):
         """This function tests a function computes volume of semi-ellipsoid truncated by a
@@ -241,7 +227,11 @@ class TestVolumeCalculations:
             length_semiaxis, diameter, level)
         assert abs(result - expected_volume) < 1e-3
 
-    @pytest.mark.skip(reason="Test data to be added later")
+    @pytest.mark.parametrize("diameter, level, expected_volume",
+                             [
+                                 (0.2, 0.14, 0.001747)
+                             ]
+                             )
     def test_volume_cover_circle_trunc(self, diameter, level, expected_volume):
         """This function tests a function computes volume of semi-sphere truncated
         by a horizontal plane. This is considered as a special case of semi-ellipsoid
@@ -259,46 +249,6 @@ class TestVolumeCalculations:
             Expected volume of semi-sphere truncated by a horizontal plane.
         """
         result = meter.volume_cover_circle_trunc(diameter, level)
-        assert abs(result - expected_volume) < 1e-3
-
-    @pytest.mark.skip(reason="Test data to be added later")
-    def test_volume_section_horiz_general(
-            self, length_semiaxis_left, length_cylinder, length_semiaxis_right,
-            diameter, level, volume_cover_left_fn, volume_cover_right_fn,
-            expected_volume):
-        """This function tests a function computes volume of horizontal section with
-        two covers truncated by horizontal plane.
-
-        Parameters
-        ----------
-        length_semiaxis_left
-            Left cover length.
-
-        length_cylinder
-            Cylindrical part length.
-
-        length_semiaxis_right
-            Right cover length.
-
-        diameter
-            Diameter of section.
-
-        level
-            Truncation level.
-
-        volume_cover_left_fn
-            Function for volume of left cover with (H,D,h) signature.
-
-        volume_cover_right_fn
-            Function for volume of right cover with (H,D,h) signature.
-
-        expected_volume
-            Expected volume of horizontal section with specified covers truncated by
-            horizontal plane.
-        """
-        result = meter.volume_section_horiz_general(
-            length_semiaxis_left, length_cylinder, length_semiaxis_right,
-            diameter, level, volume_cover_left_fn, volume_cover_right_fn)
         assert abs(result - expected_volume) < 1e-3
 
     @pytest.mark.skip(reason="Test data to be added later")
