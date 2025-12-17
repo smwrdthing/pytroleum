@@ -145,9 +145,9 @@ class Valve(Conductor):
 
         if self.phase_index > 0:  # conductor deals with liquid phase
 
-            upstream_pressure = compute_pressure_for_elevation(
+            upstream_pressure = _compute_pressure_for_elevation(
                 self.elevation, upstream_state.level, upstream_state.pressure)
-            downstream_pressure = compute_pressure_for_elevation(
+            downstream_pressure = _compute_pressure_for_elevation(
                 self.elevation, downstream_state.level, downstream_state.pressure)
 
             mass_flow_rate = efflux.incompressible(
@@ -558,7 +558,7 @@ class PhaseInterface(Conductor):
         pass
 
 
-def compute_pressure_for_elevation(
+def _compute_pressure_for_elevation(
         elevation: float | float64,
         levels_profile: NDArray[float64],
         pressures_profile: NDArray[float64]) -> float | float64:
