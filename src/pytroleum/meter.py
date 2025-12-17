@@ -184,7 +184,7 @@ def area_cs_Utube_trunc(diameter: float | float64):
     -------
         Cross-sectional area of the U-shaped tube (far apart from start/end of tube).
     """
-    return 2*np.pi*(diameter/2)**2/4  # explicit formula for clarity
+    return 2*np.pi*diameter**2/4  # explicit formula for clarity
 
 
 # -----------------------------------------------------------------------------
