@@ -245,7 +245,7 @@ class UnderPass(Conductor):
         # NOTE implement as property later?
         self.locking_offset = locking_offset
         self.locking_level = self.edge_level+self.locking_offset
-        self.discharge_coefficinet = discharge_coefficient
+        self.discharge_coefficient = discharge_coefficient
         self.is_locked: bool = False
 
         # Initiate here?
@@ -402,7 +402,7 @@ class UnderPass(Conductor):
                     self.source.diameter, self.source.state.level[0])
             flow_elevation = 0.5*(self.edge_level+self.source.state.level[0])
             vapor_mass_flow_rate = efflux.compressible(
-                flow_area, self.discharge_coefficinet,
+                flow_area, self.discharge_coefficient,
                 self.source.state.equation_of_state[0].cpmass() /
                 self.source.state.equation_of_state[0].cvmass(),
                 R/self.source.state.equation_of_state[0].molar_mass(),
