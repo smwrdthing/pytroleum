@@ -103,6 +103,12 @@ class ControlVolume(ABC):
             eos.update(CoolConst.PT_INPUTS, self.state.pressure[0], new_T)
 
     def compute_net_flow_rates(self):
+
+        # NOTE for refactoring :
+        # ControlVolumes should not know about flow rates if we solve
+        # ODE system on higher level only. Flow rates in system should be
+        # obtained from conductors
+
         self.net_flow_rate_mass = np.zeros(1)
         self.net_flow_rate_energy = np.zeros(1)
         for inlet in self.inlets:
