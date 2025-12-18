@@ -134,7 +134,12 @@ class TestAreaCalculations:
         result = meter.area_planecut_cover_circle(diameter, level)
         assert abs(result - expected_area) < 1e-3
 
-    @pytest.mark.skip(reason="Test data to be added later")
+    @pytest.mark.parametrize("length_semiaxis_left, length_cylinder, "
+                             "length_semiaxis_right,diameter, level, expected_area",
+                             [
+                                 (0.804, 9.498, 0.802, 2, 1.54, 17.772039)
+                             ]
+                             )
     def test_area_planecut_section_horiz_ellipses(
             self, length_semiaxis_left, length_cylinder, length_semiaxis_right,
             diameter, level, expected_area):
@@ -251,7 +256,12 @@ class TestVolumeCalculations:
         result = meter.volume_cover_circle_trunc(diameter, level)
         assert abs(result - expected_volume) < 1e-3
 
-    @pytest.mark.skip(reason="Test data to be added later")
+    @pytest.mark.parametrize("length_semiaxis_left, length_cylinder, "
+                             "length_semiaxis_right, diameter, level, expected_volume",
+                             [
+                                 (0.804, 9.498, 0.802, 2, 1.54, 33.196137)
+                             ]
+                             )
     def test_volume_section_horiz_ellipses(
             self, length_semiaxis_left, length_cylinder, length_semiaxis_right,
             diameter, level, expected_volume):
