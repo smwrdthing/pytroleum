@@ -551,14 +551,24 @@ class FurnacePolynomial(Conductor):
 
     # Subclass to represent heat flux from furnace with polynomial
     # approximation of furnace heat_flux(fuel_flow_rate)-like characteristic
+    _POLYNOMIAL_COEFFICIENTS: Iterable[float | float64] = []
 
     def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         super().__init__(phase_index, source, sink)
+        self._polynomial_coefficients = self._POLYNOMIAL_COEFFICIENTS
+
+    def adjust_model(self, new_coefficients):
+        self._polynomial_coefficients = new_coefficients
+
+    def compute_heat_flux(self):
+        J = np.polyval(self._polynomial_coefficients)  # pyright: ignore
+        self.flow.energy_flow[self.phase_index] = J
+        # Add geometry constrints!
 
     def advance(self):
-        pass
+        self.compute_heat_flux()
 
 
 class PhaseInterface(Conductor):
