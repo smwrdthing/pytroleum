@@ -259,7 +259,7 @@ class UnderPass(Conductor):
         if criterila_level > self.locking_level:
             self.is_locked = True
 
-    def equal_level_distribution(self):
+    def equal_level_distribution(self) -> tuple[float | float64, float | float64]:
 
         liquid_common_volume = (
             self.source.state.volume[1:]+self.sink.state.volume[1:])
