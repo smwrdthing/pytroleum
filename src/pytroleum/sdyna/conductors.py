@@ -254,8 +254,7 @@ class UnderPass(Conductor):
 
     def check_if_locked(self):
         self.is_locked = False
-        criterila_level = max(
-            self.sink.state.level[1], self.source.state.level[1])
+        criterila_level = self.equal_level_distribution()[0]
         if criterila_level > self.locking_level:
             self.is_locked = True
 
@@ -372,17 +371,36 @@ class UnderPass(Conductor):
         liquid_mass_source = self.source.state.density[1:]*liquid_volume_source
         liquid_mass_sink = self.sink.state.density[1:]*liquid_volume_sink
 
-        # Proportional changes in liquid energy
+        # Changes in energy should be handled according to flow direction and
+        # new values of mass
+        liquid_mass_difference_source = (
+            liquid_mass_source-self.source.state.mass[1:])
+        liquid_mass_difference_sink = (
+            liquid_mass_source-self.sink.state.mass[1:])
+
+        if liquid_mass_difference_source < 0:
+            # liquid leaves source
+            flow_specific_energy = self.source.state.energy_specific[1:]
+        else:
+            # liquid comes to source
+            flow_specific_energy = self.sink.state.energy_specific[1:]
+
         liquid_energy_source = (
-            self.source.state.energy_specific[1:]*liquid_mass_source)
+            self.source.state.energy[1:] +
+            flow_specific_energy*liquid_mass_difference_source)
         liquid_energy_sink = (
-            self.sink.state.energy_specific[1:]*liquid_mass_sink)
+            self.sink.state.energy[1:] +
+            flow_specific_energy*liquid_mass_difference_sink)
 
         # Updating state variables accordingly
         self.source.state.mass[1:] = liquid_mass_source
         self.source.state.energy[1:] = liquid_energy_source
         self.sink.state.mass[1:] = liquid_mass_sink
         self.sink.state.energy[1:] = liquid_energy_sink
+
+        # NOTE :
+        # We should check if this violates mass and/or energy balance. It should not,
+        # because algorithm was built with this objective in mind, but still.
 
     def compute_vapor_flow_rate(self):
         if self.is_locked:
@@ -433,8 +451,8 @@ class UnderPass(Conductor):
 
     def advance(self):
         self.check_if_locked()
-        self.perform_distribution()
         self.compute_vapor_flow_rate()
+        self.perform_distribution()  # NOTE : this disrupted solver in legacy, be careful
 
 
 class OverPass(Conductor):
