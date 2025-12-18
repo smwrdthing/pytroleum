@@ -2,11 +2,12 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import numpy as np
-from scipy.constants import g
 import CoolProp.constants as CoolConst
+from scipy.constants import g
 from pytroleum import meter
+from pytroleum.tdyna.eos import factory_eos
 
-from typing import Callable, overload
+from typing import TYPE_CHECKING, Callable, overload
 from numpy.typing import NDArray
 from numpy import float64
 from pytroleum.sdyna.interfaces import Conductor
@@ -15,20 +16,19 @@ from pytroleum.sdyna.opdata import StateData
 
 class ControlVolume(ABC):
 
-    # Abstract base class for control volume
-
     def __init__(self) -> None:
         self.outlets: list[Conductor] = []
         self.inlets: list[Conductor] = []
         self.volume: float | float64 = np.inf
+        self.net_flow_rate_mass = np.zeros(1)
+        self.net_flow_rate_energy = np.zeros(1)
 
-    # Introduce custom decorator for iterable inputs
+    # TODO Introduce custom decorator for iterable inputs
     def connect_inlet(self, conductor: Conductor) -> None:
         if conductor not in self.inlets:
             conductor.sink = self
             self.inlets.append(conductor)
 
-    # Introduce custom decorator for iterable inputs
     def connect_outlet(self, conductor: Conductor) -> None:
         if conductor not in self.outlets:
             conductor.source = self
@@ -37,30 +37,39 @@ class ControlVolume(ABC):
     def specify_state(self, state: StateData) -> None:
         self.state = state
 
-    # NOTE
-    # methods for advancment are listed in the order of intended sequential execution
+    # NOTE methods are listed in the inteded execution order for advancement
 
     def compute_fluid_energy_specific(self) -> None:
         self.state.energy_specific = self.state.energy/self.state.mass
 
-    def compute_fluid_temperature(self) -> None:
-        # density does not depend much on pressure, so vapor
-        # pressure might be used as value for system's pressure
-        pressure_system = self.state.pressure[0]
-        T = []
+    # NOTE :
+    # All secondary parameters are computed with finite-difference approximation of
+    # respective differentials with additional reasonable assumptions for preformance and
+    # robustness reasons.
+    #
+    # In this case eos contains parameters from previous time step and aids computations
+    # for custom state object that should hold new values. We should update eos only at
+    # the very end of time step processing.
 
-        for eos, u in zip(self.state.equation_of_state, self.state.energy_specific):
-            # update algortihm, this is not going to work (PUmass is not supported)
-            eos.update(CoolConst.PUmass_INPUTS, pressure_system, u)
-            T.append(eos.T())
-        T = np.array(T)
-        self.state.temperature = T
+    def compute_fluid_temperature(self) -> None:
+        temperature = []
+        for eos, energy_specific in zip(self.state.equation_of_state,
+                                        self.state.energy_specific):
+            partial_derivative_energy = eos.first_partial_deriv(
+                CoolConst.iUmass, CoolConst.iT, CoolConst.iP)
+            fluid_new_temperature = (
+                (energy_specific-eos.umass())/partial_derivative_energy + eos.T())
+            temperature.append(fluid_new_temperature)
+        self.state.temperature[:] = temperature
 
     def compute_liquid_density(self) -> None:
-        # eos should be valid for current state from pressure-energy
-        # computations, so we can read values without an update
-        for phase_index, eos in enumerate(self.state.equation_of_state[1:], start=1):
-            self.state.density[phase_index] = eos.rhomass()
+        liquid_density = []
+        for eos, new_T in zip(self.state.equation_of_state[1:], self.state.temperature):
+            density_partial_derivative = eos.first_partial_deriv(
+                CoolConst.iDmass, CoolConst.iT, CoolConst.iP)
+            fluid_new_density = eos.rhomass()+density_partial_derivative*(new_T-eos.T())
+            liquid_density.append(fluid_new_density)
+        self.state.density[1:] = liquid_density
 
     def compute_fluid_volume(self) -> None:
         self.state.volume[1:] = self.state.mass[1:]/self.state.density[1:]
@@ -70,9 +79,38 @@ class ControlVolume(ABC):
         self.state.density[0] = self.state.mass[0]/self.state.volume[0]
 
     def compute_vapor_pressure(self) -> None:
-        self.state.equation_of_state[0].update(
-            CoolConst.DmassT_INPUTS, self.state.density[0], self.state.temperature[0])
-        self.state.pressure[0] = self.state.equation_of_state[0].p()
+        # Vapor pressure should be computed from finite difference approximation too, as
+        # DmassT pair is not supported
+        vapor_eos = self.state.equation_of_state[0]
+
+        pressure_partial_derivative_wrt_temperatrue = (
+            vapor_eos.first_partial_deriv(CoolConst.iP, CoolConst.iT, CoolConst.iDmass))
+        pressure_partial_derivative_wrt_density = (
+            vapor_eos.first_partial_deriv(CoolConst.iP, CoolConst.iDmass, CoolConst.iT))
+
+        change_in_density = self.state.density[0]-vapor_eos.rhomass()
+        change_in_temperature = self.state.temperature[0] - vapor_eos.T()
+
+        new_vapor_pressure = vapor_eos.p() + (
+            pressure_partial_derivative_wrt_temperatrue*change_in_temperature +
+            pressure_partial_derivative_wrt_density*change_in_density)
+
+        self.state.pressure[0] = new_vapor_pressure
+
+    def update_equations_of_state(self):
+        for eos, new_T in zip(self.state.equation_of_state, self.state.temperature):
+            # Also check if internal energy is consistent for this approach
+            eos.update(CoolConst.PT_INPUTS, self.state.pressure[0], new_T)
+
+    def compute_net_flow_rates(self):
+        self.net_flow_rate_mass = np.zeros(1)
+        self.net_flow_rate_energy = np.zeros(1)
+        for inlet in self.inlets:
+            self.net_flow_rate_mass += inlet.flow.mass_flow_rate
+            self.net_flow_rate_energy += inlet.flow.energy_flow
+        for outlet in self.outlets:
+            self.net_flow_rate_mass -= outlet.flow.mass_flow_rate
+            self.net_flow_rate_energy -= outlet.flow.energy_flow
 
     # This is as far as common routines go, to get other parameters details about liquid
     # spatial distribution should be known
@@ -90,14 +128,34 @@ class Atmosphere(ControlVolume):
     def __init__(self) -> None:
         super().__init__()
 
+        # Possible TODO :
+        # Implement selector-method to set standard temperature and pressure for
+        # specified STP refernce
+        self._standard_temperature = 20+273.15
+        self._standard_pressure = 101_330
+        eos_air = factory_eos({"air": 1}, with_state=(
+            CoolConst.PT_INPUTS, self._standard_pressure, self._standard_temperature))
+
+        self.specify_state(
+            StateData(
+                equation_of_state=[eos_air],
+                pressure=np.array([self._standard_pressure]),
+                temperature=np.array([self._standard_temperature]),
+                density=np.array([eos_air.rhomass()]),
+                energy_specific=np.array([eos_air.umass()]),
+                dynamic_viscosity=np.array([eos_air.viscosity()]),
+                thermal_conductivity=np.array([eos_air.conductivity()]),
+                mass=np.array([np.inf]),
+                energy=np.array([np.inf]),
+                level=np.array([np.inf]),
+                volume=np.array([np.inf]))
+        )
+
     def advance(self) -> None:
         return
 
 
 class Reservoir(ControlVolume):
-
-    # Class to represent petroleum fluids reservoir. In context of dynamical system
-    # modelling imposes infinite volume and constant params (for now?)
 
     def __init__(self) -> None:
         super().__init__()
@@ -108,7 +166,6 @@ class Reservoir(ControlVolume):
 
 class SectionHorizontal(ControlVolume):
 
-    # Class for horizontal section
     @overload
     def __init__(
         self,
@@ -185,8 +242,6 @@ class SectionHorizontal(ControlVolume):
         return meter.inverse_graduate(volume, self.level_graduated, self.volume_graduated)
 
     def compute_fluid_level(self) -> None:
-        # This might look nasty, but I think doing it in place
-        # more elegant than trying to break it down
         self.state.level = self.compute_level_with_volume(
             np.flip(np.cumsum(np.flip(self.state.volume))))
 
@@ -204,18 +259,16 @@ class SectionHorizontal(ControlVolume):
         self.compute_fluid_volume()
         self.compute_vapor_density()
         self.compute_vapor_pressure()
-        self.compute_vapor_pressure()
         self.compute_fluid_level()
         self.compute_liquid_pressure()
+        self.compute_net_flow_rates()
 
     def advance(self) -> None:
         self.compute_secondary_parameters()
+        self.update_equations_of_state()
 
 
 class SectionVertical(ControlVolume):
-
-    # Class for vertical section, not really needed right now, might be useful later for
-    # tests and other equipment?
 
     @overload
     def __init__(

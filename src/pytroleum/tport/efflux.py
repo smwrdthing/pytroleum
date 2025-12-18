@@ -1,23 +1,71 @@
 import numpy as np
+
+from typing import overload
 from numpy.typing import NDArray
+from numpy import float64
 
-# TODO :
-# 1. Fix types (applies to other parts of project too)
-# 2. More models for flow rate with lumped parameters
-# 3. Generalisation of lumpded parameters models for
-#    flow rate computations?
+# TODO (maybe?) :
+# 1. Those functions are a bit messy, throwing ton of arguments is rather complicated, try
+#    to find workaround?
+# 2. Generalisation of lumpded parameters models for flow rate computations?
 
-type Numeric = float | NDArray
+
+@overload
+def incompressible(
+        area_of_orifice: float | float64,
+        area_of_pipe: float | float64,
+        discharge_coefficient: float | float64,
+        density: float | float64,
+        upstream_pressure: float | float64,
+        donwstream_pressure: float | float64,
+        pressure_recovery: bool = False) -> float | float64:
+    ...
+
+
+@overload
+def incompressible(
+        area_of_orifice: float | float64,
+        area_of_pipe: float | float64,
+        discharge_coefficient: float | float64,
+        density: NDArray[float64],
+        upstream_pressure: float | float64,
+        donwstream_pressure: float | float64,
+        pressure_recovery: bool = False) -> NDArray[float64]:
+    ...
+
+
+@overload
+def incompressible(
+        area_of_orifice: float | float64,
+        area_of_pipe: float | float64,
+        discharge_coefficient: float | float64,
+        density: float | float64,
+        upstream_pressure: NDArray[float64],
+        donwstream_pressure: float | float64,
+        pressure_recovery: bool = False) -> NDArray[float64]:
+    ...
+
+
+@overload
+def incompressible(
+        area_of_orifice: float | float64,
+        area_of_pipe: float | float64,
+        discharge_coefficient: float | float64,
+        density: float | float64,
+        upstream_pressure: float | float64,
+        donwstream_pressure: NDArray[float64],
+        pressure_recovery: bool = False) -> NDArray[float64]:
+    ...
 
 
 def incompressible(
-        area_of_orifice: Numeric,
-        area_of_pipe: Numeric,
-        discharge_coefficient: Numeric,
-        density: Numeric,
-        upstream_pressure: Numeric,
-        donwstream_pressure: Numeric,
-        pressure_recovery: bool = False) -> Numeric:
+        area_of_orifice,
+        area_of_pipe,
+        discharge_coefficient,
+        density,
+        upstream_pressure,
+        donwstream_pressure,
+        pressure_recovery=False):
     """This function computes flow rate for incompressible flow through orifice.
     Well-known orifice equation is employed for calualtions.
 
@@ -60,17 +108,62 @@ def incompressible(
     return mass_flow_rate
 
 
+@overload
 def compressible(
-        area: Numeric,
-        discharge_coefficient: Numeric,
-        adiabatic_index: Numeric,
-        gas_constant: Numeric,
-        upstream_density: Numeric,
-        upstream_temperature: Numeric,
-        upstream_pressure: Numeric,
-        downstream_density: Numeric,
-        downstream_temperature: Numeric,
-        downstream_pressure: Numeric) -> Numeric:
+        area: float | float64,
+        discharge_coefficient: float | float64,
+        adiabatic_index: float | float64,
+        gas_constant: float | float64,
+        upstream_density: float | float64,
+        upstream_temperature: float | float64,
+        upstream_pressure: float | float64,
+        downstream_density: float | float64,
+        downstream_temperature: float | float64,
+        downstream_pressure: float | float64) -> float | float64:
+    ...
+
+
+@overload
+def compressible(
+        area: float | float64,
+        discharge_coefficient: float | float64,
+        adiabatic_index: float | float64,
+        gas_constant: float | float64,
+        upstream_density: NDArray[float64],
+        upstream_temperature: NDArray[float64],
+        upstream_pressure: NDArray[float64],
+        downstream_density: float | float64,
+        downstream_temperature: float | float64,
+        downstream_pressure: float | float64) -> NDArray[float64]:
+    ...
+
+
+@overload
+def compressible(
+        area: float | float64,
+        discharge_coefficient: float | float64,
+        adiabatic_index: float | float64,
+        gas_constant: float | float64,
+        upstream_density: float | float64,
+        upstream_temperature: float | float64,
+        upstream_pressure: float | float64,
+        downstream_density: NDArray[float64],
+        downstream_temperature: NDArray[float64],
+        downstream_pressure: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def compressible(
+        area,
+        discharge_coefficient,
+        adiabatic_index,
+        gas_constant,
+        upstream_density,
+        upstream_temperature,
+        upstream_pressure,
+        downstream_density,
+        downstream_temperature,
+        downstream_pressure):
     """This function computes flow rate for compressible flow through orifice.
     Equation for adiabatic flow through nozzle is employed for calculations.
 
@@ -103,12 +196,16 @@ def compressible(
         Mass flow rate of compressible fluid through orifice.
     """
 
+    # TODO :
+    # rewrite to exclude density from consideration + adjust wherever this is used
+
     sign = np.sign(upstream_pressure-downstream_pressure)
     beta_crit = (2/(adiabatic_index+1))**(adiabatic_index/(adiabatic_index-1))
     beta = (downstream_pressure/upstream_pressure)**sign
 
-    # should be ok, np. internal broadcasting will handle this
-    beta[beta < beta_crit] = beta_crit
+    # following is equivalent to beta[beta < beta_crit] = beta_crit
+    # but encompasses all relevant data types simultaneously
+    beta = beta*(beta > beta_crit) + beta_crit*(beta <= beta_crit)
 
     rho = upstream_density*(sign >= 0) + downstream_density*(sign < 0)
     temperature = (
@@ -135,7 +232,7 @@ if __name__ == '__main__':
     C = 0.61
 
     p1 = np.linspace(1e5, (20+1)*1e5, 500)
-    p2 = np.mean(p1)
+    p2 = 1/2*(np.max(p1)+np.min(p1))
     dp = p1-p2
 
     rho_inc = 1000
@@ -143,7 +240,7 @@ if __name__ == '__main__':
     G_inc_norm = G_inc/np.max(G_inc)
     v_inc = G_inc_norm/A/rho_inc
 
-    T_comp = 300, 300
+    T_comp = 300., 300.
     k = 1.4
     R = 287
     # constant values yiel crytical flow
@@ -151,8 +248,9 @@ if __name__ == '__main__':
     # however when rho = rho(p,T) behavior is more like incompressible
     # rho_comp = p1/R/T_comp[0], p2/R/T_comp[0]
 
-    G_comp = compressible(
-        A, C, k, R, *rho_comp, *T_comp, p1, p2)  # type: ignore
+    G_comp = compressible(A, C, k, R,
+                          rho_comp[0], T_comp[0], p1,  # type: ignore
+                          rho_comp[1], T_comp[1], p2)  # type: ignore
     G_comp_norm = G_comp/np.max(G_comp)
 
     fig, ax = plt.subplots(ncols=2)

@@ -4,6 +4,7 @@ from scipy.constants import g
 from dataclasses import dataclass
 from abc import ABC
 from numpy.typing import NDArray
+from numpy import float64
 from typing import TYPE_CHECKING, Callable
 if TYPE_CHECKING:
     from ..tdyna.CoolStub import AbstractState  # type: ignore
@@ -27,31 +28,31 @@ else:
 class OperationData(ABC):
     equation_of_state: list[AbstractState]
 
-    pressure: NDArray[np.float64]
-    temperature: NDArray[np.float64]
-    density: NDArray[np.float64]
-    energy_specific: NDArray[np.float64]
+    pressure: NDArray[float64]
+    temperature: NDArray[float64]
+    density: NDArray[float64]
+    energy_specific: NDArray[float64]
 
-    dynamic_viscosity: NDArray
-    thermal_conductivity: NDArray
+    dynamic_viscosity: NDArray[float64]
+    thermal_conductivity: NDArray[float64]
 
 
 @dataclass
 class StateData(OperationData):
-    mass: NDArray[np.float64]
-    energy: NDArray[np.float64]
-    level: NDArray[np.float64]
-    volume: NDArray[np.float64]
+    mass: NDArray[float64]
+    energy: NDArray[float64]
+    level: NDArray[float64]
+    volume: NDArray[float64]
 
 
 @dataclass
 class FlowData(OperationData):
-    velocity: NDArray[np.float64]
-    energy_specific_flow: NDArray[np.float64]
-    mass_flow_rate: NDArray[np.float64]
-    volume_flowrate: NDArray[np.float64]
-    energy_flow: NDArray[np.float64]
-    elevation: float | np.float64 = 0
+    velocity: NDArray[float64]
+    energy_specific_flow: NDArray[float64]
+    mass_flow_rate: NDArray[float64]
+    volume_flowrate: NDArray[float64]
+    energy_flow: NDArray[float64]
+    elevation: float | float64 = 0
 
 
 def _extract_temperature_dependent(
@@ -59,10 +60,10 @@ def _extract_temperature_dependent(
     pressure: NDArray,
     temperature: NDArray,
     use_ideal_gas_specific_energy: bool = True
-) -> tuple[NDArray[np.float64],
-           NDArray[np.float64],
-           NDArray[np.float64],
-           NDArray[np.float64]]:
+) -> tuple[NDArray[float64],
+           NDArray[float64],
+           NDArray[float64],
+           NDArray[float64]]:
 
     # Maybe move this functionality to tdyna later
 
@@ -89,10 +90,10 @@ def _extract_temperature_dependent(
 
 def fabric_state(
         equation_of_state: list[AbstractState],
-        volume_fn: Callable[[NDArray[np.float64]], NDArray[np.float64]],
-        pressure: NDArray[np.float64],
-        temperature: NDArray[np.float64],
-        level: NDArray[np.float64],
+        volume_fn: Callable[[NDArray[float64]], NDArray[float64]],
+        pressure: NDArray[float64],
+        temperature: NDArray[float64],
+        level: NDArray[float64],
         use_ideal_gas_specific_energy: bool = True) -> StateData:
 
     (density,
@@ -132,11 +133,11 @@ def fabric_state(
 
 def fabric_flow(
         equation_of_state: list[AbstractState],
-        pressure: NDArray[np.float64],
-        temperature: NDArray[np.float64],
-        flow_cross_area: float | np.float64,
-        elevation: float | np.float64,
-        mass_flowrate: NDArray[np.float64],
+        pressure: NDArray[float64],
+        temperature: NDArray[float64],
+        flow_cross_area: float | float64,
+        elevation: float | float64,
+        mass_flowrate: NDArray[float64],
         use_ideal_gas_specific_energy: bool = True) -> FlowData:
 
     (density,
