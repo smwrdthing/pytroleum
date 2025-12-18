@@ -248,10 +248,6 @@ class UnderPass(Conductor):
         self.discharge_coefficient = discharge_coefficient
         self.is_locked: bool = False
 
-        # Initiate here?
-        self._common_level_graduated = None
-        self._common_volume_graduated = None
-
         # For type checker only
         self.source: Section
         self.sink: Section
