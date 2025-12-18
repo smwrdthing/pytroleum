@@ -468,6 +468,9 @@ def area_planecut_section_horiz_ellipses(
         Area formed by horizontal truncation of horizontal section with two elliptic
         covers.
     """
+
+    # NOTE : failed test for this function
+
     A_planecut_section = area_planecut_section_horiz_general(
         length_semiaxis_left,
         length_cylinder,
