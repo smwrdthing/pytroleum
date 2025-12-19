@@ -145,20 +145,18 @@ class Atmosphere(ControlVolume):
         eos_air = factory_eos({"air": 1}, with_state=(
             CoolConst.PT_INPUTS, self._STANDARD_PRESSURE, self._STANDARD_TEMPERATURE))
 
-        self.specify_state(
-            StateData(
-                equation_of_state=[eos_air],
-                pressure=np.array([self._STANDARD_PRESSURE]),
-                temperature=np.array([self._STANDARD_TEMPERATURE]),
-                density=np.array([eos_air.rhomass()]),
-                energy_specific=np.array([eos_air.umass()]),
-                dynamic_viscosity=np.array([eos_air.viscosity()]),
-                thermal_conductivity=np.array([eos_air.conductivity()]),
-                mass=np.array([np.inf]),
-                energy=np.array([np.inf]),
-                level=np.array([np.inf]),
-                volume=np.array([np.inf]))
-        )
+        self.state = StateData(
+            equation_of_state=[eos_air],
+            pressure=np.array([self._STANDARD_PRESSURE]),
+            temperature=np.array([self._STANDARD_TEMPERATURE]),
+            density=np.array([eos_air.rhomass()]),
+            energy_specific=np.array([eos_air.umass()]),
+            dynamic_viscosity=np.array([eos_air.viscosity()]),
+            thermal_conductivity=np.array([eos_air.conductivity()]),
+            mass=np.array([np.inf]),
+            energy=np.array([np.inf]),
+            level=np.array([np.inf]),
+            volume=np.array([np.inf]))
 
     def advance(self) -> None:
         return
