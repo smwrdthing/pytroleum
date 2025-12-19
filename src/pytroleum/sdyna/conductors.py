@@ -46,9 +46,7 @@ class Conductor(ABC):
             self.sink = Atmosphere()
         self.phase_index = phase_index
         self.controller: PropIntDiff | StartStop | None = None
-
-    def specify_flow(self, flow: FlowData) -> None:
-        self.flow = flow
+        self.flow: FlowData
 
     def connect_source(self, convolume: ControlVolume) -> None:
         if self not in convolume.outlets:

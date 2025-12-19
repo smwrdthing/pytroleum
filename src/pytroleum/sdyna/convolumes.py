@@ -35,9 +35,6 @@ class ControlVolume(ABC):
             conductor.source = self
             self.outlets.append(conductor)
 
-    def specify_state(self, state: StateData) -> None:
-        self.state = state
-
     # NOTE methods are listed in the inteded execution order for advancement
 
     def compute_fluid_energy_specific(self) -> None:
