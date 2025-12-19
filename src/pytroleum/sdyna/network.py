@@ -1,6 +1,103 @@
 # System-level functionality goes here
 from abc import ABC, abstractmethod
-from pytroleum.sdyna.interfaces import ControlVolume, Conductor
+from typing import Literal, overload
+from scipy.integrate import OdeSolver, RK23
+from pytroleum.sdyna.convolumes import ControlVolume, SectionHorizontal
+from pytroleum.sdyna.conductors import (Conductor, Valve, OverPass,
+                                        UnderPass, CentrifugalPump)
+from pytroleum.sdyna.controllers import PropIntDiff, StartStop
+from pytroleum.sdyna.opdata import StateData
+from pytroleum.sdyna.custom_solvers import ExplicitEuler
+import numpy as np
+from numpy import float64
+from numpy.typing import NDArray
+
+# NOTE :
+# this is WIP, so it is still forming. Few good ideas are of concern now, should try
+# implementing them
+
+# For optimisation purposes stick with arrays. Before solution process begins evaluate
+# size of system using number of phases and number of control volumes, then create
+# system-level state vector for ODE, should be faster
+#
+# Apparently slice-assignments are slightly slower thane new array creation.
+# We still can leverage this to simplify procedure for dynamic system with state-altering
+# elements conductors. (see UnderPass)
+
+
+# NOTE on order of resolution:
+# Distribution algorithms of UnderPass must be applied before everything else in
+# order to get correct pressure values for other computations.
+#
+# Don't forget to amend solver's state-vector after distribution is done, or you
+# will eventually encounter negative masses and energies in intermediate
+# computations. OverPass advancement must be last, as it relies on flow rates of
+# other conductors
+#
+# In legacy it was like that
+# * ->
+# Perform ODE solver step ->
+# Assign new masses and energies to CV states ->
+# Invoke UnderPass distribution algorithm ->
+# Amend Solver's state vector ->
+# Compute secondary parameters in CVs ->
+# Log system parameters ->
+# Compute control errors ->
+# Apply control ->
+# Compute system flows ->
+# ** ->
+#
+# First two steps are considered as part of "process" procedure for ODE solution,
+# all others as part of "postprocess" procedure.
+#
+# Sequence above looks like a mess, mostly due to the features of distributing
+# conductors (UnderPass) requiering special treatment. Here we should refine
+# time-advancement algorithms to make them general enough to cover such unusual
+# cases too.
+
+# Advancing conductors first is, most likely, the way :
+#
+# UnderPass -> externals -> OverPass -> to CV advancement
+#
+# When we look at this like that, we consider only states in CVs to
+# be known (state vector), during system advancement we basically evaluate
+# our right side for previous time-step first by condutor's advancement.
+# This eliminates time-advancement mess above
+# (and probably even eliminates need for solver amendment).
+#
+# Should implement and see what happens
+
+
+# NOTE :
+# Tried to capture overall advancement here in hope to maintain Runge-Kutta's
+# methods accuracy. It occurs to be extremely difficult due to the prescence
+# of state-altering conductors. We can alter solver state vector inside of this
+# function, but we must be carefull with it
+#
+# In legacy code right-hand side was evaluated for fixed state
+# (i.e. state vector did not affect objects of system at all).
+#
+# This made usage of higher order methods futile, because they reach accuracy by
+# intermediate function evaluations (more evaluations for higher accuracy).
+# This looses meaning when we return constant values for each intermediate
+# evaluation on time step. That's why RK23 was used, solver with lowest order
+# of accuracy (and thus with minimal intermediate function evlautions) among
+# out-of-box solvers in scipy.
+#
+# Scipy solvers can be modified with custom procedures to capture behavior of
+# state-altering conductors (such as UnderPass). This should be possible,
+# however for now it was decided to make base-class method abstract
+# (asking for ode system resolution procedure explicitly) and stick with
+# basic solver using explicit Euler's method.
+#
+# This should not be a catastrophy, because even large commercial applications
+# use frist-order methods. HYSYS use Euler's method as well, but they use implicit
+# scheme. Implicit scheme is more robust in terms of stability and works better
+# with stiff systems, but it requieres iterative solution of nonlinear equation.
+# As long as we keep step size reasonably small Euler's method should do the job.
+
+
+_VALID_OBJECTIVES = ["level", "pressure", "temperature"]
 
 
 class DynamicNetwork(ABC):
