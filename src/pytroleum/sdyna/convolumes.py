@@ -100,6 +100,10 @@ class ControlVolume(ABC):
             # Also check if internal energy is consistent for this approach
             eos.update(CoolConst.PT_INPUTS, self.state.pressure[0], new_T)
 
+    def reset_flow_rates(self):
+        self.net_mass_flow = np.zeros_like(self.net_mass_flow)
+        self.net_energy_flow = np.zeros_like(self.net_energy_flow)
+
     def compute_net_flow_rates(self):
 
         # NOTE for refactoring :
