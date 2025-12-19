@@ -31,9 +31,7 @@ class Conductor(ABC):
         ...
 
     @abstractmethod
-    def __init__(self, phase_index,
-                 source=None,
-                 sink=None) -> None:
+    def __init__(self, phase_index, source=None, sink=None) -> None:
 
         # Possible TODO
         # default flow attribute in FlowData
@@ -573,7 +571,7 @@ class FurnacePolynomial(Conductor):
     def compute_heat_flux(self):
         J = np.polyval(self._polynomial_coefficients)  # pyright: ignore
         self.flow.energy_flow[self.phase_index] = J
-        # Add geometry constrints!
+        # Add geometry constraints!
 
     def advance(self):
         self.compute_heat_flux()
