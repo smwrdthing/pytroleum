@@ -195,3 +195,11 @@ class EmulsionTreater(DynamicNetwork):
 
     def __init__(self) -> None:
         super().__init__()
+        self.control_volumes: list[SectionHorizontal]
+        self.conductors: list[Valve | OverPass | UnderPass | CentrifugalPump]
+
+    def ode_system(self, t, y):
+        return self.map_flows_to_vector()
+
+    def advance(self):
+        pass
