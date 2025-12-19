@@ -20,8 +20,9 @@ class ControlVolume(ABC):
         self.outlets: list[Conductor] = []
         self.inlets: list[Conductor] = []
         self.volume: float | float64 = np.inf
-        self.net_flow_rate_mass = np.zeros(1)
-        self.net_flow_rate_energy = np.zeros(1)
+        self.net_mass_flow = np.zeros(1)
+        self.net_energy_flow = np.zeros(1)
+        self.state: StateData
 
     # TODO Introduce custom decorator for iterable inputs
     def connect_inlet(self, conductor: Conductor) -> None:
@@ -109,14 +110,14 @@ class ControlVolume(ABC):
         # ODE system on higher level only. Flow rates in system should be
         # obtained from conductors
 
-        self.net_flow_rate_mass = np.zeros(1)
-        self.net_flow_rate_energy = np.zeros(1)
+        self.net_mass_flow = np.zeros(1)
+        self.net_energy_flow = np.zeros(1)
         for inlet in self.inlets:
-            self.net_flow_rate_mass += inlet.flow.mass_flow_rate
-            self.net_flow_rate_energy += inlet.flow.energy_flow
+            self.net_mass_flow += inlet.flow.mass_flow_rate
+            self.net_energy_flow += inlet.flow.energy_flow
         for outlet in self.outlets:
-            self.net_flow_rate_mass -= outlet.flow.mass_flow_rate
-            self.net_flow_rate_energy -= outlet.flow.energy_flow
+            self.net_mass_flow -= outlet.flow.mass_flow_rate
+            self.net_energy_flow -= outlet.flow.energy_flow
 
     # This is as far as common routines go, to get other parameters details about liquid
     # spatial distribution should be known
