@@ -58,6 +58,13 @@ class Conductor(ABC):
             convolume.inlets.append(self)
             self.sink = convolume
 
+    def propagate_flow_rate(self):
+        self.source.net_mass_flow -= self.flow.mass_flow_rate
+        self.source.net_energy_flow -= self.flow.mass_flow_rate
+
+        self.sink.net_mass_flow += self.flow.mass_flow_rate
+        self.sink.net_energy_flow += self.flow.mass_flow_rate
+
     @abstractmethod
     def advance(self) -> None:
         return
@@ -210,6 +217,7 @@ class Valve(Conductor):
 
     def advance(self):
         self.compute_flow()
+        self.propagate_flow_rate()
 
 
 class CentrifugalPump(Conductor):
@@ -451,6 +459,7 @@ class UnderPass(Conductor):
         self.check_if_locked()
         self.compute_vapor_flow_rate()
         self.perform_distribution()  # NOTE : this disrupted solver in legacy, be careful
+        self.propagate_flow_rate()
 
 
 class OverPass(Conductor):
@@ -541,8 +550,9 @@ class OverPass(Conductor):
 
     def advance(self) -> None:
         self.check_if_reached()
-        self.compute_vapor_flow()
         self.compute_liquid_overflow()
+        self.compute_vapor_flow()
+        self.propagate_flow_rate()
 
 
 class FurnacePolynomial(Conductor):
@@ -567,6 +577,7 @@ class FurnacePolynomial(Conductor):
 
     def advance(self):
         self.compute_heat_flux()
+        self.propagate_flow_rate()
 
 
 class PhaseInterface(Conductor):
