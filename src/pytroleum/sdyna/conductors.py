@@ -54,6 +54,18 @@ class Conductor(ABC):
         return
 
 
+class Fixed(Conductor):
+
+    def __init__(self, phase_index: int | list[int],
+                 source: ControlVolume | None = None,
+                 sink: ControlVolume | None = None) -> None:
+        super().__init__(phase_index, source, sink)
+
+    def advance(self) -> None:
+        self.propagate_flow_rate()
+        return
+
+
 class Valve(Conductor):
 
     # Subclass to represent Valve
