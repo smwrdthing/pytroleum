@@ -1,6 +1,6 @@
 # System-level functionality goes here
 from abc import ABC, abstractmethod
-from typing import Literal, overload
+from typing import Literal, Callable, overload
 from scipy.integrate import OdeSolver, RK23
 from pytroleum.sdyna.convolumes import ControlVolume, SectionHorizontal
 from pytroleum.sdyna.conductors import (Conductor, Valve, OverPass,
@@ -107,7 +107,7 @@ class DynamicNetwork(ABC):
     def __init__(self) -> None:
         self.control_volumes: list[ControlVolume] = []
         self.conductors: list[Conductor] = []
-        self.objectives: dict[Conductor, float | float64] = {}
+        self.objectives: dict[Conductor, Callable[[], float]] = {}
         self.solver: ExplicitEuler
 
         # Convenience parameters to track system-level state variables
@@ -163,11 +163,14 @@ class DynamicNetwork(ABC):
         if conductor not in self.conductors:
             raise KeyError("Conductor not found in the system")
         if parameter == "level":
-            self.objectives[conductor] = in_control_volume.state.level[of_phase]
+            self.objectives[conductor] = lambda: (
+                in_control_volume.state.level[of_phase])
         if parameter == "temperature":
-            self.objectives[conductor] = in_control_volume.state.temperature[of_phase]
+            self.objectives[conductor] = lambda: (
+                in_control_volume.state.temperature[of_phase])
         if parameter == "pressure":
-            self.objectives[conductor] = in_control_volume.state.pressure[of_phase]
+            self.objectives[conductor] = lambda: (
+                in_control_volume.state.pressure[of_phase])
 
         # NOTE :
         # Check if values are updated in dinctinoary for this arrangement, if it does not
@@ -282,9 +285,9 @@ class DynamicNetwork(ABC):
             # conductor advancement algorithm
             if isinstance(conductor.controller, PropIntDiff):
                 conductor.controller.control(
-                    self.solver.time_step, self.objectives[conductor])
+                    self.solver.time_step, self.objectives[conductor]())
             if isinstance(conductor.controller, StartStop):
-                conductor.controller.control(self.objectives[conductor])
+                conductor.controller.control(self.objectives[conductor]())
             conductor.advance()
 
         self.solver.step()
@@ -368,6 +371,9 @@ if __name__ == "__main__":
     # net.add_control_volume(atm)
     net.add_conductor(vlv)
     net.evaluate_size()
+
+    vlv.controller = PropIntDiff(0.1, 0.01, 0, 100, 0.5, [0, 1])
+    vlv.controller.polarity = 1
 
     net.bind_objective(("level", 1), s2, vlv)
     net.connect_elements(
