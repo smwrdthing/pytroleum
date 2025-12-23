@@ -57,11 +57,11 @@ class Conductor(ABC):
             self.sink = convolume
 
     def propagate_flow_rate(self):
-        self.source.net_mass_flow -= self.flow.mass_flow_rate
-        self.source.net_energy_flow -= self.flow.mass_flow_rate
+        self.source.net_mass_flow = self.source.net_mass_flow-self.flow.mass_flow_rate
+        self.source.net_energy_flow = self.source.net_energy_flow-self.flow.energy_flow
 
-        self.sink.net_mass_flow += self.flow.mass_flow_rate
-        self.sink.net_energy_flow += self.flow.mass_flow_rate
+        self.sink.net_mass_flow = self.sink.net_mass_flow + self.flow.mass_flow_rate
+        self.sink.net_energy_flow = self.sink.net_energy_flow + self.flow.energy_flow
 
     @abstractmethod
     def advance(self) -> None:
