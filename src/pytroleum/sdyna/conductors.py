@@ -171,8 +171,8 @@ class Valve(Conductor):
                 self.discharge_coefficient,
 
                 # eos makes storing k and R excessive
-                upstream_state.equation_of_state[self.phase_index].cvmass() /
-                upstream_state.equation_of_state[self.phase_index].cpmass(),
+                upstream_state.equation_of_state[self.phase_index].cpmass() /
+                upstream_state.equation_of_state[self.phase_index].cvmass(),
                 R/upstream_state.equation_of_state[self.phase_index].molar_mass(),
 
                 upstream_state.density[self.phase_index],
