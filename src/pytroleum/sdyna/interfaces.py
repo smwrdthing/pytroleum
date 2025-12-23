@@ -17,8 +17,8 @@ class ControlVolume(Protocol):
     net_mass_flow: NDArray[float64]
     net_energy_flow: NDArray[float64]
 
-    def __init__(self) -> None:
-        ...
+    # def __init__(self) -> None:
+    #     ...
 
     def connect_inlet(self, conductor: Conductor):
         ...
