@@ -117,7 +117,6 @@ def fabric_state(
     state = StateData(
         equation_of_state,
         pressure,
-        volume,
         temperature,
         density,
         energy_specific,
@@ -125,7 +124,8 @@ def fabric_state(
         thermal_conductivity,
         mass,
         energy,
-        level
+        level,
+        volume
     )
 
     return state
