@@ -71,13 +71,13 @@ class Conductor(Protocol):
 
     # Interface for conductor
 
-    phase_index: int
+    phase_index: int | list[int]
     source: ControlVolume
     sink: ControlVolume
     flow: FlowData
     controller: PropIntDiff | StartStop | None
 
-    def __init__(self, phase_index: int,
+    def __init__(self, phase_index: int | list[int],
                  source: ControlVolume | None,
                  sink: ControlVolume | None) -> None:
         ...
