@@ -62,7 +62,8 @@ class ControlVolume(ABC):
 
     def compute_liquid_density(self) -> None:
         liquid_density = []
-        for eos, new_T in zip(self.state.equation_of_state[1:], self.state.temperature):
+        for eos, new_T in zip(
+                self.state.equation_of_state[1:], self.state.temperature[1:]):
             density_partial_derivative = eos.first_partial_deriv(
                 CoolConst.iDmass, CoolConst.iT, CoolConst.iP)
             fluid_new_density = eos.rhomass()+density_partial_derivative*(new_T-eos.T())
