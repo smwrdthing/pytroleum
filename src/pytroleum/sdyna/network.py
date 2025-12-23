@@ -186,9 +186,11 @@ class DynamicNetwork(ABC):
         if any(sink is source for sink, source in control_volume_pairs):
             raise ValueError("Map contains looped paths")
 
-        for sink, source in control_volume_pairs:
-            if sink not in self.control_volumes or source not in self.control_volumes:
-                raise ValueError("Map contains unknonws control volumes")
+        # for sink, source in control_volume_pairs:
+        #     if sink not in self.control_volumes or source not in self.control_volumes:
+        #         raise ValueError("Map contains unknonws control volumes")
+        # Unregistered control volumes should be allowed if we want to skip computations
+        # for infinite-volume control volumes (atmosphere, reservoir etc)
 
         for item in connection_map.items():
             conductor, (source, sink) = item
@@ -300,3 +302,94 @@ class EmulsionTreater(DynamicNetwork):
 
     def advance(self):
         pass
+
+# Check how this stuff works, try to test some simple systems, look into mapping
+# algorithms, investigate how other parts of system behaves, verify against legacy?
+
+
+if __name__ == "__main__":
+    from pytroleum.sdyna.opdata import OperationData, FlowData, fabric_state, fabric_flow
+    from pytroleum.sdyna.convolumes import Atmosphere
+    from pytroleum.tdyna.eos import factory_eos
+    import CoolProp.constants as CoolConst
+    from pprint import pprint
+
+    s1 = SectionHorizontal(0.4, 1, 0, 1, lambda h: 0)
+    s2 = SectionHorizontal(0, 1, 0.4, 1, lambda h: 0)
+    atm = Atmosphere()
+    vlv = Valve(1, 100e-3, 50e-3, 0.61, 1, 0.1, s2, atm)
+
+    thermodynamic_state = (CoolConst.PT_INPUTS, 1e5, 300)
+
+    s1.state = fabric_state(
+        [factory_eos({"air": 1}, with_state=thermodynamic_state),
+         factory_eos({"water": 1}, with_state=thermodynamic_state)],
+        s1.compute_volume_with_level,
+        np.array([2e5, 2e5]),
+        np.array([300, 300]),
+        np.array([1, 0.4]),
+        False)
+
+    s2.state = fabric_state(
+        [factory_eos({"air": 1}, with_state=thermodynamic_state),
+         factory_eos({"water": 1}, with_state=thermodynamic_state)],
+        s2.compute_volume_with_level,
+        np.array([2e5, 2e5]),
+        np.array([300, 300]),
+        np.array([1, 0.4]),
+        False)
+
+    vlv.opening = 0.7
+    vlv.flow = fabric_flow(
+        [factory_eos({"air": 1}, with_state=thermodynamic_state),
+         factory_eos({"water": 1}, with_state=thermodynamic_state)],
+        np.array([1e5, 1e5]),
+        np.array([275, 275]),
+        vlv.area_valve*vlv.opening,
+        vlv.elevation,
+        np.array([0, 0], dtype=np.float64),
+        False
+    )
+
+    class GenericDynamic(DynamicNetwork):
+        # Can't instantiate ABC, need dummy subclass
+        def __init__(self) -> None:
+            super().__init__()
+
+        def ode_system(self, t, y):
+            return super().ode_system(t, y)
+
+        def advance(self):
+            return super().advance()
+
+    net = GenericDynamic()
+    net.add_control_volume(s1)
+    net.add_control_volume(s2)
+    # net.add_control_volume(atm)
+    net.add_conductor(vlv)
+    net.evaluate_size()
+
+    net.bind_objective(("level", 1), s2, vlv)
+    net.connect_elements(
+        {vlv: (s2, atm)}
+    )
+
+    s1.advance()
+    s2.advance()
+    vlv.advance()
+
+    pprint(s2.state)
+    print()
+
+    net.prepare_solver(1)
+    net.advance()
+    net.advance()
+
+    # Final step should perform mapping too to capture last-step changes
+    # or move mapping in advancement algorithm to the bottom of method, whatever
+    # suits better.
+    # net.map_vector_to_state(net.solver.y)
+
+    pprint(s2.state)
+
+    # Mass decreases, it works. Nice
