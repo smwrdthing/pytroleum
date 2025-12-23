@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, overload
+import numpy as np
 from numpy import float64
 from numpy.typing import NDArray
 
@@ -437,7 +438,6 @@ def specific_to_api_gravity(specific_gravity):
 
 if __name__ == "__main__":
 
-    import numpy as np
     import matplotlib.pyplot as plt
 
     # Let's see if this makes sense
