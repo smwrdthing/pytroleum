@@ -8,7 +8,8 @@ class PropIntDiff:
     def __init__(
             self, P: float, I: float, D: float, F: float,  # noqa
             setpoint: float, saturation: Iterable[float] = (-np.inf, np.inf),
-            ratelim: float = np.inf) -> None:
+            ratelim: float = np.inf,
+            polarity: float = 1, norm_by: float = 1) -> None:
 
         # noqa is needed because flake8 does not like I as variable name :
         # ambiguous variable name 'I' (E741)
@@ -39,7 +40,8 @@ class PropIntDiff:
 
         self.saturated: bool = False
 
-        self.polarity = 1
+        self.polarity = polarity
+        self.norm_by = norm_by
 
     def check_saturation(self):
 
@@ -59,7 +61,7 @@ class PropIntDiff:
         if abs(rate) > self.ratelim:
             self.signal = self.history_signal+np.sign(rate)*self.ratelim*dt
 
-    def control(self, dt: float, probe: float, norm_by: float = 1):
+    def control(self, dt: float, probe: float):
 
         # Previous step values become history
         self.history_gain = self.gain
@@ -69,7 +71,7 @@ class PropIntDiff:
         self.history_signal = self.signal
 
         # Computing new error
-        self.error = self.polarity*(self.setpoint-probe)/norm_by
+        self.error = self.polarity*(self.setpoint-probe)/self.norm_by
 
         # Computing new signal
         self.gain = self.P*self.error
