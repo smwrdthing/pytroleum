@@ -218,7 +218,7 @@ class Valve(Conductor):
 
 class CentrifugalPump(Conductor):
 
-    # Subclass ro representcentrifugal pump
+    # Subclass ro represent centrifugal pump
 
     def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
