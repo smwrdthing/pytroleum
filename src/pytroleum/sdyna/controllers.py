@@ -74,7 +74,7 @@ class PropIntDiff:
         # Computing new signal
         self.gain = self.P*self.error
         self.integral = self.integral + self.I * (
-            self.error*dt*(not PID.saturated))  # anti-windup measure
+            self.error*dt*(not self.saturated))  # anti-windup measure
         self.diff = self.D*(
             self.error-self.history_error + self.F*self.history_diff)/(dt+self.F)
         self.signal = self.gain+self.integral+self.diff
