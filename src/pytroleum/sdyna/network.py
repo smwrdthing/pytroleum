@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Literal, Callable, overload
 from scipy.integrate import OdeSolver, RK23
 from pytroleum.sdyna.convolumes import ControlVolume, SectionHorizontal
-from pytroleum.sdyna.conductors import (Conductor, Valve, OverPass,
+from pytroleum.sdyna.conductors import (Conductor, Fixed, Valve, OverPass,
                                         UnderPass, CentrifugalPump)
 from pytroleum.sdyna.controllers import PropIntDiff, StartStop
 from pytroleum.sdyna.opdata import StateData
@@ -316,11 +316,12 @@ if __name__ == "__main__":
     from pytroleum.tdyna.eos import factory_eos
     import CoolProp.constants as CoolConst
     from pprint import pprint
+    import matplotlib.pyplot as plt
 
     s1 = SectionHorizontal(0.4, 1, 0, 1, lambda h: 0)
     s2 = SectionHorizontal(0, 1, 0.4, 1, lambda h: 0)
     atm = Atmosphere()
-    vlv = Valve(1, 100e-3, 50e-3, 0.61, 1, 0.1, s2, atm)
+    vlv = Valve(1, 50e-3, 32e-3, 0.61, 1, 0.1, s2, atm)
 
     thermodynamic_state = (CoolConst.PT_INPUTS, 1e5, 300)
 
@@ -341,6 +342,18 @@ if __name__ == "__main__":
         np.array([300, 300]),
         np.array([1, 0.4]),
         False)
+
+    inlet = Fixed([0, 1], sink=s2)
+    inlet.flow = fabric_flow(
+        [factory_eos({"air": 1}, with_state=thermodynamic_state),
+         factory_eos({"water": 1}, with_state=thermodynamic_state)],
+        np.array([1e5, 1e5]),
+        np.array([300, 300]),
+        np.pi*(50e-3)**2/4,
+        0.9,
+        np.array([0, 1], dtype=np.float64),
+        False
+    )
 
     vlv.opening = 0.7
     vlv.flow = fabric_flow(
@@ -370,15 +383,18 @@ if __name__ == "__main__":
     net.add_control_volume(s2)
     # net.add_control_volume(atm)
     net.add_conductor(vlv)
+    net.add_conductor(inlet)
     net.evaluate_size()
 
-    vlv.controller = PropIntDiff(0.1, 0.01, 0, 100, 0.5, [0, 1])
-    vlv.controller.polarity = 1
+    vlv.controller = PropIntDiff(0.4, 0.015, 0, 100, 0.45, [0, 1])
+    vlv.controller.polarity = -1
+    vlv.controller.norm_by = vlv.controller.setpoint
 
     net.bind_objective(("level", 1), s2, vlv)
-    net.connect_elements(
-        {vlv: (s2, atm)}
-    )
+    net.connect_elements({
+        vlv: (s2, atm),
+        inlet: (atm, s2)
+    })
 
     s1.advance()
     s2.advance()
@@ -387,9 +403,9 @@ if __name__ == "__main__":
     pprint(s2.state)
     print()
 
-    net.prepare_solver(1)
+    net.prepare_solver(10)
     net.advance()
-    net.advance()
+    # net.advance()
 
     # Final step should perform mapping too to capture last-step changes
     # or move mapping in advancement algorithm to the bottom of method, whatever
@@ -399,3 +415,34 @@ if __name__ == "__main__":
     pprint(s2.state)
 
     # Mass decreases, it works. Nice
+
+    # Some simple simulation
+
+    t = [0.]
+    h = [s2.state.level[1]]
+    signal = [vlv.controller.signal]
+    error = [vlv.controller.error]
+    for n in range(300):
+        net.advance()
+        t.append(t[-1]+net.solver.time_step)
+        h.append(s2.state.level[1])
+        signal.append(vlv.controller.signal)
+        error.append(vlv.controller.error)
+    t = np.array(t)
+    h = np.array(h)
+    signal = np.array(signal)
+    error = np.array(error)
+
+    fig, ax = plt.subplots()
+    ax.set_title("Objective parameter")
+    ax.plot(t/60, h*1e3)
+
+    fig, ax = plt.subplots()
+    ax.set_title("Control signal")
+    ax.plot(t/60, signal*100)
+
+    fig, ax = plt.subplots()
+    ax.set_title("Control error")
+    ax.plot(t/60, error*100)
+    plt.show()
+    # General algorithm seems to work fine.
