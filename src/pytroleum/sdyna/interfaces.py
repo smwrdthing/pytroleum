@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Iterable, Protocol, runtime_checkable, overload
+from typing import Optional, Iterable, Protocol, runtime_checkable, overload
 from numpy.typing import NDArray
 from numpy import float64
 from pytroleum.sdyna.opdata import StateData, FlowData
@@ -34,7 +34,9 @@ class ControlVolume(Protocol):
 class Section(Protocol):
 
     # Needed for type checking in conductors with embedded distribution logic
-
+    length_left_semiaxis: float | float64
+    length_cylinder: float | float64
+    length_right_semiaxis: float | float64
     diameter: float | float64
     outlets: list[Conductor]
     inlets: list[Conductor]
