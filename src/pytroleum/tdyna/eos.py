@@ -19,22 +19,6 @@ import CoolProp.constants as CoolConst
 # algorithms from thermo might be useful too
 
 MOLE_FRACTION_SUM_TOL = 1e-3
-GENERIC_HYDROCARBS = {
-    # Hydrocarbons
-    'METHANE',
-    'ETHANE',
-    'PROPANE',
-    'ISOBUTANE',
-    'N-BUTANE',
-    'ISOPENTANE',
-    'N-PENTANE',
-
-    # Contaminants/Others
-    'NITROGEN',
-    'CARBONMONOXIDE',
-    'CARBONDIOXIDE',
-    'HYDROGENSULFIDE'
-}
 CRUDE_OIL = "CrudeOil", "CRUDEOIL"
 _MESSAGE_UNSUPPORTED_DERIVATIVE = "Specified partial derivative is not supported"
 _MESSAGE_UNSUPPORTED_INPUT_PAIR = "Provided input pair is not supported"
@@ -370,27 +354,6 @@ def factory_eos(
     return eos
 
 
-def factory_natgas(composition: dict[str, float], backend: str = 'PR',
-                   with_state: None | Iterable = None) -> AbstractState:
-
-    # Note how for general factory default CoolProp backend is Helmholtz EOS and for
-    # hydrocarbons it is Peng-Robinson EOS.
-
-    # Here we want to obtain an interface of hydrocarbon gases. Some assertions with
-    # regard to provided compostion should be done.
-    names = list(composition.keys())
-    # black magic to eliminate case sensitivity
-    names = set(' '.join(names).upper().split(' '))
-    if len(GENERIC_HYDROCARBS.intersection(names)) == 0:
-        msg = ("No components associated with typical natural gas")
-        raise ValueError(msg)
-
-    # If names are valid we create an interface with call to a common eos factory
-    hcmix = factory_eos(composition, backend, with_state)
-
-    return hcmix
-
-
 def factory_crude_oil():
     pass
 
@@ -453,7 +416,7 @@ if __name__ == "__main__":
         'H2S': 0.01
     }
 
-    hcm_eos_PR = factory_natgas(natural_gas_composition)
+    hcm_eos_PR = factory_eos(natural_gas_composition, "PR")
     hcm_eos_PR.build_phase_envelope("")
     PE = hcm_eos_PR.get_phase_envelope_data()
 
