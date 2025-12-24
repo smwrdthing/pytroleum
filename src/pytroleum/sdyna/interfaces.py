@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Protocol, runtime_checkable, overload
+from typing import Iterable, Protocol, runtime_checkable, overload
 from numpy.typing import NDArray
 from numpy import float64
 from pytroleum.sdyna.opdata import StateData, FlowData
@@ -71,13 +71,13 @@ class Conductor(Protocol):
 
     # Interface for conductor
 
-    phase_index: int | list[int]
+    phase_index: int | Iterable[int]
     source: ControlVolume
     sink: ControlVolume
     flow: FlowData
     controller: PropIntDiff | StartStop | None
 
-    def __init__(self, phase_index: int | list[int],
+    def __init__(self, phase_index: int | Iterable[int],
                  source: ControlVolume | None,
                  sink: ControlVolume | None) -> None:
         ...
