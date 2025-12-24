@@ -327,19 +327,6 @@ class DynamicNetwork(ABC):
         self.solver.step()
 
 
-class EmulsionTreater(DynamicNetwork):
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.control_volumes: list[SectionHorizontal]
-        self.conductors: list[Valve | OverPass | UnderPass | CentrifugalPump]
-
-    def ode_system(self, t, y):
-        return self.map_flows_to_vector()
-
-    def advance(self):
-        pass
-
 # Check how this stuff works, try to test some simple systems, look into mapping
 # algorithms, investigate how other parts of system behaves, verify against legacy?
 
