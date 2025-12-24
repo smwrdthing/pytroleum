@@ -18,7 +18,7 @@ from numpy import float64
 class Conductor(ABC):
 
     @abstractmethod
-    def __init__(self, phase_index: int | list[int],
+    def __init__(self, phase_index: int | Iterable[int],
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
 
@@ -314,6 +314,7 @@ class UnderPass(Conductor):
                  source: Section | None = None,
                  sink: Section | None = None) -> None:
 
+        self.phase_index: int
         super().__init__(0, source, sink)
 
         self.edge_level = edge_level
@@ -675,6 +676,7 @@ class FurnacePolynomial(Conductor):
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         super().__init__(phase_index, source, sink)
+        self.phase_index: int
         self._polynomial_coefficients = self._POLYNOMIAL_COEFFICIENTS
 
     def adjust_model(self, new_coefficients):
