@@ -231,10 +231,75 @@ class CentrifugalPump(Conductor):
     def __init__(self, phase_index: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
+        self.coefficients: tuple[float, float, float] | NDArray[float64]
+        self.phase_index: int
+        self.resistance_coeff: float
+        self.angular_velocity: float
+        self.elevation: float
+        self.flow_area: float  # maybe better to do this in base class
         super().__init__(phase_index, source, sink)
 
+    def characteristic_reference(
+            self, angular_velocity: float,
+            volume_flow_rates: tuple[float, float, float],
+            heads: tuple[float, float, float]) -> None:
+        """Computes coefficients for pump's quadratic characteristic model with given
+        angular velocity and three reference values of volumetric flow rate and head."""
+
+        coeff_matrix = []
+        free_vector = []
+        for flow_rate, head in zip(volume_flow_rates, heads):
+            coeff_matrix.append([
+                angular_velocity**2,
+                -2*angular_velocity*flow_rate,
+                -flow_rate])
+            free_vector.append(head)
+        self.coefficients = np.linalg.solve(coeff_matrix, free_vector)
+
+    def compute_flow(self) -> None:
+        """Computes mass and energy flow produced by pump"""
+        upstream_pressure = _compute_pressure_for_elevation(
+            self.elevation, self.source.state.level, self.source.state.pressure)
+        downstream_pressure = _compute_pressure_for_elevation(
+            self.elevation, self.sink.state.level, self.sink.state.pressure)
+
+        # Pump should not allow backflow due to the inverse rotation issues,
+        # so we always take from source
+        density = self.source.state.density[self.phase_index]
+        pressure = self.source.state.pressure[self.phase_index]
+        temperature = self.source.state.temperature[self.phase_index]
+        energy_specific = self.source.state.energy_specific[self.phase_index]
+        pressure_difference = downstream_pressure-upstream_pressure
+
+        static_head_difference = pressure_difference/density/g
+        k1, k2, k3 = self.coefficients
+        A = k3 + self.resistance_coeff/(2*g*self.flow_area**2)
+        B = 2*k2*self.angular_velocity
+        C = static_head_difference - k1*self.angular_velocity**2
+        D = np.sqrt(B**2-4*A*C)
+        volumetric_flow_rate = (np.sqrt(D)-B)/(2*A)
+
+        mass_flow_rate = 0
+        if volumetric_flow_rate > 0:
+            mass_flow_rate = volumetric_flow_rate*density
+
+        # Maybe abstract out reassignments? (for Valve too)
+        velocity = mass_flow_rate/density/self.flow_area
+        energy_specific_flow = (
+            energy_specific + pressure/density + g*self.elevation + velocity**2/2)
+        flow_energy = energy_specific_flow*mass_flow_rate
+
+        self.flow.mass_flow_rate[self.phase_index] = mass_flow_rate
+        self.flow.velocity[self.phase_index] = velocity
+        self.flow.temperature[self.phase_index] = temperature
+        self.flow.density[self.phase_index] = density
+        self.flow.energy_specific[self.phase_index] = energy_specific
+        self.flow.energy_specific_flow[self.phase_index] = energy_specific_flow
+        self.flow.energy_flow[self.phase_index] = flow_energy
+
     def advance(self) -> None:
-        pass
+        self.compute_flow()
+        self.propagate_flow_rate()
 
 
 class UnderPass(Conductor):
