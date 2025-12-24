@@ -105,22 +105,6 @@ class ControlVolume(ABC):
         self.net_mass_flow = np.zeros_like(self.net_mass_flow)
         self.net_energy_flow = np.zeros_like(self.net_energy_flow)
 
-    def compute_net_flow_rates(self):
-
-        # NOTE for refactoring :
-        # ControlVolumes should not know about flow rates if we solve
-        # ODE system on higher level only. Flow rates in system should be
-        # obtained from conductors
-
-        self.net_mass_flow = np.zeros(1)
-        self.net_energy_flow = np.zeros(1)
-        for inlet in self.inlets:
-            self.net_mass_flow += inlet.flow.mass_flow_rate
-            self.net_energy_flow += inlet.flow.energy_flow
-        for outlet in self.outlets:
-            self.net_mass_flow -= outlet.flow.mass_flow_rate
-            self.net_energy_flow -= outlet.flow.energy_flow
-
     # This is as far as common routines go, to get other parameters details about liquid
     # spatial distribution should be known
 
