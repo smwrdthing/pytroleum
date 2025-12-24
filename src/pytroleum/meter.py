@@ -835,9 +835,3 @@ def inverse_graduate(volume_target, level_graduated, volume_graduated):
         Interpolated value of level that corresponds to V_target
     """
     return np.interp(volume_target, volume_graduated, level_graduated)
-
-
-if __name__ == '__main__':
-    print(volume_section_horiz_ellipses(0.8, 1, 0.8, 1, 0.5))
-    # yildes same value as function in legacy, additional tests should be conducted in
-    # dedicated directory
