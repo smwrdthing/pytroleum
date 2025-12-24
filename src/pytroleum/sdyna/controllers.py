@@ -44,7 +44,7 @@ class PropIntDiff:
         self.norm_by = norm_by
 
     def check_saturation(self):
-
+        """Checks if signal gets saturated and enforces saturation boundaries"""
         upperlim, lowerlim = max(self.saturation), min(self.saturation)
 
         self.saturated = False
@@ -56,13 +56,15 @@ class PropIntDiff:
             self.signal = lowerlim
 
     def check_rate(self, dt: float):
-
+        """Checks if rate of change of signal exceeds limit, amends value to
+        comply with limit if it does."""
         rate = (self.signal-self.history_signal)/dt
         if abs(rate) > self.ratelim:
             self.signal = self.history_signal+np.sign(rate)*self.ratelim*dt
 
     def control(self, dt: float, probe: float):
-
+        """Generates contorl signal of PID controller from given time step and
+        probe value"""
         # Previous step values become history
         self.history_gain = self.gain
         self.history_integral = self.integral
@@ -104,7 +106,8 @@ class StartStop:
         self.signal: float = 0
 
     def control(self, probe, invert=False):
-
+        """Generates control signal (either max or min value).
+        Logic can be inverted with flag"""
         # Inverted on-off - on mode decreases probes, off increases
         # example : pump controlling liquid level
         if invert:

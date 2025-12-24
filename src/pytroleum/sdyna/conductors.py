@@ -33,16 +33,22 @@ class Conductor(ABC):
         self.flow: FlowData
 
     def connect_source(self, convolume: ControlVolume) -> None:
+        """Assigns control volume as source for conductor and adds conductor to control
+        volume's outlets list if conductor is not already here, does nothing otherwise."""
         if self not in convolume.outlets:
             convolume.outlets.append(self)
             self.source = convolume
 
     def connect_sink(self, convolume: ControlVolume) -> None:
+        """Assigns control volume as sink for conductor and adds conductor to control
+        volume's inlets list if conductor is not already here, does nothing otherwise."""
         if self not in convolume.inlets:
             convolume.inlets.append(self)
             self.sink = convolume
 
     def propagate_flow_rate(self):
+        """Contributes flow rate values to net flow attributes of source and sink with
+        appropriate signs."""
         self.source.net_mass_flow = self.source.net_mass_flow-self.flow.mass_flow_rate
         self.source.net_energy_flow = self.source.net_energy_flow-self.flow.energy_flow
 
@@ -51,6 +57,7 @@ class Conductor(ABC):
 
     @abstractmethod
     def advance(self) -> None:
+        """Resolves conductor state at given time step."""
         return
 
 
@@ -136,6 +143,7 @@ class Valve(Conductor):
     # ------------------------------------------------------------------------------------
 
     def compute_flow(self):
+        """Computes flow rate with respect to upstream and downstream states."""
 
         upstream_state = self.source.state
         downstream_state = self.sink.state
@@ -255,13 +263,15 @@ class UnderPass(Conductor):
         self.sink: Section
 
     def check_if_locked(self):
+        """Switches corresponding flag if locking conditions are met/not met."""
         self.is_locked = False
         criterila_level = self.equal_level_distribution()[0]
         if criterila_level > self.locking_level:
             self.is_locked = True
 
     def equal_level_distribution(self) -> tuple[float | float64, float | float64]:
-
+        """Performs liquid distribution among neighboring section so that final values
+        of total level are same on both sides."""
         liquid_common_volume = (
             self.source.state.volume[1:]+self.sink.state.volume[1:])
         liquid_total_volume = np.sum(liquid_common_volume)
@@ -283,7 +293,20 @@ class UnderPass(Conductor):
 
     def _hydrostatic_balance_objective(
             self, levels: tuple[float, float], disbalance: float | float64 = 0) -> tuple:
+        """Represents system of equations describing hydrostatic balance conditions to
+        minimize with rootfinding.
 
+        Parameters
+        ----------
+        levels
+            tuple of level values on both sides.
+        disbalance, optional
+            disbalance introduced in equations for tuning, by default 0.
+
+        Returns
+        -------
+            Residuals of hydrostatic balance equations.
+        """
         # Reading inputs
         source_level, sink_level = levels
 
@@ -340,6 +363,21 @@ class UnderPass(Conductor):
     def hydrostatic_balance_distribution(
             self, level_guesse: tuple[float, float] | None = None,
             disbalance: float | float64 = 0) -> tuple:
+        """Performs distribution of liquids among neighboring control volumes so that
+        values of pressure exerted on the bottom of control volumes are same.
+
+        Parameters
+        ----------
+        level_guesse, optional
+            initial guesse for levels to pass to rootfinding algorithm, if None - values
+            of levels from previous time step are used, by default None.
+        disbalance, optional
+            disbalance in hydrostatic balance equations for tuning, by default 0.
+
+        Returns
+        -------
+            Values of total level that comply to hydrostatic balance.
+        """
 
         if level_guesse is None:
             level_guesse = (
@@ -356,6 +394,9 @@ class UnderPass(Conductor):
         return liquid_level_source, liquid_level_sink
 
     def perform_distribution(self):
+        """Checks if hydrostatic lock is formed, does hydrostatic balance distribution
+        if yes and equal level distribution otherwise. For multiphase situation recombines
+        phase composition from initial volume fractions."""
         if self.is_locked:
             new_levels = self.hydrostatic_balance_distribution()
         else:
@@ -405,6 +446,8 @@ class UnderPass(Conductor):
         # because algorithm was built with this objective in mind, but still.
 
     def compute_vapor_flow_rate(self):
+        """Determines vapor flow rate value if there is a gap between liquid surface and
+        weir's crest, sets 0 for vapor flow rate otherwise"""
         if self.is_locked:
             # All other stuff must be zero
             self.flow.mass_flow_rate[self.phase_index] = 0
@@ -490,6 +533,8 @@ class OverPass(Conductor):
         )
 
     def check_if_reached(self):
+        """Switches corresponding flag if liquid level reaches crest of weir or falls
+        behind it"""
         self.is_reached = False
         criterial_level = max(max(self.source.state.level),
                               max(self.sink.state.level))
@@ -497,7 +542,7 @@ class OverPass(Conductor):
             self.is_reached = True
 
     def compute_vapor_flow(self):
-
+        """Determines vapor flow rate with compressible adiabatic flow model"""
         phase_index = self.phase_index[0]
 
         vapor_mass_flow_rate = efflux.compressible(
@@ -518,6 +563,10 @@ class OverPass(Conductor):
         self.flow
 
     def compute_liquid_overflow(self):
+        """Determines flow rate of lightest liquid if weir's crest is reached, sets 0
+        otherwise. Computation are based on condition of constant total volume of liquids
+        in source, so for correct resolution all flow rates from other conductors must be
+        computed"""
         # NOTE : for this to work other conductors must be resolved before, so
         # order of execution must be enforced
         phase_index = self.phase_index[1]  # lightest liquid
@@ -564,9 +613,12 @@ class FurnacePolynomial(Conductor):
         self._polynomial_coefficients = self._POLYNOMIAL_COEFFICIENTS
 
     def adjust_model(self, new_coefficients):
+        """Set new coefficient for polynomial approximation of furnace energy output"""
         self._polynomial_coefficients = new_coefficients
 
     def compute_heat_flux(self):
+        """Compute heat flux produced by furnace with polynomial approximation and fuel
+        flow rate"""
         J = np.polyval(self._polynomial_coefficients)  # pyright: ignore
         self.flow.energy_flow[self.phase_index] = J
         # Add geometry constraints!
@@ -593,6 +645,22 @@ def _compute_pressure_for_elevation(
         elevation: float | float64,
         levels_profile: NDArray[float64],
         pressures_profile: NDArray[float64]) -> float | float64:
+    """Computes pressure value for given elevation with provided pressure profile data.
+    Profile data should follow introduced convention for phase data storage.
+
+    Parameters
+    ----------
+    elevation
+        level value at which pressure value is desired.
+    levels_profile
+        level data of pressure profile.
+    pressures_profile
+        pressure data of pressure profile.
+
+    Returns
+    -------
+        pressure at given elevation for provided profile.
+    """
 
     # Processing algorithm complies with introduced data storage convention for
     # multiphase situation

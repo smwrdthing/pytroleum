@@ -126,16 +126,18 @@ class DynamicNetwork(ABC):
         self._state_vector_size: int
 
     def add_control_volume(self, control_volume: ControlVolume) -> None:
+        """Adds control volume to a list of network control volumes"""
         if control_volume not in self.control_volumes:
             self.control_volumes.append(control_volume)
 
     def add_conductor(self, conductor: Conductor) -> None:
+        """Adds conductor to a list of network control volumes"""
         if conductor not in self.conductors:
             self.conductors.append(conductor)
 
     def evaluate_size(self) -> None:
-        # Fixates system's size, allocates arrays for global state tracking
-
+        """Determines "size" of system with pnumber of control volumes and number of
+        presented phases. Allocates arrays to hold state-vector information"""
         self._number_of_control_volumes = len(self.control_volumes)
         self._number_of_phases = len(self.control_volumes[0].state.mass)
         self._state_vector_size = 2*self._number_of_control_volumes*self._number_of_phases
@@ -151,6 +153,29 @@ class DynamicNetwork(ABC):
     def bind_objective(
             self, objective: tuple[Literal["level", "temperature", "pressure"], int],
             in_control_volume: ControlVolume, conductor: Conductor) -> None:
+        """Assigns control variable to track to a controllable conductor in system.
+
+        Parameters
+        ----------
+        objective
+            tuple with first element as a string to specify variable to control and second
+            element as integer index to specify phase.
+        in_control_volume
+            control volume where specified control variable must be maintained.
+        conductor
+            conductor that affects specified control variable in specified control volume.
+
+        Raises
+        ------
+        KeyError
+            if phase index exceeds size of phase state-arrays
+        KeyError
+            if provided string does not specify valid control variable to maintain
+        KeyError
+            If control volume is missing from a system
+        KeyError
+            if conductor is missing from a system
+        """
 
         parameter, of_phase = objective
 
@@ -179,7 +204,21 @@ class DynamicNetwork(ABC):
 
     def connect_elements(
             self, connection_map: dict[Conductor, tuple[ControlVolume, ControlVolume]]):
+        """Connects elements in system to each other with provided connection map.
 
+        Parameters
+        ----------
+        connection_map
+            A dictionary with conductors as keys and tuples with pair of control volumes
+            to connect with conductor as values.
+
+        Raises
+        ------
+        KeyError
+            if conductor is missing from system
+        ValueError
+            if value in conncetion map contains tuple of same control volumes
+        """
         conductors = list(connection_map.keys())
         control_volume_pairs = list(connection_map.values())
 
@@ -201,10 +240,8 @@ class DynamicNetwork(ABC):
             conductor.connect_sink(sink)
 
     def map_state_to_vector(self) -> NDArray[float64]:
-
-        # Map control volumes' state parameters to solver's state vector
-        # m, E -> y
-
+        """Maps control volumes' state parameters to solver's state vector,
+        i.e. m, E -> y"""
         for i, cv in enumerate(self.control_volumes):
             start = i*self._number_of_phases
             stop = start+self._number_of_phases
@@ -217,10 +254,8 @@ class DynamicNetwork(ABC):
         return self._state_vector
 
     def map_vector_to_state(self, y: NDArray[float64]) -> None:
-
-        # Map state vector into control volumes' state objects
-        # y -> m, E
-
+        """Maps solver's state vector to control volumes' state parameters,
+        i.e. y -> m, E"""
         if len(y) != self._state_vector_size:
             raise RuntimeError("Incorrect size of state vector")
 
@@ -235,10 +270,7 @@ class DynamicNetwork(ABC):
             cv.state.energy[:] = self._energies[start:stop]
 
     def map_flows_to_vector(self) -> NDArray[float64]:
-
-        # Cast net flow rates of control volumes into vector that corresponds
-        # to state-vector os solver
-
+        """Maps flow rates in system into 1D vector for solver to use"""
         for i, cv in enumerate(self.control_volumes):
             start = i*self._number_of_phases
             stop = start+self._number_of_phases
@@ -253,6 +285,7 @@ class DynamicNetwork(ABC):
 
     @abstractmethod
     def ode_system(self, t: float, y: NDArray[float64]) -> NDArray[float64]:
+        """Represents right-hand side of system of ordinary differential equations"""
         return self.map_flows_to_vector()
 
     def prepare_solver(self, time_step, start_time=0) -> None:
@@ -262,6 +295,7 @@ class DynamicNetwork(ABC):
 
     @abstractmethod
     def advance(self):
+        """Process dynamic system for current time step"""
 
         # Base class implementation ignores state-altering conductors bullshit.
         # This expects regular systems with one-to-one mapping of masses and energies

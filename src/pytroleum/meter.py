@@ -26,11 +26,7 @@ def area_cs_circle_trunc(
 
 
 def area_cs_circle_trunc(diameter, level):
-    """This function computes area of circle which is truncated with horizontal
-    straight line. Formula obtained by the integration of the following function
-    from zero to h:
-
-                        2*sqrt((D/2)**2 - (x-D/2)**2)
+    """Computes area of circle which is truncated with horizontal straight line.
 
     Parameters
     ----------
@@ -247,8 +243,8 @@ def area_planecut_cover_ellipse(
 
 
 def area_planecut_cover_ellipse(length_semiaxis, diameter, level):
-    """This function computes area of a top surface formed by truncation of
-    elliptic cover by horizontal plane.
+    """Computes area of a top surface formed by truncation of elliptic cover by
+    horizontal plane.
 
     Parameters
     ----------
@@ -279,9 +275,8 @@ def area_planecut_cover_circle(
 
 
 def area_planecut_cover_circle(diameter, level):
-    """This function computes area of a top surface formed by truncation of
-    circular cover by horizontal plane. This is considered as a special case
-    of elliptic cover wiht H = D/2.
+    """Computes area of a top surface formed by truncation of circular cover by
+    horizontal plane. This is considered as a special case of elliptic cover wiht H = D/2.
 
     Parameters
     ----------
@@ -292,7 +287,7 @@ def area_planecut_cover_circle(diameter, level):
 
     Returns
     -------
-        Area of a surface formed by truncation of circular cover and horizontal plane
+        Area of a surface formed by truncation of circular cover and horizontal plane.
     """
     return area_planecut_cover_ellipse(diameter/2, diameter, level)
 
@@ -386,9 +381,8 @@ def area_planecut_section_horiz_general(
 def area_planecut_section_horiz_general(
         length_semiaxis_left, length_cylinder, length_semiaxis_right,
         diameter, level, area_cover_left_fn, area_cover_right_fn):
-    """This function performs computations of area for top surface formed by truncation of
-    horizontal section with two covers by horizontal plane. Computations are performed in
-    a general manner.
+    """Computes area for top surface formed by truncation of horizontal section with two
+    covers by horizontal plane. Computations are performed in a general manner.
 
     Parameters
     ----------
@@ -444,10 +438,13 @@ def area_planecut_section_horiz_ellipses(
 
 
 def area_planecut_section_horiz_ellipses(
-        length_semiaxis_left, length_cylinder, length_semiaxis_right,
-        diameter, level):
-    """This function performs computations of area formed by horizontal truncation of
-    horizontal section with two elliptic covers. Considered as special case.
+        length_semiaxis_left,
+        length_cylinder,
+        length_semiaxis_right,
+        diameter,
+        level):
+    """Computes area of plane formed by horizontal truncation of horizontal section with
+    two elliptic covers. Considered as special case.
 
     Parameters
     ----------
@@ -535,8 +532,7 @@ def volume_cover_elliptic_trunc(
 
 
 def volume_cover_elliptic_trunc(length_semiaxis, diameter, level):
-    """This function computes volume of semi-ellipsoid truncated by a horizontal
-    plane.
+    """This function computes volume of semi-ellipsoid truncated by a horizontal plane.
 
     Parameters
     ----------
@@ -567,8 +563,8 @@ def volume_cover_circle_trunc(
 
 
 def volume_cover_circle_trunc(diameter, level):
-    """This function computes volume of semi-sphere truncated by a horizontal
-    plane. This is considered as a special case of semi-ellipsoid with H = D/2.
+    """This function computes volume of semi-sphere truncated by a horizontal plane.
+    This is considered as a special case of semi-ellipsoid with H = D/2.
 
     Parameters
     ----------
@@ -675,8 +671,8 @@ def volume_section_horiz_general(
     length_semiaxis_left, length_cylinder, length_semiaxis_right,
     diameter, level, volume_cover_left_fn, volume_cover_right_fn
 ):
-    """This function computes volume of horizontal section with two covers truncated by
-    horizontal plane. Computations are performed in a general manner.
+    """Computes volume of horizontal section with two covers truncated by horizontal
+    plane. Computations are performed in a general manner.
 
     Parameters
     ----------
@@ -736,8 +732,8 @@ def volume_section_horiz_ellipses(
         length_semiaxis_right,
         diameter,
         level):
-    """This function computes volume of horizontal section with two elliptic covers
-    truncated by horizontal plane.
+    """Computes volume of horizontal section with two elliptic covers truncated by
+    horizontal plane.
 
     Parameters
     ----------
@@ -754,7 +750,7 @@ def volume_section_horiz_ellipses(
 
     Returns
     -------
-    V
+    volume_section
         Volume of horizontal section with elliptic covers truncated by horizontal plane.
     """
     volume_section = volume_section_horiz_general(
@@ -779,18 +775,18 @@ def graduate(
         volume_fn: Callable[[NDArray[float64]], NDArray[float64]],
         number_of_points: int = 50
 ) -> tuple[NDArray[float64], NDArray[float64]]:
-    """This function computes volume values that correspond to level values ranging from
-    min to max possible value for element with provided volume dependency on level.
+    """Computes volume values that correspond to level values ranging from min to max
+    possible value for element with provided volume dependency on level.
 
     Parameters
     ----------
-    h_min
+    level_min
         Minimal possible level.
-    h_max
+    level_max
         Maximal possible level.
-    vol_of_lvl
+    volume_fn
         Function that relates level and volume in the element.
-    N, optional
+    number_of_points, optional
         Number of point between min and max level, by default 50.
 
     Returns
@@ -821,9 +817,9 @@ def inverse_graduate(
 
 
 def inverse_graduate(volume_target, level_graduated, volume_graduated):
-    """This function performs computations to detemine level value that corresponds to
-    target volume. Computations are performed by means of linear interpolation over
-    arrays of levels and volumes (see function for graduation).
+    """Performs computations to determine level value that corresponds to target volume.
+    Computations are performed by means of linear interpolation over arrays of levels and
+    volumes (see function for graduation).
 
     Parameters
     ----------
