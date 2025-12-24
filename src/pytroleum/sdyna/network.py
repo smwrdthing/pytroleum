@@ -136,7 +136,7 @@ class DynamicNetwork(ABC):
             self.conductors.append(conductor)
 
     def evaluate_size(self) -> None:
-        """Determines "size" of system with pnumber of control volumes and number of
+        """Determines "size" of system with number of control volumes and number of
         presented phases. Allocates arrays to hold state-vector information"""
         self._number_of_control_volumes = len(self.control_volumes)
         self._number_of_phases = len(self.control_volumes[0].state.mass)
