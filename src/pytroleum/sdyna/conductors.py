@@ -14,6 +14,8 @@ from typing import Callable, Iterable, overload
 from numpy.typing import NDArray
 from numpy import float64
 
+# TODO : sort out type specifications and actual assignments in ints
+
 
 class Conductor(ABC):
 
@@ -699,13 +701,51 @@ class PhaseInterface(Conductor):
 
     # Subclass to represent interfacial interactions
 
-    def __init__(self, phase_index: int,
-                 source: ControlVolume | None = None,
-                 sink: ControlVolume | None = None) -> None:
-        super().__init__(phase_index, source, sink)
+    def __init__(self, phase_index: tuple[int, int],
+                 in_control_volume: Section | None = None) -> None:
+
+        # This one differs from others in a sense that energy is not moved
+        # from one control volume to other, it redistributed between phases
+        # in one control volume
+        #
+        # phase_index should be an iterable of two specifying adjacent phases that
+        # form interface. Index listing should correspond with introduced convention
+        # (lighter comes first)
+
+        self.phase_index: tuple[int, int]
+        self.source: Section
+        self.sink: Section
+        super().__init__(phase_index, None, in_control_volume)
+        self.heat_transfer_coeff: float
+        self.is_evaporation_surface = False
+
+    def compute_flow(self):
+        light_phase_index, heavy_phase_index = self.phase_index
+        level = self.sink.state.level[heavy_phase_index]
+
+        heat_transfer_area = meter.area_planecut_section_horiz_ellipses(
+            self.sink.length_left_semiaxis,
+            self.sink.length_cylinder,
+            self.sink.length_right_semiaxis,
+            self.sink.diameter,
+            level)
+
+        light_phase_temperature = self.sink.state.temperature[light_phase_index]
+        heavy_phase_temperature = self.sink.state.temperature[heavy_phase_index]
+        temperature_difference = light_phase_temperature-heavy_phase_temperature
+
+        # Watch sign carefully!
+        heat_flow = heat_transfer_area*self.heat_transfer_coeff*temperature_difference
+
+        self.flow.energy_flow[light_phase_index] = -heat_flow
+        self.flow.energy_flow[heavy_phase_index] = heat_flow
+
+        if self.is_evaporation_surface:
+            # Compute flow rate associated with evaporation?
+            pass
 
     def advance(self):
-        pass
+        self.compute_flow()
 
 
 def _compute_pressure_for_elevation(
