@@ -436,13 +436,16 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     ax.set_title("Objective parameter")
     ax.plot(t/60, h*1e3)
+    ax.grid(True)
 
     fig, ax = plt.subplots()
     ax.set_title("Control signal")
     ax.plot(t/60, signal*100)
+    ax.grid(True)
 
     fig, ax = plt.subplots()
     ax.set_title("Control error")
     ax.plot(t/60, error*100)
+    ax.grid(True)
     plt.show()
     # General algorithm seems to work fine.
