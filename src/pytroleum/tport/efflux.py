@@ -219,6 +219,35 @@ def compressible(
     return mass_flow_rate
 
 
+@overload
+def evaporation_heuristic(
+        area: float, discharge_coefficient: float,
+        saturation_density: float, saturation_pressure: float,
+        pressure: float) -> float:
+    ...
+
+
+@overload
+def evaporation_heuristic(
+        area: float, discharge_coefficient: float,
+        saturation_density: NDArray[float64], saturation_pressure: NDArray[float64],
+        pressure: NDArray[float64]) -> NDArray[float64]:
+    ...
+
+
+def evaporation_heuristic(
+        area, discharge_coefficient,
+        saturation_density, saturation_pressure,
+        pressure):
+    """Naive model for evaporation rate computations"""
+
+    mass_flow = area*discharge_coefficient*np.sqrt(
+        saturation_density * (saturation_pressure-pressure) *
+        (saturation_pressure >= pressure))
+
+    return mass_flow
+
+
 if __name__ == '__main__':
 
     # NOTE : type annotations are tricky when we want function to work both with
