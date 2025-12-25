@@ -560,8 +560,8 @@ class UnderPass(Conductor):
 
     def advance(self):
         self.check_if_locked()
-        self.compute_vapor_flow()
         self.distribute()  # NOTE : this disrupted solver in legacy, be careful
+        self.compute_vapor_flow()
         self.propagate_flow()
 
 
