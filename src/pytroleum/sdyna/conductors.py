@@ -4,7 +4,7 @@ from scipy.constants import g, R
 from scipy.optimize import newton
 from pytroleum import meter
 from pytroleum.tport import efflux
-from pytroleum.sdyna.opdata import FlowData
+from pytroleum.sdyna.opdata import FlowData, StateData
 from pytroleum.sdyna.interfaces import ControlVolume, Section
 from pytroleum.sdyna.controllers import PropIntDiff, StartStop
 
@@ -30,6 +30,7 @@ class Conductor(ABC):
             self.sink = Atmosphere()
         self.of_phase = of_phase
         self.controller: PropIntDiff | StartStop | None = None
+
         self.flow: FlowData
 
     def connect_source(self, convolume: ControlVolume) -> None:
@@ -92,8 +93,8 @@ class Valve(Conductor):
         self.discharge_coefficient = discharge_coefficient
         self.elevation = elevation
         self.opening = opening
-
         self.controller: PropIntDiff | StartStop | None = None
+
         self.of_phase: int
 
     # getter/setter for pipe diameter  ---------------------------------------------------
@@ -224,15 +225,18 @@ class Valve(Conductor):
 
 class CentrifugalPump(Conductor):
 
-    def __init__(self, of_phase: int,
+    def __init__(self, of_phase: int, elevation: float = 0,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
+
+        self.of_phase = of_phase
+        self.elevation = elevation
+
         self.coefficients: tuple[float, float, float] | NDArray[float64]
-        self.of_phase: int
         self.resistance_coeff: float
         self.angular_velocity: float
-        self.elevation: float
         self.flow_area: float  # maybe better to do this in base class
+
         super().__init__(of_phase, source, sink)
 
     def characteristic_reference(
@@ -572,23 +576,20 @@ class OverPass(Conductor):
                  source: Section | None = None,
                  sink: Section | None = None) -> None:
 
-        self.of_phase: list[int]
-
         # Only vapor and lightest fluid passes
-        super().__init__([0, 1], source, sink)
-
-        self.source: Section
-        self.sink: Section
-
-        self.edge_level = edge_level
+        super().__init__((0, 1), source, sink)
         self.discharge_coefficinet = discharge_coefficient
+        self.edge_level = edge_level
         self.is_reached: bool = False
 
         # Possible TODO : recast into property, simplify total volume computations
         self._vapor_flow_area = (
             meter.area_cs_circle_trunc(self.source.diameter, self.source.diameter) -
-            meter.area_cs_circle_trunc(self.source.diameter, self.edge_level)
-        )
+            meter.area_cs_circle_trunc(self.source.diameter, self.edge_level))
+
+        self.of_phase: tuple[int, int]
+        self.source: Section
+        self.sink: Section
 
     def check_if_reached(self):
         """Switches corresponding flag if liquid level reaches crest of weir or falls
@@ -665,9 +666,11 @@ class FurnacePolynomial(Conductor):
     def __init__(self, of_phase: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
+
         super().__init__(of_phase, source, sink)
-        self.of_phase: int
         self._polynomial_coefficients = self._POLYNOMIAL_COEFFICIENTS
+
+        self.of_phase: int
 
     def adjust_model(self, new_coefficients):
         """Set new coefficient for polynomial approximation of furnace energy output"""
@@ -688,7 +691,8 @@ class FurnacePolynomial(Conductor):
 class PhaseInterface(Conductor):
 
     def __init__(self, of_phase: tuple[int, int],
-                 in_control_volume: Section | None = None) -> None:
+                 in_control_volume: Section,
+                 evaporation_coefficient: float = 0) -> None:
 
         # This one differs from others in a sense that energy is not moved
         # from one control volume to other, it redistributed between phases
@@ -698,12 +702,13 @@ class PhaseInterface(Conductor):
         # form interface. Index listing should correspond with introduced convention
         # (lighter comes first)
 
-        self.of_phase: tuple[int, int]
-        self.source: Section
-        self.sink: Section
         super().__init__(of_phase, None, in_control_volume)
+        self.evaporation_coefficient = evaporation_coefficient
+
+        self.saturation_state: StateData
         self.heat_transfer_coeff: float
-        self.is_evaporation_surface = False
+        self.of_phase: tuple[int, int]
+        self.sink: Section
 
     def compute_flow(self):
         of_light_phase, of_heavy_phase = self.of_phase
