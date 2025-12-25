@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from numpy import float64
 from typing import TYPE_CHECKING, Callable
 if TYPE_CHECKING:
-    from ..tdyna.CoolStub import AbstractState  # type: ignore
+    from pytroleum.tdyna.CoolStub import AbstractState   # type: ignore
     # TODO : figure why pyright complains about stub file being
     #        impossible to resolve from source
 else:
