@@ -6,18 +6,19 @@ from typing import Iterable
 class PropIntDiff:
 
     def __init__(
-            self, P: float, I: float, D: float, F: float,  # noqa
+            self,
+            gain_coeff: float,
+            integral_coeff: float,
+            derivative_coeff: float,
+            filter: float,
             setpoint: float, saturation: Iterable[float] = (-np.inf, np.inf),
             ratelim: float = np.inf,
             polarity: float = 1, norm_by: float = 1) -> None:
 
-        # noqa is needed because flake8 does not like I as variable name :
-        # ambiguous variable name 'I' (E741)
-        # but application is clear, so we retain this
-
-        # Assigning paramterers
-        self.P, self.I, self.D = P, I, D
-        self.F = F
+        self.gain_coeff = gain_coeff
+        self.integral_coeff = integral_coeff
+        self.derivative_coeff = derivative_coeff
+        self.filter = filter
         self.setpoint = setpoint
         self.saturation = saturation
         self.ratelim = ratelim
@@ -77,11 +78,12 @@ class PropIntDiff:
         self.error = self.polarity*(self.setpoint-probe)/self.norm_by
 
         # Computing new signal
-        self.gain = self.P*self.error
-        self.integral = self.integral + self.I * (
+        self.gain = self.gain_coeff*self.error
+        self.integral = self.integral + self.integral_coeff * (
             self.error*time_step*(not self.saturated))  # anti-windup measure
         self.diff = self.history_diff + (
-            self.D*(self.error-self.history_error)-self.history_diff*time_step)/self.F
+            self.derivative_coeff*(self.error-self.history_error) -
+            self.history_diff*time_step)/self.filter
         self.signal = self.gain+self.integral+self.diff
 
         # Performing saturation and rate limitataions checks and amends
@@ -139,7 +141,8 @@ if __name__ == "__main__":
 
     # Testing area for PID
     PID = PropIntDiff(
-        P=0.01, I=0.01, D=0.95, F=100, setpoint=1,
+        gain_coeff=0.01, integral_coeff=0.01, derivative_coeff=0.95,
+        filter=100, setpoint=1,
         # saturation=[-0.001, 0.001]
     )
     probe = 0.
