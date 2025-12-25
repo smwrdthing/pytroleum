@@ -659,29 +659,49 @@ class OverPass(Conductor):
 
 class FurnacePolynomial(Conductor):
 
-    # Subclass to represent heat flux from furnace with polynomial
-    # approximation of furnace heat_flux(fuel_flow_rate)-like characteristic
-    _POLYNOMIAL_COEFFICIENTS: Iterable[float | float64] = []
+    def __init__(
+            self, of_phase: int, minmax_fuel_flow: tuple[float, float],
+            elevation: float, diameter: float, center_distance: float,
+            in_control_volume: ControlVolume) -> None:
 
-    def __init__(self, of_phase: int,
-                 source: ControlVolume | None = None,
-                 sink: ControlVolume | None = None) -> None:
+        super().__init__(of_phase, None, in_control_volume)
 
-        super().__init__(of_phase, source, sink)
-        self._polynomial_coefficients = self._POLYNOMIAL_COEFFICIENTS
+        self.of_phase = of_phase
+        self.min_fuel_flow, self.max_fuel_flow = minmax_fuel_flow
+        self.range_fuel_flow = self.max_fuel_flow-self.min_fuel_flow
+        self.elevation = elevation
+        self.diameter = diameter
+        self.center_distance = center_distance
 
-        self.of_phase: int
+        self.fuel_flow = self.min_fuel_flow
 
-    def adjust_model(self, new_coefficients):
-        """Set new coefficient for polynomial approximation of furnace energy output"""
-        self._polynomial_coefficients = new_coefficients
+        self.polynomial_coefficients: NDArray[float64]
+        self.controller: PropIntDiff | None
 
     def compute_heat_flux(self):
         """Compute heat flux produced by furnace with polynomial approximation and fuel
         flow rate"""
-        J = np.polyval(self._polynomial_coefficients)  # pyright: ignore
-        self.flow.energy_flow[self.of_phase] = J
-        # Add geometry constraints!
+
+        bottom_layer_level = 0
+        if self.of_phase < len(self.sink.state.mass)-1:
+            bottom_layer_level = self.sink.state.level[self.of_phase+1]
+        upper_layer_level = self.sink.state.level[self.of_phase]
+
+        # Furnace activates only when heated layer fully encloses it
+        enclosed = (
+            (upper_layer_level >= self.elevation+self.diameter/2) and
+            (bottom_layer_level <= self.elevation-self.diameter/2))
+
+        output = 1
+        if self.controller is not None:
+            output = self.controller.signal
+
+        fuel_flow = self.min_fuel_flow+output*self.range_fuel_flow
+        heat = np.polynomial.polynomial.polyval(
+            fuel_flow, self.polynomial_coefficients)*enclosed
+
+        self.fuel_flow = fuel_flow*enclosed
+        self.flow.energy_flow[self.of_phase] = heat
 
     def advance(self):
         self.compute_heat_flux()
