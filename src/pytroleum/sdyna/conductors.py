@@ -344,7 +344,7 @@ class UnderPass(Conductor):
             self.source.state.volume[1:]+self.sink.state.volume[1:])
         liquid_total_volume = np.sum(liquid_common_volume)
 
-        # To make this stuff work graduated levels should correspond in neghbouring
+        # To make this stuff work graduated levels should correspond in neighbouring
         # sections, for more complicated cases there are workarounds, which can be
         # implemented too, but for now we do this
         common_level_graduated = self.source.level_graduated
