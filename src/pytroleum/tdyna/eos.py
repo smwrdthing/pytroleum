@@ -8,7 +8,7 @@ from numpy import float64
 from numpy.typing import NDArray
 
 if TYPE_CHECKING:
-    from pytroleum.tdyna.CoolStub import AbstractState
+    from pytroleum.tdyna.CoolStub import AbstractState  # type: ignore
 else:
     from CoolProp.CoolProp import AbstractState
 import CoolProp.CoolProp as CP
