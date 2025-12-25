@@ -55,7 +55,7 @@ class ControlVolume(ABC):
     def compute_fluid_temperature(self) -> None:
         """Computes temperature from specific energy."""
         temperature = []
-        for eos, energy_specific in zip(self.state.equation_of_state,
+        for eos, energy_specific in zip(self.state.equation,
                                         self.state.energy_specific):
             partial_derivative_energy = eos.first_partial_deriv(
                 CoolConst.iUmass, CoolConst.iT, CoolConst.iP)
@@ -68,7 +68,7 @@ class ControlVolume(ABC):
         """Computes density of liquid from temperature."""
         liquid_density = []
         for eos, new_T in zip(
-                self.state.equation_of_state[1:], self.state.temperature[1:]):
+                self.state.equation[1:], self.state.temperature[1:]):
             density_partial_derivative = eos.first_partial_deriv(
                 CoolConst.iDmass, CoolConst.iT, CoolConst.iP)
             fluid_new_density = eos.rhomass()+density_partial_derivative*(new_T-eos.T())
@@ -89,7 +89,7 @@ class ControlVolume(ABC):
         """Computes vapor pressure from density and temperature"""
         # Vapor pressure should be computed from finite difference approximation too, as
         # DmassT pair is not supported
-        vapor_eos = self.state.equation_of_state[0]
+        vapor_eos = self.state.equation[0]
 
         pressure_partial_derivative_wrt_temperatrue = (
             vapor_eos.first_partial_deriv(CoolConst.iP, CoolConst.iT, CoolConst.iDmass))
@@ -107,7 +107,7 @@ class ControlVolume(ABC):
 
     def update_equations_of_state(self):
         """Updates equations of state with pressure and temperature values"""
-        for eos, new_T in zip(self.state.equation_of_state, self.state.temperature):
+        for eos, new_T in zip(self.state.equation, self.state.temperature):
             # Also check if internal energy is consistent for this approach
             eos.update(CoolConst.PT_INPUTS, self.state.pressure[0], new_T)
 
@@ -143,7 +143,7 @@ class Atmosphere(ControlVolume):
             CoolConst.PT_INPUTS, self._STANDARD_PRESSURE, self._STANDARD_TEMPERATURE))
 
         self.state = StateData(
-            equation_of_state=[eos_air],
+            equation=[eos_air],
             pressure=np.array([self._STANDARD_PRESSURE]),
             temperature=np.array([self._STANDARD_TEMPERATURE]),
             density=np.array([eos_air.rhomass()]),

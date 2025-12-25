@@ -55,14 +55,15 @@ class PropIntDiff:
             self.saturated = True
             self.signal = lowerlim
 
-    def check_rate(self, dt: float):
+    def check_rate(self, time_step: float):
         """Checks if rate of change of signal exceeds limit, amends value to
         comply with limit if it does."""
-        rate = (self.signal-self.history_signal)/dt
+        rate = (self.signal-self.history_signal)/time_step
         if abs(rate) > self.ratelim:
-            self.signal = self.history_signal+np.sign(rate)*self.ratelim*dt
+            self.signal = (
+                self.history_signal+np.sign(rate)*self.ratelim*time_step)
 
-    def control(self, dt: float, probe: float):
+    def control(self, time_step: float, probe: float):
         """Generates contorl signal of PID controller from given time step and
         probe value"""
         # Previous step values become history
@@ -78,14 +79,14 @@ class PropIntDiff:
         # Computing new signal
         self.gain = self.P*self.error
         self.integral = self.integral + self.I * (
-            self.error*dt*(not self.saturated))  # anti-windup measure
+            self.error*time_step*(not self.saturated))  # anti-windup measure
         self.diff = self.history_diff + (
-            self.D*(self.error-self.history_error)-self.history_diff*dt)/self.F
+            self.D*(self.error-self.history_error)-self.history_diff*time_step)/self.F
         self.signal = self.gain+self.integral+self.diff
 
         # Performing saturation and rate limitataions checks and amends
         self.check_saturation()
-        self.check_rate(dt)
+        self.check_rate(time_step)
 
         # At this point signal for the next step is generated and can be employed
 

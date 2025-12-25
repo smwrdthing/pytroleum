@@ -20,7 +20,7 @@ from numpy import float64
 class Conductor(ABC):
 
     @abstractmethod
-    def __init__(self, phase_index: int | Iterable[int],
+    def __init__(self, of_phase: int | Iterable[int],
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
 
@@ -30,7 +30,7 @@ class Conductor(ABC):
         if sink is None:
             from pytroleum.sdyna.convolumes import Atmosphere
             self.sink = Atmosphere()
-        self.phase_index = phase_index
+        self.of_phase = of_phase
         self.controller: PropIntDiff | StartStop | None = None
         self.flow: FlowData
 
@@ -48,7 +48,7 @@ class Conductor(ABC):
             convolume.inlets.append(self)
             self.sink = convolume
 
-    def propagate_flow_rate(self):
+    def propagate_flow(self):
         """Contributes flow rate values to net flow attributes of source and sink with
         appropriate signs."""
         self.source.net_mass_flow = self.source.net_mass_flow-self.flow.mass_flow_rate
@@ -65,13 +65,13 @@ class Conductor(ABC):
 
 class Fixed(Conductor):
 
-    def __init__(self, phase_index: int | list[int],
+    def __init__(self, of_phase: int | list[int],
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
-        super().__init__(phase_index, source, sink)
+        super().__init__(of_phase, source, sink)
 
     def advance(self) -> None:
-        self.propagate_flow_rate()
+        self.propagate_flow()
         return
 
 
@@ -80,7 +80,7 @@ class Valve(Conductor):
     # Subclass to represent Valve
 
     def __init__(
-            self, phase_index: int,
+            self, of_phase: int,
             diameter_pipe: float | float64,
             diameter_valve: float | float64,
             discharge_coefficient: float | float64,
@@ -89,7 +89,7 @@ class Valve(Conductor):
             source: ControlVolume | None = None,
             sink: ControlVolume | None = None) -> None:
 
-        super().__init__(phase_index, source, sink)
+        super().__init__(of_phase, source, sink)
 
         self.diameter_pipe = diameter_pipe
         self.diameter_valve = diameter_valve
@@ -98,7 +98,7 @@ class Valve(Conductor):
         self.opening = opening
 
         self.controller: PropIntDiff | StartStop | None = None
-        self.phase_index: int
+        self.of_phase: int
 
     # getter/setter for pipe diameter  ---------------------------------------------------
     @property
@@ -154,7 +154,7 @@ class Valve(Conductor):
             # direct assignment corresponds to controller signal interpretation
             self.opening = self.controller.signal
 
-        if self.phase_index > 0:  # conductor deals with liquid phase
+        if self.of_phase > 0:  # conductor deals with liquid phase
 
             upstream_pressure = _compute_pressure_for_elevation(
                 self.elevation, upstream_state.level, upstream_state.pressure)
@@ -165,30 +165,30 @@ class Valve(Conductor):
                 self.area_valve*self.opening,
                 self.area_pipe,
                 self.discharge_coefficient,
-                upstream_state.density[self.phase_index],
+                upstream_state.density[self.of_phase],
                 upstream_pressure,
                 downstream_pressure
             )
         else:  # conductor deals with vapor phase
 
-            upstream_pressure = upstream_state.pressure[self.phase_index]
-            downstream_pressure = downstream_state.pressure[self.phase_index]
+            upstream_pressure = upstream_state.pressure[self.of_phase]
+            downstream_pressure = downstream_state.pressure[self.of_phase]
 
             mass_flow_rate = efflux.compressible(
                 self.area_valve*self.opening,
                 self.discharge_coefficient,
 
                 # eos makes storing k and R excessive
-                upstream_state.equation_of_state[self.phase_index].cpmass() /
-                upstream_state.equation_of_state[self.phase_index].cvmass(),
-                R/upstream_state.equation_of_state[self.phase_index].molar_mass(),
+                upstream_state.equation[self.of_phase].cpmass() /
+                upstream_state.equation[self.of_phase].cvmass(),
+                R/upstream_state.equation[self.of_phase].molar_mass(),
 
-                upstream_state.density[self.phase_index],
-                upstream_state.temperature[self.phase_index],
+                upstream_state.density[self.of_phase],
+                upstream_state.temperature[self.of_phase],
                 upstream_pressure,
 
-                downstream_state.density[self.phase_index],
-                downstream_state.temperature[self.phase_index],
+                downstream_state.density[self.of_phase],
+                downstream_state.temperature[self.of_phase],
                 downstream_pressure
             )
 
@@ -197,49 +197,49 @@ class Valve(Conductor):
         else:
             donor = self.sink.state
 
-        self.flow.mass_flow_rate[self.phase_index] = mass_flow_rate
+        self.flow.mass_flow_rate[self.of_phase] = mass_flow_rate
 
         (
-            self.flow.energy_specific[self.phase_index],
-            self.flow.temperature[self.phase_index],
-            self.flow.density[self.phase_index],
+            self.flow.energy_specific[self.of_phase],
+            self.flow.temperature[self.of_phase],
+            self.flow.density[self.of_phase],
         ) = (
-            donor.energy_specific[self.phase_index],
-            donor.temperature[self.phase_index],
-            donor.density[self.phase_index]
+            donor.energy_specific[self.of_phase],
+            donor.temperature[self.of_phase],
+            donor.density[self.of_phase]
         )
 
-        self.flow.pressure[self.phase_index] = max(
+        self.flow.pressure[self.of_phase] = max(
             upstream_pressure, downstream_pressure)
-        self.flow.velocity[self.phase_index] = (
-            self.flow.mass_flow_rate[self.phase_index] /
-            self.flow.density[self.phase_index] /
+        self.flow.velocity[self.of_phase] = (
+            self.flow.mass_flow_rate[self.of_phase] /
+            self.flow.density[self.of_phase] /
             self.area_pipe)
-        self.flow.energy_specific_flow[self.phase_index] = (
-            self.flow.energy_specific[self.phase_index] +
-            self.flow.pressure[self.phase_index] / self.flow.density[self.phase_index] +
-            self.flow.velocity[self.phase_index]**2/2)
+        self.flow.energy_specific_flow[self.of_phase] = (
+            self.flow.energy_specific[self.of_phase] +
+            self.flow.pressure[self.of_phase] / self.flow.density[self.of_phase] +
+            self.flow.velocity[self.of_phase]**2/2)
         self.flow.energy_flow = self.flow.energy_specific_flow*self.flow.mass_flow_rate
 
     def advance(self):
         self.compute_flow()
-        self.propagate_flow_rate()
+        self.propagate_flow()
 
 
 class CentrifugalPump(Conductor):
 
     # Subclass ro represent centrifugal pump
 
-    def __init__(self, phase_index: int,
+    def __init__(self, of_phase: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
         self.coefficients: tuple[float, float, float] | NDArray[float64]
-        self.phase_index: int
+        self.of_phase: int
         self.resistance_coeff: float
         self.angular_velocity: float
         self.elevation: float
         self.flow_area: float  # maybe better to do this in base class
-        super().__init__(phase_index, source, sink)
+        super().__init__(of_phase, source, sink)
 
     def characteristic_reference(
             self, angular_velocity: float,
@@ -267,10 +267,10 @@ class CentrifugalPump(Conductor):
 
         # Pump should not allow backflow due to the inverse rotation issues,
         # so we always take from source
-        density = self.source.state.density[self.phase_index]
-        pressure = self.source.state.pressure[self.phase_index]
-        temperature = self.source.state.temperature[self.phase_index]
-        energy_specific = self.source.state.energy_specific[self.phase_index]
+        density = self.source.state.density[self.of_phase]
+        pressure = self.source.state.pressure[self.of_phase]
+        temperature = self.source.state.temperature[self.of_phase]
+        energy_specific = self.source.state.energy_specific[self.of_phase]
         pressure_difference = downstream_pressure-upstream_pressure
 
         static_head_difference = pressure_difference/density/g
@@ -291,17 +291,17 @@ class CentrifugalPump(Conductor):
             energy_specific + pressure/density + g*self.elevation + velocity**2/2)
         flow_energy = energy_specific_flow*mass_flow_rate
 
-        self.flow.mass_flow_rate[self.phase_index] = mass_flow_rate
-        self.flow.velocity[self.phase_index] = velocity
-        self.flow.temperature[self.phase_index] = temperature
-        self.flow.density[self.phase_index] = density
-        self.flow.energy_specific[self.phase_index] = energy_specific
-        self.flow.energy_specific_flow[self.phase_index] = energy_specific_flow
-        self.flow.energy_flow[self.phase_index] = flow_energy
+        self.flow.mass_flow_rate[self.of_phase] = mass_flow_rate
+        self.flow.velocity[self.of_phase] = velocity
+        self.flow.temperature[self.of_phase] = temperature
+        self.flow.density[self.of_phase] = density
+        self.flow.energy_specific[self.of_phase] = energy_specific
+        self.flow.energy_specific_flow[self.of_phase] = energy_specific_flow
+        self.flow.energy_flow[self.of_phase] = flow_energy
 
     def advance(self) -> None:
         self.compute_flow()
-        self.propagate_flow_rate()
+        self.propagate_flow()
 
 
 class UnderPass(Conductor):
@@ -316,7 +316,7 @@ class UnderPass(Conductor):
                  source: Section | None = None,
                  sink: Section | None = None) -> None:
 
-        self.phase_index: int
+        self.of_phase: int
         super().__init__(0, source, sink)
 
         self.edge_level = edge_level
@@ -405,7 +405,7 @@ class UnderPass(Conductor):
         # difference is of interest, errors should cancel out anyways
         source_vapor_pressure = (
             source_vapor_density*R*self.source.state.temperature[0] /
-            self.source.state.equation_of_state[0].molar_mass())
+            self.source.state.equation[0].molar_mass())
         source_liquid_pressure = self._liquid_pseudo_density*g*source_level
         source_total_pressure = source_vapor_pressure+source_liquid_pressure
 
@@ -415,7 +415,7 @@ class UnderPass(Conductor):
         sink_vapor_density = self.sink.state.mass[0]/sink_vapor_volume
         sink_vapor_pressure = (
             sink_vapor_density*R*self.sink.state.temperature[0] /
-            self.sink.state.equation_of_state[0].molar_mass())
+            self.sink.state.equation[0].molar_mass())
         sink_liquid_pressure = self._liquid_pseudo_density*g*sink_level
         sink_total_pressure = sink_vapor_pressure+sink_liquid_pressure
 
@@ -461,7 +461,7 @@ class UnderPass(Conductor):
 
         return liquid_level_source, liquid_level_sink
 
-    def perform_distribution(self):
+    def distribute(self):
         """Checks if hydrostatic lock is formed, does hydrostatic balance distribution
         if yes and equal level distribution otherwise. For multiphase situation recombines
         phase composition from initial volume fractions."""
@@ -518,10 +518,10 @@ class UnderPass(Conductor):
         weir's crest, sets 0 for vapor flow rate otherwise"""
         if self.is_locked:
             # All other stuff must be zero
-            self.flow.mass_flow_rate[self.phase_index] = 0
-            self.flow.energy_flow[self.phase_index] = 0
-            self.flow.velocity[self.phase_index] = 0
-            self.flow.energy_flow[self.phase_index] = 0
+            self.flow.mass_flow_rate[self.of_phase] = 0
+            self.flow.energy_flow[self.of_phase] = 0
+            self.flow.velocity[self.of_phase] = 0
+            self.flow.energy_flow[self.of_phase] = 0
         else:
             # Actually compute flow
             flow_area = meter.area_cs_circle_trunc(
@@ -530,9 +530,9 @@ class UnderPass(Conductor):
             flow_elevation = 0.5*(self.edge_level+self.source.state.level[0])
             vapor_mass_flow_rate = efflux.compressible(
                 flow_area, self.discharge_coefficient,
-                self.source.state.equation_of_state[0].cpmass() /
-                self.source.state.equation_of_state[0].cvmass(),
-                R/self.source.state.equation_of_state[0].molar_mass(),
+                self.source.state.equation[0].cpmass() /
+                self.source.state.equation[0].cvmass(),
+                R/self.source.state.equation[0].molar_mass(),
                 self.source.state.density[0],
                 self.source.state.temperature[0],
                 self.source.state.pressure[0],
@@ -545,28 +545,28 @@ class UnderPass(Conductor):
             else:
                 donor = self.sink.state
 
-            energy_specific = donor.energy_specific[self.phase_index]
-            pressure = donor.pressure[self.phase_index]
-            density = donor.density[self.phase_index]
+            energy_specific = donor.energy_specific[self.of_phase]
+            pressure = donor.pressure[self.of_phase]
+            density = donor.density[self.of_phase]
             velocity = vapor_mass_flow_rate / density / flow_area
 
             energy_specific_flow = (
                 g*flow_elevation + energy_specific + pressure/density + velocity**2/2)
             energy_flow = energy_specific_flow*vapor_mass_flow_rate
 
-            self.flow.mass_flow_rate[self.phase_index] = vapor_mass_flow_rate
-            self.flow.energy_flow[self.phase_index] = energy_specific
-            self.flow.pressure[self.phase_index] = pressure
-            self.flow.density[self.phase_index] = density
-            self.flow.velocity[self.phase_index] = velocity
-            self.flow.energy_specific_flow[self.phase_index] = energy_specific_flow
-            self.flow.energy_flow[self.phase_index] = energy_flow
+            self.flow.mass_flow_rate[self.of_phase] = vapor_mass_flow_rate
+            self.flow.energy_flow[self.of_phase] = energy_specific
+            self.flow.pressure[self.of_phase] = pressure
+            self.flow.density[self.of_phase] = density
+            self.flow.velocity[self.of_phase] = velocity
+            self.flow.energy_specific_flow[self.of_phase] = energy_specific_flow
+            self.flow.energy_flow[self.of_phase] = energy_flow
 
     def advance(self):
         self.check_if_locked()
         self.compute_vapor_flow_rate()
-        self.perform_distribution()  # NOTE : this disrupted solver in legacy, be careful
-        self.propagate_flow_rate()
+        self.distribute()  # NOTE : this disrupted solver in legacy, be careful
+        self.propagate_flow()
 
 
 class OverPass(Conductor):
@@ -582,7 +582,7 @@ class OverPass(Conductor):
                  source: Section | None = None,
                  sink: Section | None = None) -> None:
 
-        self.phase_index: list[int]
+        self.of_phase: list[int]
 
         # Only vapor and lightest fluid passes
         super().__init__([0, 1], source, sink)
@@ -611,23 +611,23 @@ class OverPass(Conductor):
 
     def compute_vapor_flow(self):
         """Determines vapor flow rate with compressible adiabatic flow model"""
-        phase_index = self.phase_index[0]
+        of_phase = self.of_phase[0]
 
         vapor_mass_flow_rate = efflux.compressible(
             self._vapor_flow_area,
             self.discharge_coefficinet,
-            self.source.state.equation_of_state[phase_index].cpmass() /
-            self.source.state.equation_of_state[phase_index].cvmass(),
-            R/self.source.state.equation_of_state[phase_index].molar_mass(),
-            self.source.state.density[phase_index],
-            self.source.state.temperature[phase_index],
-            self.source.state.pressure[phase_index],
-            self.sink.state.density[phase_index],
-            self.sink.state.temperature[phase_index],
-            self.sink.state.pressure[phase_index]
+            self.source.state.equation[of_phase].cpmass() /
+            self.source.state.equation[of_phase].cvmass(),
+            R/self.source.state.equation[of_phase].molar_mass(),
+            self.source.state.density[of_phase],
+            self.source.state.temperature[of_phase],
+            self.source.state.pressure[of_phase],
+            self.sink.state.density[of_phase],
+            self.sink.state.temperature[of_phase],
+            self.sink.state.pressure[of_phase]
         )
 
-        self.flow.mass_flow_rate[phase_index] = vapor_mass_flow_rate
+        self.flow.mass_flow_rate[of_phase] = vapor_mass_flow_rate
         self.flow
 
     def compute_liquid_overflow(self):
@@ -637,8 +637,8 @@ class OverPass(Conductor):
         computed"""
         # NOTE : for this to work other conductors must be resolved before, so
         # order of execution must be enforced
-        phase_index = self.phase_index[1]  # lightest liquid
-        self.flow.mass_flow_rate[phase_index] = 0
+        of_phase = self.of_phase[1]  # lightest liquid
+        self.flow.mass_flow_rate[of_phase] = 0
         if self.is_reached:
             # collect net flow rates for source formed by other conductors
             other_liquid_flow_rates_inlet = 0
@@ -659,13 +659,13 @@ class OverPass(Conductor):
                 # will not resolve array elements' types correctly
                 overflow_rate = 0
 
-            self.flow.mass_flow_rate[phase_index] = overflow_rate
+            self.flow.mass_flow_rate[of_phase] = overflow_rate
 
     def advance(self) -> None:
         self.check_if_reached()
         self.compute_liquid_overflow()
         self.compute_vapor_flow()
-        self.propagate_flow_rate()
+        self.propagate_flow()
 
 
 class FurnacePolynomial(Conductor):
@@ -674,11 +674,11 @@ class FurnacePolynomial(Conductor):
     # approximation of furnace heat_flux(fuel_flow_rate)-like characteristic
     _POLYNOMIAL_COEFFICIENTS: Iterable[float | float64] = []
 
-    def __init__(self, phase_index: int,
+    def __init__(self, of_phase: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
-        super().__init__(phase_index, source, sink)
-        self.phase_index: int
+        super().__init__(of_phase, source, sink)
+        self.of_phase: int
         self._polynomial_coefficients = self._POLYNOMIAL_COEFFICIENTS
 
     def adjust_model(self, new_coefficients):
@@ -689,39 +689,39 @@ class FurnacePolynomial(Conductor):
         """Compute heat flux produced by furnace with polynomial approximation and fuel
         flow rate"""
         J = np.polyval(self._polynomial_coefficients)  # pyright: ignore
-        self.flow.energy_flow[self.phase_index] = J
+        self.flow.energy_flow[self.of_phase] = J
         # Add geometry constraints!
 
     def advance(self):
         self.compute_heat_flux()
-        self.propagate_flow_rate()
+        self.propagate_flow()
 
 
 class PhaseInterface(Conductor):
 
     # Subclass to represent interfacial interactions
 
-    def __init__(self, phase_index: tuple[int, int],
+    def __init__(self, of_phase: tuple[int, int],
                  in_control_volume: Section | None = None) -> None:
 
         # This one differs from others in a sense that energy is not moved
         # from one control volume to other, it redistributed between phases
         # in one control volume
         #
-        # phase_index should be an iterable of two specifying adjacent phases that
+        # of_phase should be an iterable of two specifying adjacent phases that
         # form interface. Index listing should correspond with introduced convention
         # (lighter comes first)
 
-        self.phase_index: tuple[int, int]
+        self.of_phase: tuple[int, int]
         self.source: Section
         self.sink: Section
-        super().__init__(phase_index, None, in_control_volume)
+        super().__init__(of_phase, None, in_control_volume)
         self.heat_transfer_coeff: float
         self.is_evaporation_surface = False
 
     def compute_flow(self):
-        light_phase_index, heavy_phase_index = self.phase_index
-        level = self.sink.state.level[heavy_phase_index]
+        of_light_phase, of_heavy_phase = self.of_phase
+        level = self.sink.state.level[of_heavy_phase]
 
         heat_transfer_area = meter.area_planecut_section_horiz_ellipses(
             self.sink.length_left_semiaxis,
@@ -730,15 +730,15 @@ class PhaseInterface(Conductor):
             self.sink.diameter,
             level)
 
-        light_phase_temperature = self.sink.state.temperature[light_phase_index]
-        heavy_phase_temperature = self.sink.state.temperature[heavy_phase_index]
+        light_phase_temperature = self.sink.state.temperature[of_light_phase]
+        heavy_phase_temperature = self.sink.state.temperature[of_heavy_phase]
         temperature_difference = light_phase_temperature-heavy_phase_temperature
 
         # Watch sign carefully!
         heat_flow = heat_transfer_area*self.heat_transfer_coeff*temperature_difference
 
-        self.flow.energy_flow[light_phase_index] = -heat_flow
-        self.flow.energy_flow[heavy_phase_index] = heat_flow
+        self.flow.energy_flow[of_light_phase] = -heat_flow
+        self.flow.energy_flow[of_heavy_phase] = heat_flow
 
         if self.is_evaporation_surface:
             # Compute flow rate associated with evaporation?

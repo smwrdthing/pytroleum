@@ -26,7 +26,7 @@ else:
 
 @dataclass
 class OperationData(ABC):
-    equation_of_state: list[AbstractState]
+    equation: list[AbstractState]
 
     pressure: NDArray[float64]
     temperature: NDArray[float64]
