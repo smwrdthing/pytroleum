@@ -88,7 +88,7 @@ def _extract_temperature_dependent(
     return density, energy_specific, dynamic_viscosity, thermal_conductivity
 
 
-def fabric_state(
+def factory_state(
         equation_of_state: list[AbstractState],
         volume_fn: Callable[[NDArray[float64]], NDArray[float64]],
         pressure: NDArray[float64],
@@ -131,7 +131,7 @@ def fabric_state(
     return state
 
 
-def fabric_flow(
+def factory_flow(
         equation_of_state: list[AbstractState],
         pressure: NDArray[float64],
         temperature: NDArray[float64],

@@ -332,7 +332,7 @@ class DynamicNetwork(ABC):
 
 
 if __name__ == "__main__":
-    from pytroleum.sdyna.opdata import OperationData, FlowData, fabric_state, fabric_flow
+    from pytroleum.sdyna.opdata import OperationData, FlowData, factory_state, factory_flow
     from pytroleum.sdyna.convolumes import Atmosphere
     from pytroleum.tdyna.eos import factory_eos
     import CoolProp.constants as CoolConst
@@ -346,7 +346,7 @@ if __name__ == "__main__":
 
     thermodynamic_state = (CoolConst.PT_INPUTS, 1e5, 300)
 
-    s1.state = fabric_state(
+    s1.state = factory_state(
         [factory_eos({"air": 1}, with_state=thermodynamic_state),
          factory_eos({"water": 1}, with_state=thermodynamic_state)],
         s1.compute_volume_with_level,
@@ -355,7 +355,7 @@ if __name__ == "__main__":
         np.array([1, 0.4]),
         False)
 
-    s2.state = fabric_state(
+    s2.state = factory_state(
         [factory_eos({"air": 1}, with_state=thermodynamic_state),
          factory_eos({"water": 1}, with_state=thermodynamic_state)],
         s2.compute_volume_with_level,
@@ -365,7 +365,7 @@ if __name__ == "__main__":
         False)
 
     inlet = Fixed([0, 1], sink=s2)
-    inlet.flow = fabric_flow(
+    inlet.flow = factory_flow(
         [factory_eos({"air": 1}, with_state=thermodynamic_state),
          factory_eos({"water": 1}, with_state=thermodynamic_state)],
         np.array([1e5, 1e5]),
@@ -377,7 +377,7 @@ if __name__ == "__main__":
     )
 
     vlv.opening = 0.7
-    vlv.flow = fabric_flow(
+    vlv.flow = factory_flow(
         [factory_eos({"air": 1}, with_state=thermodynamic_state),
          factory_eos({"water": 1}, with_state=thermodynamic_state)],
         np.array([1e5, 1e5]),
