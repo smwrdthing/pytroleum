@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, Iterable, Protocol, runtime_checkable, overload
+from typing import Iterable, Protocol, runtime_checkable, overload
 from numpy.typing import NDArray
 from numpy import float64
 from pytroleum.sdyna.opdata import StateData, FlowData

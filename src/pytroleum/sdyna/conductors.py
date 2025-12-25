@@ -1,16 +1,14 @@
-# Conductors here
 from abc import ABC, abstractmethod
 import numpy as np
 from scipy.constants import g, R
 from scipy.optimize import newton
-import CoolProp.constants as CoolConst
 from pytroleum import meter
 from pytroleum.tport import efflux
 from pytroleum.sdyna.opdata import FlowData
 from pytroleum.sdyna.interfaces import ControlVolume, Section
 from pytroleum.sdyna.controllers import PropIntDiff, StartStop
 
-from typing import Callable, Iterable, overload
+from typing import Iterable
 from numpy.typing import NDArray
 from numpy import float64
 
@@ -76,8 +74,6 @@ class Fixed(Conductor):
 
 
 class Valve(Conductor):
-
-    # Subclass to represent Valve
 
     def __init__(
             self, of_phase: int,
@@ -156,9 +152,9 @@ class Valve(Conductor):
 
         if self.of_phase > 0:  # conductor deals with liquid phase
 
-            upstream_pressure = _compute_pressure_for_elevation(
+            upstream_pressure = _compute_pressure_for(
                 self.elevation, upstream_state.level, upstream_state.pressure)
-            downstream_pressure = _compute_pressure_for_elevation(
+            downstream_pressure = _compute_pressure_for(
                 self.elevation, downstream_state.level, downstream_state.pressure)
 
             mass_flow_rate = efflux.incompressible(
@@ -228,8 +224,6 @@ class Valve(Conductor):
 
 class CentrifugalPump(Conductor):
 
-    # Subclass ro represent centrifugal pump
-
     def __init__(self, of_phase: int,
                  source: ControlVolume | None = None,
                  sink: ControlVolume | None = None) -> None:
@@ -260,9 +254,9 @@ class CentrifugalPump(Conductor):
 
     def compute_flow(self) -> None:
         """Computes mass and energy flow produced by pump"""
-        upstream_pressure = _compute_pressure_for_elevation(
+        upstream_pressure = _compute_pressure_for(
             self.elevation, self.source.state.level, self.source.state.pressure)
-        downstream_pressure = _compute_pressure_for_elevation(
+        downstream_pressure = _compute_pressure_for(
             self.elevation, self.sink.state.level, self.sink.state.pressure)
 
         # Pump should not allow backflow due to the inverse rotation issues,
@@ -285,7 +279,6 @@ class CentrifugalPump(Conductor):
         if volumetric_flow_rate > 0:
             mass_flow_rate = volumetric_flow_rate*density
 
-        # Maybe abstract out reassignments? (for Valve too)
         velocity = mass_flow_rate/density/self.flow_area
         energy_specific_flow = (
             energy_specific + pressure/density + g*self.elevation + velocity**2/2)
@@ -326,7 +319,6 @@ class UnderPass(Conductor):
         self.discharge_coefficient = discharge_coefficient
         self.is_locked: bool = False
 
-        # For type checker only
         self.source: Section
         self.sink: Section
 
@@ -513,7 +505,7 @@ class UnderPass(Conductor):
         # We should check if this violates mass and/or energy balance. It should not,
         # because algorithm was built with this objective in mind, but still.
 
-    def compute_vapor_flow_rate(self):
+    def compute_vapor_flow(self):
         """Determines vapor flow rate value if there is a gap between liquid surface and
         weir's crest, sets 0 for vapor flow rate otherwise"""
         if self.is_locked:
@@ -564,14 +556,12 @@ class UnderPass(Conductor):
 
     def advance(self):
         self.check_if_locked()
-        self.compute_vapor_flow_rate()
+        self.compute_vapor_flow()
         self.distribute()  # NOTE : this disrupted solver in legacy, be careful
         self.propagate_flow()
 
 
 class OverPass(Conductor):
-
-    # TODO : finish OverPass
 
     # Subclass to represent passage at the top of section formed by crest of weir and
     # internal wall of vessel
@@ -635,8 +625,6 @@ class OverPass(Conductor):
         otherwise. Computation are based on condition of constant total volume of liquids
         in source, so for correct resolution all flow rates from other conductors must be
         computed"""
-        # NOTE : for this to work other conductors must be resolved before, so
-        # order of execution must be enforced
         of_phase = self.of_phase[1]  # lightest liquid
         self.flow.mass_flow_rate[of_phase] = 0
         if self.is_reached:
@@ -699,8 +687,6 @@ class FurnacePolynomial(Conductor):
 
 class PhaseInterface(Conductor):
 
-    # Subclass to represent interfacial interactions
-
     def __init__(self, of_phase: tuple[int, int],
                  in_control_volume: Section | None = None) -> None:
 
@@ -748,7 +734,7 @@ class PhaseInterface(Conductor):
         self.compute_flow()
 
 
-def _compute_pressure_for_elevation(
+def _compute_pressure_for(
         elevation: float | float64,
         levels_profile: NDArray[float64],
         pressures_profile: NDArray[float64]) -> float | float64:

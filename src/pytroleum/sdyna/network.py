@@ -1,25 +1,14 @@
-# System-level functionality goes here
 from abc import ABC, abstractmethod
-from typing import Literal, Callable, overload
-from scipy.integrate import OdeSolver, RK23
+from typing import Literal, Callable
 from pytroleum.sdyna.convolumes import ControlVolume, SectionHorizontal
-from pytroleum.sdyna.conductors import (Conductor, Fixed, Valve, OverPass,
-                                        UnderPass, CentrifugalPump)
+from pytroleum.sdyna.conductors import Conductor, Fixed, Valve
 from pytroleum.sdyna.controllers import PropIntDiff, StartStop
-from pytroleum.sdyna.opdata import StateData
 from pytroleum.sdyna.custom_solvers import ExplicitEuler
 import numpy as np
 from numpy import float64
 from numpy.typing import NDArray
 
 # NOTE :
-# this is WIP, so it is still forming. Few good ideas are of concern now, should try
-# implementing them
-
-# For optimisation purposes stick with arrays. Before solution process begins evaluate
-# size of system using number of phases and number of control volumes, then create
-# system-level state vector for ODE, should be faster
-#
 # Apparently slice-assignments are slightly slower thane new array creation.
 # We still can leverage this to simplify procedure for dynamic system with state-altering
 # elements conductors. (see UnderPass)
@@ -102,25 +91,20 @@ _VALID_OBJECTIVES = ["level", "pressure", "temperature"]
 
 class DynamicNetwork(ABC):
 
-    # Must figure out how to connect objects quick
-
     def __init__(self) -> None:
         self.control_volumes: list[ControlVolume] = []
         self.conductors: list[Conductor] = []
         self.objectives: dict[Conductor, Callable[[], float]] = {}
         self.solver: ExplicitEuler
 
-        # Convenience parameters to track system-level state variables
         self._masses: NDArray[float64]
         self._energies: NDArray[float64]
         self._state_vector: NDArray[float64]
 
-        # Vectors to hold system-level mass and energy flow rates
         self._mass_flows: NDArray[float64]
         self._energy_flows: NDArray[float64]
         self._flows: NDArray[float64]
 
-        # Convenience attributes
         self._number_of_phases: int
         self._number_of_control_volumes: int
         self._state_vector_size: int
@@ -196,11 +180,6 @@ class DynamicNetwork(ABC):
         if parameter == "pressure":
             self.objectives[conductor] = lambda: (
                 in_control_volume.state.pressure[of_phase])
-
-        # NOTE :
-        # Check if values are updated in dinctinoary for this arrangement, if it does not
-        # work and values do not change we can try recasting stuff above into lambdas.
-        # If this will not work too we still can record tuples
 
     def connect_elements(
             self, connection_map: dict[Conductor, tuple[ControlVolume, ControlVolume]]):
@@ -332,7 +311,7 @@ class DynamicNetwork(ABC):
 
 
 if __name__ == "__main__":
-    from pytroleum.sdyna.opdata import OperationData, FlowData, factory_state, factory_flow
+    from pytroleum.sdyna.opdata import factory_state, factory_flow
     from pytroleum.sdyna.convolumes import Atmosphere
     from pytroleum.tdyna.eos import factory_eos
     import CoolProp.constants as CoolConst

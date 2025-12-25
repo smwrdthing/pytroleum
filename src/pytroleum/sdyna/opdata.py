@@ -108,7 +108,6 @@ def factory_state(
     # order (from light to heavy phase). So when we use provided volume function we get
     # volume values that correspond to this order
     volume_by_level = volume_fn(level)
-    # To get volume of matter we use diff with negative sign and appended zero
     volume = -np.diff(volume_by_level, append=0)
 
     mass = volume*density

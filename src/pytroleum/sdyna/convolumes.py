@@ -1,4 +1,3 @@
-# Control volumes here
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import numpy as np
@@ -7,7 +6,7 @@ from scipy.constants import g
 from pytroleum import meter
 from pytroleum.tdyna.eos import factory_eos
 
-from typing import TYPE_CHECKING, Callable, overload
+from typing import Callable, overload
 from numpy.typing import NDArray
 from numpy import float64
 from pytroleum.sdyna.interfaces import Conductor
@@ -87,8 +86,6 @@ class ControlVolume(ABC):
 
     def compute_vapor_pressure(self) -> None:
         """Computes vapor pressure from density and temperature"""
-        # Vapor pressure should be computed from finite difference approximation too, as
-        # DmassT pair is not supported
         vapor_eos = self.state.equation[0]
 
         pressure_partial_derivative_wrt_temperatrue = (
@@ -108,16 +105,12 @@ class ControlVolume(ABC):
     def update_equations_of_state(self):
         """Updates equations of state with pressure and temperature values"""
         for eos, new_T in zip(self.state.equation, self.state.temperature):
-            # Also check if internal energy is consistent for this approach
             eos.update(CoolConst.PT_INPUTS, self.state.pressure[0], new_T)
 
     def reset_flow_rates(self):
         """Assigns zero for net flow in control volume"""
         self.net_mass_flow = np.zeros_like(self.net_mass_flow)
         self.net_energy_flow = np.zeros_like(self.net_energy_flow)
-
-    # This is as far as common routines go, to get other parameters details about liquid
-    # spatial distribution should be known
 
     @abstractmethod
     def advance(self) -> None:
@@ -126,9 +119,6 @@ class ControlVolume(ABC):
 
 
 class Atmosphere(ControlVolume):
-
-    # Class for atmosphere representation. Should impose nominal infinite
-    # volume and constant values for thermodynamic paramters
 
     _STANDARD_TEMPERATURE = 20+273.15
     _STANDARD_PRESSURE = 101_330
@@ -157,15 +147,6 @@ class Atmosphere(ControlVolume):
 
     def advance(self) -> None:
         return
-
-
-class Reservoir(ControlVolume):
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def advance(self) -> None:
-        pass
 
 
 class SectionHorizontal(ControlVolume):

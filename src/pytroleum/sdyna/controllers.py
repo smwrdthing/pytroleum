@@ -1,4 +1,3 @@
-import abc
 import numpy as np
 from typing import Iterable
 
@@ -23,7 +22,6 @@ class PropIntDiff:
         self.saturation = saturation
         self.ratelim = ratelim
 
-        # Entries for active operation attributes
         self.signal: float = 0
         self.history_signal: float = 0
 
@@ -90,22 +88,17 @@ class PropIntDiff:
         self.check_saturation()
         self.check_rate(time_step)
 
-        # At this point signal for the next step is generated and can be employed
-
 
 class StartStop:
 
     def __init__(self, upperlim: float, lowerlim: float,
                  signal_max: float, signal_min: float) -> None:
-
-        # Setting parameters
         self.signal_min = signal_min
         self.signal_max = signal_max
 
         self.upperlim = upperlim
         self.lowerlim = lowerlim
 
-        # Entry to operational value of signal
         self.signal: float = 0
 
     def control(self, probe, invert=False):
@@ -114,25 +107,17 @@ class StartStop:
         # Inverted on-off - on mode decreases probes, off increases
         # example : pump controlling liquid level
         if invert:
-            # If probe overshoots upper limit we impose max signal
             if probe > self.upperlim:
                 self.signal = self.signal_max
-            # If probe is less than lower limit we minimize signal
             if probe < self.lowerlim:
                 self.signal = self.signal_min
-
         # Non-inverted on-off - on mode increases probes, off decreases
         # example : compressor controlling pressure in vessel
         else:
-            # If probe overshoots upper limit we impose minimal signal
             if probe > self.upperlim:
                 self.signal = self.signal_min
-            # If probe is less than lower limit we give max signal
             if probe < self.lowerlim:
                 self.signal = self.signal_max
-            # signal value in-between does not change, this is expected behavior
-
-        # This should cover start/stop logic entirely
 
 
 if __name__ == "__main__":
@@ -204,5 +189,3 @@ if __name__ == "__main__":
     ax.set_ylabel('error [-]')
     ax.plot(time, errors)
     ax.grid(True)
-
-    # Looks like it works
