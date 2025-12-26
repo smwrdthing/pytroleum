@@ -771,6 +771,7 @@ class PhaseInterface(Conductor):
 
     def advance(self):
         self.compute_flow()
+        self.propagate_flow()
 
 
 def _compute_pressure_for(
