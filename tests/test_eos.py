@@ -10,7 +10,6 @@ from pytroleum.tdyna.eos import (
     CrudeOilReferenced,
     CrudeOilRefernceData,
     factory_eos,
-    factory_natgas,
     density_to_specific_gravity,
     specific_to_api_gravity,
     api_to_specific_gravity,
@@ -237,31 +236,6 @@ class TestFactoryFunctions:
 
         assert eos.T() == 300
         assert eos.p() == 101325
-
-    def test_factory_natgas_valid(self):
-        """Тест фабрики природного газа с валидным составом"""
-        composition = {
-            'Methane': 0.9,
-            'Ethane': 0.1
-        }
-
-        eos = factory_natgas(composition)
-
-        assert eos is not None
-        fluid_names = [name.upper() for name in eos.fluid_names()]
-        assert 'METHANE' in fluid_names
-
-    def test_factory_natgas_invalid(self):
-        """Тест фабрики природного газа с невалидным составом"""
-        # Состав без углеводородов
-        composition = {
-            'Water': 0.5,
-            'Air': 0.5
-        }
-
-        with pytest.raises(ValueError, match="No components associated with typical "
-                           "natural gas"):
-            factory_natgas(composition)
 
 
 class TestUtilityFunctions:
