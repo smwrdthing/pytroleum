@@ -752,12 +752,7 @@ class PhaseInterface(Conductor):
         self.flow.energy_flow[of_heavy_phase] = heat_flow
 
         if of_light_phase == 0:
-            evaporation_area = meter.area_planecut_section_horiz_ellipses(
-                self.sink.length_left_semiaxis,
-                self.sink.length_cylinder,
-                self.sink.length_right_semiaxis,
-                self.sink.diameter,
-                self.sink.state.level[of_heavy_phase])
+            evaporation_area = heat_transfer_area
             saturation_pressure = self.saturation_state.pressure[of_light_phase]
             saturation_density = self.saturation_state.density[of_light_phase]
 
