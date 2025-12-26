@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from numpy import float64
 from typing import TYPE_CHECKING, Callable
 if TYPE_CHECKING:
-    from ..tdyna.CoolStub import AbstractState  # type: ignore
+    from pytroleum.tdyna.CoolStub import AbstractState   # type: ignore
     # TODO : figure why pyright complains about stub file being
     #        impossible to resolve from source
 else:
@@ -26,7 +26,7 @@ else:
 
 @dataclass
 class OperationData(ABC):
-    equation_of_state: list[AbstractState]
+    equation: list[AbstractState]
 
     pressure: NDArray[float64]
     temperature: NDArray[float64]
@@ -88,7 +88,7 @@ def _extract_temperature_dependent(
     return density, energy_specific, dynamic_viscosity, thermal_conductivity
 
 
-def fabric_state(
+def factory_state(
         equation_of_state: list[AbstractState],
         volume_fn: Callable[[NDArray[float64]], NDArray[float64]],
         pressure: NDArray[float64],
@@ -108,7 +108,6 @@ def fabric_state(
     # order (from light to heavy phase). So when we use provided volume function we get
     # volume values that correspond to this order
     volume_by_level = volume_fn(level)
-    # To get volume of matter we use diff with negative sign and appended zero
     volume = -np.diff(volume_by_level, append=0)
 
     mass = volume*density
@@ -117,7 +116,6 @@ def fabric_state(
     state = StateData(
         equation_of_state,
         pressure,
-        volume,
         temperature,
         density,
         energy_specific,
@@ -125,13 +123,14 @@ def fabric_state(
         thermal_conductivity,
         mass,
         energy,
-        level
+        level,
+        volume
     )
 
     return state
 
 
-def fabric_flow(
+def factory_flow(
         equation_of_state: list[AbstractState],
         pressure: NDArray[float64],
         temperature: NDArray[float64],

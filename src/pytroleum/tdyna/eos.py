@@ -3,13 +3,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Iterable, overload
+import numpy as np
 from numpy import float64
 from numpy.typing import NDArray
 
 if TYPE_CHECKING:
-    from CoolStub import AbstractState
+    from pytroleum.tdyna.CoolStub import AbstractState  # type: ignore
 else:
-    from CoolProp import AbstractState
+    from CoolProp.CoolProp import AbstractState
 import CoolProp.CoolProp as CP
 import CoolProp.constants as CoolConst
 
@@ -18,22 +19,6 @@ import CoolProp.constants as CoolConst
 # algorithms from thermo might be useful too
 
 MOLE_FRACTION_SUM_TOL = 1e-3
-GENERIC_HYDROCARBS = {
-    # Hydrocarbons
-    'METHANE',
-    'ETHANE',
-    'PROPANE',
-    'ISOBUTANE',
-    'N-BUTANE',
-    'ISOPENTANE',
-    'N-PENTANE',
-
-    # Contaminants/Others
-    'NITROGEN',
-    'CARBONMONOXIDE',
-    'CARBONDIOXIDE',
-    'HYDROGENSULFIDE'
-}
 CRUDE_OIL = "CrudeOil", "CRUDEOIL"
 _MESSAGE_UNSUPPORTED_DERIVATIVE = "Specified partial derivative is not supported"
 _MESSAGE_UNSUPPORTED_INPUT_PAIR = "Provided input pair is not supported"
@@ -64,27 +49,35 @@ class AbstractStateImitator(ABC):
         self._molar_mass: float
 
     def molar_mass(self):
+        """Returns molar mass of fluid."""
         return self._molar_mass
 
     def cvmass(self):
+        """Returns isochoric heat capacity of fluid."""
         return self._heat_capacity_isochoric
 
     def p(self):
+        """Returns pressure."""
         return self._pressure
 
     def T(self):
+        """Returns temperature."""
         return self._temperature
 
     def rhomass(self):
+        """Returns density."""
         return self._density
 
     def umass(self):
+        """Returns mass-based specific internal energy."""
         return self._mass_specific_energy
 
     def set_mole_fractions(self, mole_fractions: Iterable[float]):
+        """Sets new molar compositin of fluid."""
         self._mole_fractions = mole_fractions
 
     def get_mole_fractions(self) -> Iterable[float]:
+        """Returns molar composition of fluid."""
         return self._mole_fractions
 
     # All imitators should contain implemented partial derivatives for
@@ -92,11 +85,13 @@ class AbstractStateImitator(ABC):
     # PT inputs.
 
     def _valid_input_pair(self, pair_key):
+        """Checks validity of provided input pair for state specification."""
         return pair_key == CoolConst.PT_INPUTS
 
     def _valid_partial_derivative(
             self, of_parameter_key: int,
             with_respect_to_key: int, holding_const_key: int) -> bool:
+        """Checks validity of requested partial derivative."""
 
         # NOTE : logic should be checked later
 
@@ -114,6 +109,17 @@ class AbstractStateImitator(ABC):
             with_respect_to_key: int,
             holding_const_key: int
     ) -> None:
+        """Returns requested partial derivative.
+
+        Parameters
+        ----------
+        of_parameter_key
+            integer key of parameter for which derivatvie is calculated.
+        with_respect_to_key
+            integer key of parameter with repect to which derivative is calculated.
+        holding_const_key
+            integer key of parameter to hold constand for derivative calculations.
+        """
 
         # Important NOTE :
         # We are developing this primarly for dynamic modelling now, so we need
@@ -131,15 +137,19 @@ class AbstractStateImitator(ABC):
         return
 
     def _compute_density(self):
+        """Computes density for current state."""
         return
 
     def _compute_viscosity(self):
+        """Computes viscosity for current state."""
         return
 
     def _compute_heat_capacity_isochoric(self):
+        """Computes heat capacity for current state."""
         return
 
     def _compute_mass_specific_energy(self):
+        """Computes mass specific internal energy for current state."""
         return
 
     def _run_computations(self):
@@ -152,6 +162,17 @@ class AbstractStateImitator(ABC):
     def update(self, input_pair_key: int,
                first_keyed_parameter: float,
                second_keyed_parameter: float) -> None:
+        """Compute parameters of state specified with provided input pair.
+
+        Parameters
+        ----------
+        input_pair_key
+            integer key to specify which values are provided as imput pair.
+        first_keyed_parameter
+            value of first parameter corresponding to input pair.
+        second_keyed_parameter
+            value if second parameter corresponding to input pair.
+        """
         return
 
 
@@ -173,6 +194,7 @@ class CrudeOilHardcoded(AbstractStateImitator):
         self._heat_capacity_isobaric = self._HEAT_CAPACITY
 
     def default(self) -> None:
+        """Sets default harcoded parameters for oil."""
         self._density = self._DENSITY
         self._dynamic_viscosity = self._DYNAMIC_VISCOSITY
         self._heat_capacity_isochoric = self._HEAT_CAPACITY
@@ -181,6 +203,7 @@ class CrudeOilHardcoded(AbstractStateImitator):
     def change(self, new_density: float | None = None,
                new_visocsity: float | None = None,
                new_heat_capacity: float | None = None) -> None:
+        """Sets new hardcoded parameters for oil."""
         if new_density is not None:
             self._density = new_density
         if new_visocsity is not None:
@@ -249,11 +272,15 @@ class CrudeOilReferenced(AbstractStateImitator):
         self._compute_mass_specific_energy()
 
     def _prepare_density_model(self):
+        """Prepares linear model for density, computes isobaric expansivity coefficient
+        from given reference for further density computations."""
         self._expansivity_isobaric = -1/self.reference.mean_density*(
             self.reference.density[1]-self.reference.density[0])/(
                 self.reference.temperature[1]-self.reference.temperature[0])
 
     def _prepare_viscosity_model(self):
+        """Prepares exponential model for viscosity, computes exponent coefficient and
+        linear coefficient from given reference for further viscosity computations."""
         T1, T2 = self.reference.temperature
         mu1, mu2 = self.reference.viscosity
         self._viscosity_model_power = T1*T2/(T1-T2)*np.log(mu2/mu1)
@@ -265,23 +292,28 @@ class CrudeOilReferenced(AbstractStateImitator):
     # initialization with appropriate default temperature for correltions to work
 
     def _compute_specific_gravity(self, temperature=15+273.15):
+        """Computes oil's specific gravity for specified temperature (default is 15C)."""
         self._specific_gravity = density_to_specific_gravity(
             self._density, temperature)
 
     def _compute_api_gravity(self):
+        """Computes oil's API from current value of specific gravity."""
         self._api_gravity = specific_to_api_gravity(self._specific_gravity)
 
     def _compute_density(self):
+        """Computes density of oil with linear model."""
         self._density = (
             self.reference.density[0] -
             self._expansivity_isobaric * self.reference.mean_density *
             (self._temperature-self.reference.temperature[0]))
 
     def _compute_viscosity(self):
+        """Computes viscosity of oil with exponential model."""
         self._dynamic_viscosity = self._viscosity_model_coeff*np.exp(
             self._viscosity_model_power/self._temperature)
 
     def _compute_heat_capacity_isochoric(self) -> None:
+        """Computes isochoric heat capacity with specific-gravity based correlation."""
         # Correlations with hardcoded coefficients for now, refine later
         temperature_celcius = self._temperature - 273.15
         self._heat_capacity_isochoric = (
@@ -289,6 +321,7 @@ class CrudeOilReferenced(AbstractStateImitator):
             2.67*temperature_celcius + 3049)
 
     def _compute_mass_specific_energy(self) -> None:
+        """Computes mass specific internal energy."""
         self._mass_specific_energy = self._heat_capacity_isochoric*self._temperature
 
     def first_partial_deriv(
@@ -344,6 +377,27 @@ class CrudeOilRefernceData:
 def factory_eos(
         composition: dict[str, float], backend: str = 'HEOS',
         with_state: None | Iterable = None) -> AbstractState:
+    """Factory function to create interface for equation of state.
+
+    Parameters
+    ----------
+    composition
+        dictionary in the form of {fluid_name: molar_fraction}.
+    backend, optional
+        CoolProp backend to use, by default 'HEOS'.
+    with_state, optional
+        tuple with keyed state, of provided interface for equation of state jumps to
+        specified state, otherwise no state is imposed, by default None.
+
+    Returns
+    -------
+        object that provides interface to equation of state.
+
+    Raises
+    ------
+    ValueError
+        if molar fractions do not sum up to unity.
+    """
 
     # should work both for mixtures and pures
     names = '&'.join(list(composition.keys()))
@@ -367,27 +421,6 @@ def factory_eos(
         eos.update(*with_state)
 
     return eos
-
-
-def factory_natgas(composition: dict[str, float], backend: str = 'PR',
-                   with_state: None | Iterable = None) -> AbstractState:
-
-    # Note how for general factory default CoolProp backend is Helmholtz EOS and for
-    # hydrocarbons it is Peng-Robinson EOS.
-
-    # Here we want to obtain an interface of hydrocarbon gases. Some assertions with
-    # regard to provided compostion should be done.
-    names = list(composition.keys())
-    # black magic to eliminate case sensitivity
-    names = set(' '.join(names).upper().split(' '))
-    if len(GENERIC_HYDROCARBS.intersection(names)) == 0:
-        msg = ("No components associated with typical natural gas")
-        raise ValueError(msg)
-
-    # If names are valid we create an interface with call to a common eos factory
-    hcmix = factory_eos(composition, backend, with_state)
-
-    return hcmix
 
 
 def factory_crude_oil():
@@ -437,7 +470,6 @@ def specific_to_api_gravity(specific_gravity):
 
 if __name__ == "__main__":
 
-    import numpy as np
     import matplotlib.pyplot as plt
 
     # Let's see if this makes sense
@@ -453,7 +485,7 @@ if __name__ == "__main__":
         'H2S': 0.01
     }
 
-    hcm_eos_PR = factory_natgas(natural_gas_composition)
+    hcm_eos_PR = factory_eos(natural_gas_composition, "PR")
     hcm_eos_PR.build_phase_envelope("")
     PE = hcm_eos_PR.get_phase_envelope_data()
 
