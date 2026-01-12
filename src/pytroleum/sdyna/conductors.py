@@ -634,10 +634,10 @@ class OverPass(Conductor):
         self.flow.energy_specific[of_phase] = donor.state.energy_specific[of_phase]
         self.flow.temperature[of_phase] = donor.state.temperature[of_phase]
         self.flow.density[of_phase] = donor.state.density[of_phase]
-        self.flow.energy_specific_flow[self.of_phase] = (
-            self.flow.energy_specific[self.of_phase] +
-            self.flow.pressure[self.of_phase] / self.flow.density[self.of_phase] +
-            self.flow.velocity[self.of_phase]**2/2)
+        self.flow.energy_specific_flow[of_phase] = (
+            self.flow.energy_specific[of_phase] +
+            self.flow.pressure[of_phase] / self.flow.density[of_phase] +
+            self.flow.velocity[of_phase]**2/2)
 
     def compute_liquid_overflow(self):
         """Determines flow rate of lightest liquid if weir's crest is reached, sets 0
@@ -674,10 +674,10 @@ class OverPass(Conductor):
             self.flow.pressure[of_phase] = donor.state.pressure[of_phase-1]
             self.flow.velocity[of_phase] = 0
             self.flow.energy_specific[of_phase] = donor.state.energy_specific[of_phase]
-            self.flow.energy_specific_flow[self.of_phase] = (
-                self.flow.energy_specific[self.of_phase] +
-                self.flow.pressure[self.of_phase] / self.flow.density[self.of_phase] +
-                self.flow.velocity[self.of_phase]**2/2)
+            self.flow.energy_specific_flow[of_phase] = (
+                self.flow.energy_specific[of_phase] +
+                self.flow.pressure[of_phase] / self.flow.density[of_phase] +
+                self.flow.velocity[of_phase]**2/2)
 
     def advance(self) -> None:
         self.check_if_reached()
