@@ -447,7 +447,7 @@ class UnderPass(Conductor):
             level_guesse = (
                 self.source.state.level[1], self.sink.state.level[1])
 
-        solution = newton(
+        solution = fsolve(
             lambda levels: self._hydrostatic_balance_objective(
                 levels, disbalance),
             level_guesse)
