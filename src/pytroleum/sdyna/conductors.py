@@ -599,8 +599,8 @@ class OverPass(Conductor):
         """Switches corresponding flag if liquid level reaches crest of weir or falls
         behind it"""
         self.is_reached = False
-        criterial_level = max(max(self.source.state.level),
-                              max(self.sink.state.level))
+        criterial_level = max(max(self.source.state.level[1:]),
+                              max(self.sink.state.level[1:]))
         if criterial_level >= self.edge_level:
             self.is_reached = True
 
