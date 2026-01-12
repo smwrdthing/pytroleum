@@ -638,7 +638,7 @@ class OverPass(Conductor):
             self.flow.energy_specific[of_phase] +
             self.flow.pressure[of_phase] / self.flow.density[of_phase] +
             self.flow.velocity[of_phase]**2/2)
-        self.flow.energy_flow[of_phase] = (self.flow.energy_specific[of_phase] *
+        self.flow.energy_flow[of_phase] = (self.flow.energy_specific_flow[of_phase] *
                                            vapor_mass_flow_rate)
 
     def compute_liquid_overflow(self):
