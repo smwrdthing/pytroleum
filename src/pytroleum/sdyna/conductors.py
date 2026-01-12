@@ -24,10 +24,14 @@ class Conductor(ABC):
 
         if source is None:
             from pytroleum.sdyna.convolumes import Atmosphere
-            self.source = Atmosphere()
+            source = Atmosphere()
         if sink is None:
             from pytroleum.sdyna.convolumes import Atmosphere
-            self.sink = Atmosphere()
+            sink = Atmosphere()
+
+        self.connect_source(source)
+        self.connect_sink(sink)
+
         self.of_phase = of_phase
         self.controller: PropIntDiff | StartStop | None = None
 
@@ -483,7 +487,7 @@ class UnderPass(Conductor):
         liquid_mass_difference_source = (
             liquid_mass_source-self.source.state.mass[1:])
         liquid_mass_difference_sink = (
-            liquid_mass_source-self.sink.state.mass[1:])
+            liquid_mass_sink-self.sink.state.mass[1:])
 
         if liquid_mass_difference_source < 0:
             # liquid leaves source
