@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from scipy.constants import g, R
-from scipy.optimize import newton
+from scipy.optimize import fsolve
 from pytroleum import meter
 from pytroleum.tport import efflux
 from pytroleum.sdyna.opdata import FlowData, StateData
