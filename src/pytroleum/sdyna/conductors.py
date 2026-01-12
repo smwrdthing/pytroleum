@@ -650,8 +650,8 @@ class OverPass(Conductor):
         self.flow.mass_flow_rate[of_phase] = 0
         if self.is_reached:
             # collect net flow rates for source formed by other conductors
-            other_liquid_flow_rates_inlet = np.array(0.0)
-            other_liquid_flow_rates_outlet = np.array(0.0)
+            other_liquid_flow_rates_inlet = np.array([0.0])
+            other_liquid_flow_rates_outlet = np.array([0.0])
             for inlet in self.source.inlets:
                 if inlet is not self:
                     other_liquid_flow_rates_inlet += inlet.flow.mass_flow_rate[1:]
@@ -662,9 +662,9 @@ class OverPass(Conductor):
             other_liquid_net_flow = (
                 other_liquid_flow_rates_inlet - other_liquid_flow_rates_outlet)
 
-            overflow_rate = other_liquid_net_flow[of_phase] - np.sum(
-                self.source.state.density[of_phase] / self.source.state.density *
-                other_liquid_net_flow)
+            overflow_rate = other_liquid_net_flow[0] - np.sum(
+                self.source.state.density[0] / self.source.state.density[1:] *
+                other_liquid_net_flow[1:])
 
             if overflow_rate < 0:
                 # NOTE : assigining integer 0 potentially can lead to troubles if numpy
