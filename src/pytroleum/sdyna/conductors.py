@@ -252,7 +252,7 @@ class CentrifugalPump(Conductor):
             coeff_matrix.append([
                 angular_velocity**2,
                 -2*angular_velocity*flow_rate,
-                -flow_rate])
+                -flow_rate**2])
             free_vector.append(head)
         self.coefficients = np.linalg.solve(coeff_matrix, free_vector)
 
@@ -752,12 +752,7 @@ class PhaseInterface(Conductor):
         self.flow.energy_flow[of_heavy_phase] = heat_flow
 
         if of_light_phase == 0:
-            evaporation_area = meter.area_planecut_section_horiz_ellipses(
-                self.sink.length_left_semiaxis,
-                self.sink.length_cylinder,
-                self.sink.length_right_semiaxis,
-                self.sink.diameter,
-                self.sink.state.level[of_heavy_phase])
+            evaporation_area = heat_transfer_area
             saturation_pressure = self.saturation_state.pressure[of_light_phase]
             saturation_density = self.saturation_state.density[of_light_phase]
 
@@ -771,6 +766,7 @@ class PhaseInterface(Conductor):
 
     def advance(self):
         self.compute_flow()
+        self.propagate_flow()
 
 
 def _compute_pressure_for(
