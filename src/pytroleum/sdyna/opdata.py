@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 else:
     from CoolProp.CoolProp import AbstractState
 
+from pytroleum.tdyna.eos import CrudeOilHardcoded, CrudeOilReferenced
+
 # NOTE & TODO
 # NDArray is imposed by default to handle possible multiphase situations
 #
@@ -23,10 +25,12 @@ else:
 #
 # This should be mentioned in documentations/docstrings
 
+type EquationOfState = AbstractState | CrudeOilHardcoded | CrudeOilReferenced
+
 
 @dataclass
 class OperationData(ABC):
-    equation: list[AbstractState]
+    equation: list[EquationOfState]
 
     pressure: NDArray[float64]
     temperature: NDArray[float64]
@@ -56,10 +60,9 @@ class FlowData(OperationData):
 
 
 def _extract_temperature_dependent(
-    equation_of_state: list[AbstractState],
+    equation_of_state: list[EquationOfState],
     pressure: NDArray,
     temperature: NDArray,
-    use_ideal_gas_specific_energy: bool = True
 ) -> tuple[NDArray[float64],
            NDArray[float64],
            NDArray[float64],
@@ -74,10 +77,7 @@ def _extract_temperature_dependent(
     for eos, p, T in zip(equation_of_state, pressure, temperature):
         eos.update(CoolConst.PT_INPUTS, p, T)
         density.append(eos.rhomass())
-        if use_ideal_gas_specific_energy:
-            energy_specific.append(eos.umass_idealgas())
-        else:
-            energy_specific.append(eos.umass())
+        energy_specific.append(eos.umass())
         dynamic_viscosity.append(eos.viscosity())
         thermal_conductivity.append(eos.conductivity())
     density = np.array(density)
@@ -89,20 +89,18 @@ def _extract_temperature_dependent(
 
 
 def factory_state(
-        equation_of_state: list[AbstractState],
+        equation_of_state: list[EquationOfState],
         volume_fn: Callable[[NDArray[float64]], NDArray[float64]],
         pressure: NDArray[float64],
         temperature: NDArray[float64],
-        level: NDArray[float64],
-        use_ideal_gas_specific_energy: bool = True) -> StateData:
+        level: NDArray[float64]) -> StateData:
 
     (density,
      energy_specific,
      dynamic_viscosity,
      thermal_conductivity) = _extract_temperature_dependent(equation_of_state,
                                                             pressure,
-                                                            temperature,
-                                                            use_ideal_gas_specific_energy)
+                                                            temperature)
 
     # Levels should be in descending oreder because data is stored in density-ascending
     # order (from light to heavy phase). So when we use provided volume function we get
@@ -131,21 +129,19 @@ def factory_state(
 
 
 def factory_flow(
-        equation_of_state: list[AbstractState],
+        equation_of_state: list[EquationOfState],
         pressure: NDArray[float64],
         temperature: NDArray[float64],
         flow_cross_area: float | float64,
         elevation: float | float64,
-        mass_flowrate: NDArray[float64],
-        use_ideal_gas_specific_energy: bool = True) -> FlowData:
+        mass_flowrate: NDArray[float64]) -> FlowData:
 
     (density,
      energy_specific,
      dynamic_viscosity,
      thermal_conductivity) = _extract_temperature_dependent(equation_of_state,
                                                             pressure,
-                                                            temperature,
-                                                            use_ideal_gas_specific_energy)
+                                                            temperature)
 
     volume_flowrate = mass_flowrate/density
     velocity = mass_flowrate/density/flow_cross_area
