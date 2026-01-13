@@ -42,6 +42,7 @@ class AbstractStateImitator(ABC):
 
         self._heat_capacity_isochoric: float
         self._dynamic_viscosity: float
+        self._thermal_conductivity: float
         self._pressure: float
         self._temperature: float
         self._density: float
@@ -53,6 +54,10 @@ class AbstractStateImitator(ABC):
         return self._molar_mass
 
     def cvmass(self):
+        """Returns isochoric heat capacity of fluid."""
+        return self._heat_capacity_isochoric
+
+    def cpmass(self):
         """Returns isochoric heat capacity of fluid."""
         return self._heat_capacity_isochoric
 
@@ -71,6 +76,12 @@ class AbstractStateImitator(ABC):
     def umass(self):
         """Returns mass-based specific internal energy."""
         return self._mass_specific_energy
+
+    def viscosity(self):
+        return self._dynamic_viscosity
+
+    def conductivity(self):
+        return self._thermal_conductivity
 
     def set_mole_fractions(self, mole_fractions: Iterable[float]):
         """Sets new molar compositin of fluid."""
