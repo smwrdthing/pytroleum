@@ -285,7 +285,7 @@ class CrudeOilReferenced(AbstractStateImitator):
         mu1, mu2 = self.reference.viscosity
         self._viscosity_model_power = T1*T2/(T1-T2)*np.log(mu2/mu1)
         self._viscosity_model_coeff = mu1*np.exp(
-            self._viscosity_model_power/T1)
+            -self._viscosity_model_power/T1)
 
     # NOTE :
     # methods for specific and api gravity computations are only called once during

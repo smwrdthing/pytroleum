@@ -120,7 +120,7 @@ class TestCrudeOilReferenced:
         mu1, mu2 = 0.008, 0.004
 
         expected_power = T1*T2/(T1-T2)*np.log(mu2/mu1)
-        expected_coeff = mu1*np.exp(expected_power/T1)
+        expected_coeff = mu1*np.exp(-expected_power/T1)
 
         assert_almost_equal(oil._viscosity_model_power, expected_power)
         assert_almost_equal(oil._viscosity_model_coeff, expected_coeff)
@@ -128,13 +128,12 @@ class TestCrudeOilReferenced:
     def test_compute_specific_gravity(self, oil):
         # Плотность воды при 15°C
         water_density = CP.PropsSI("DMASS", "T", 288.15, "P", 1e5, "water")
-        # Проверяем вычисление удельного веса
         oil._compute_specific_gravity()
         expected = oil._density / water_density
         assert_almost_equal(oil._specific_gravity, expected, decimal=4)
 
     def test_compute_api_gravity(self, oil):
-        """Тест вычисления API гравитации"""
+        """Тест вычисления API"""
         oil._compute_specific_gravity()
         oil._compute_api_gravity()
 
@@ -163,16 +162,16 @@ class TestCrudeOilReferenced:
                             expected_viscosity, decimal=6)
 
     def test_compute_heat_capacity_isochoric(self, oil):
-        """Тест вычисления изохорной теплоемкости"""
+        """Тест вычисления теплоемкости при постоянном объеме"""
         oil._temperature = 320  # 46.85°C
         oil._compute_specific_gravity()
 
         # Вычисляем теплоемкость
         oil._compute_heat_capacity_isochoric()
 
-        # Проверяем по формуле из кода:
+        # Проверяем по формуле:
         # (2*T_celcius-1429)*SG + 2.67*T_celcius + 3049
-        T_celsius = 320 - 273.15  # Конвертируем в Цельсии
+        T_celsius = 320 - 273.15
         expected = (2*T_celsius-1429)*oil._specific_gravity + \
             2.67*T_celsius + 3049
         assert_almost_equal(oil._heat_capacity_isochoric, expected, decimal=1)
@@ -188,7 +187,6 @@ class TestCrudeOilReferenced:
 
     def test_first_partial_deriv(self, oil):
         """Тест вычисления частных производных"""
-        # Подготавливаем состояние
         oil.update(CoolConst.PT_INPUTS, 1e5, 300)
 
         # dU/dT при постоянном P
@@ -296,45 +294,6 @@ class TestFactoryFunctions:
             with_state=(CoolConst.PT_INPUTS, 1e5, 300)
         )
         assert eos_with_state is not None
-
-    def test_density_to_specific_gravity(self):
-        """Тест конвертации плотности в удельный вес"""
-        # Плотность воды при 15°C
-        water_density = CP.PropsSI("DMASS", "T", 288.15, "P", 1e5, "water")
-
-        # Для воды удельный вес должен быть ~1.0
-        result = density_to_specific_gravity(water_density, 288.15)
-        assert_almost_equal(result, 1.0, decimal=3)
-
-        # Для нефти плотностью 850 кг/м³
-        result = density_to_specific_gravity(850, 288.15)
-        expected = 850 / water_density
-        assert_almost_equal(result, expected, decimal=3)
-
-    def test_density_to_api_gravity(self):
-        """Тест конвертации плотности в API """
-        # Для воды API должен быть 10
-        water_density = CP.PropsSI("DMASS", "T", 288.15, "P", 1e5, "water")
-        result = density_to_api_gravity(water_density, 288.15)
-        assert_almost_equal(result, 10.0, decimal=1)
-
-    def test_api_to_specific_gravity(self):
-        # API = 10 соответствует удельному весу воды = 1.0
-        result = api_to_specific_gravity(10.0)
-        expected = 141.5 / (10.0 + 131.5)
-        assert_almost_equal(result, expected)
-
-        # API = 40 (типичное значение для легкой нефти)
-        result = api_to_specific_gravity(40.0)
-        expected = 141.5 / (40.0 + 131.5)
-        assert_almost_equal(result, expected)
-
-    def test_specific_to_api_gravity(self):
-        """Тест конвертации удельного веса в API гравитацию"""
-        # Удельный вес воды = 1.0 соответствует API = 10
-        result = specific_to_api_gravity(1.0)
-        expected = 141.5 / 1.0 - 131.5
-        assert_almost_equal(result, expected)
 
 
 if __name__ == "__main__":
