@@ -281,6 +281,7 @@ class CrudeOilReferenced(AbstractStateImitator):
     def _prepare_viscosity_model(self):
         """Prepares exponential model for viscosity, computes exponent coefficient and
         linear coefficient from given reference for further viscosity computations."""
+        # TODO : look into sign of power coeffcient
         T1, T2 = self.reference.temperature
         mu1, mu2 = self.reference.viscosity
         self._viscosity_model_power = T1*T2/(T1-T2)*np.log(mu2/mu1)
