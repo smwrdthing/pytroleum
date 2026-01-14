@@ -696,9 +696,10 @@ class OverPass(Conductor):
 class FurnacePolynomial(Conductor):
 
     def __init__(
-            self, of_phase: int, minmax_fuel_flow: tuple[float, float],
-            elevation: float, diameter: float, center_distance: float,
-            in_control_volume: ControlVolume) -> None:
+            self, of_phase: int,
+            minmax_fuel_flow: tuple[float, float], elevation: float,
+            diameter: float, center_distance: float, in_control_volume: ControlVolume,
+            coeffs: NDArray[float64] = np.array([21.62, 10.59])*1e3) -> None:
 
         super().__init__(of_phase, None, in_control_volume)
 
@@ -711,7 +712,7 @@ class FurnacePolynomial(Conductor):
 
         self.fuel_flow = self.min_fuel_flow
 
-        self.polynomial_coefficients: NDArray[float64]
+        self.coeffs = coeffs
         self.controller: PropIntDiff | None
 
     def compute_heat_flux(self):
@@ -734,7 +735,7 @@ class FurnacePolynomial(Conductor):
 
         fuel_flow = self.min_fuel_flow+output*self.range_fuel_flow
         heat = np.polynomial.polynomial.polyval(
-            fuel_flow, self.polynomial_coefficients)*enclosed
+            fuel_flow, self.coeffs)*enclosed
 
         self.fuel_flow = fuel_flow*enclosed
         self.flow.energy_flow[self.of_phase] = heat
