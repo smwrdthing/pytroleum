@@ -197,7 +197,7 @@ class CrudeOilHardcoded(AbstractStateImitator):
     _DENSITY: float = 830
     _DYNAMIC_VISCOSITY: float = 6e-3
     _HEAT_CAPACITY: float = 2300
-    _THERMAL_CONDUCTIVITY: float = 125
+    _THERMAL_CONDUCTIVITY: float = 0.6
 
     def __init__(self) -> None:
         super().__init__(self._BACKEND, CRUDE_OIL[0])
