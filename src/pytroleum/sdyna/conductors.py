@@ -489,7 +489,7 @@ class UnderPass(Conductor):
         liquid_mass_difference_sink = (
             liquid_mass_sink-self.sink.state.mass[1:])
 
-        if liquid_mass_difference_source < 0:
+        if np.sum(liquid_mass_difference_source) < 0:
             # liquid leaves source
             flow_specific_energy = self.source.state.energy_specific[1:]
         else:
