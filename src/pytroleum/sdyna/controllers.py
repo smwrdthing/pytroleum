@@ -189,3 +189,5 @@ if __name__ == "__main__":
     ax.set_ylabel('error [-]')
     ax.plot(time, errors)
     ax.grid(True)
+
+    plt.show()
