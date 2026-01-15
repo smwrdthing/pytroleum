@@ -28,6 +28,8 @@ from pytroleum.tdyna.eos import CrudeOilHardcoded, CrudeOilReferenced
 type EquationOfState = AbstractState | CrudeOilHardcoded | CrudeOilReferenced
 
 
+# TODO : dataclass for controller parameters
+
 @dataclass
 class OperationData(ABC):
     equation: list[EquationOfState]
