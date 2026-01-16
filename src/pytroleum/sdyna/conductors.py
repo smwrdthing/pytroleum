@@ -340,8 +340,13 @@ class UnderPass(Conductor):
     def equal_level_distribution(self) -> tuple[float | float64, float | float64]:
         """Performs liquid distribution among neighboring section so that final values
         of total level are same on both sides."""
+
+        # Possible TODO
+        # Maybe move common volume computations logic somewhere else?
+
         liquid_common_volume = (
-            self.source.state.volume[1:]+self.sink.state.volume[1:])
+            self.source.state.mass[1:]/self.source.state.density[1:] +
+            self.sink.state.mass[1:]/self.sink.state.density[1:])
         liquid_total_volume = np.sum(liquid_common_volume)
 
         # To make this stuff work graduated levels should correspond in neighbouring
@@ -385,7 +390,8 @@ class UnderPass(Conductor):
             self.sink.compute_volume_with_level(sink_level))
         total_volume_with_level = source_volume_with_level+sink_volume_with_level
         liquid_common_volume = (
-            self.source.state.volume[1:]+self.sink.state.volume[1:])
+            self.source.state.mass[1:]/self.source.state.density[1:] +
+            self.sink.state.mass[1:]/self.sink.state.density[1:])
         liquid_total_volume = np.sum(liquid_common_volume)
         liquid_reference_density = 0.5*(
             self.source.state.density[1:]+self.sink.state.density[1:])
