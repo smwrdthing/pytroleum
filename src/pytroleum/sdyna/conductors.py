@@ -452,7 +452,8 @@ class UnderPass(Conductor):
         phase composition from initial volume fractions."""
 
         self._common_liquid_volumes = (
-            self.source.state.volume[1:] + self.sink.state.volume[1:])
+            self.source.state.mass[1:]/self.source.state.density[1:] +
+            self.sink.state.mass[1:]/self.sink.state.density[1:])
         self._total_liquid_volume = np.sum(self._common_liquid_volumes)
 
         self._liquid_volume_fractions = (
