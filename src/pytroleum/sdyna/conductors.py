@@ -385,12 +385,13 @@ class UnderPass(Conductor):
             self.source.volume - source_volume_with_level)
         source_vapor_density = self.source.state.mass[0]/source_vapor_volume
 
+        _R = R/self.source.state.equation[0].molar_mass()
+
         # This stuff is a good approximation at best, so no reason to sweat CoolProp's
         # EoS here to get pressure, ideal gas should do, especially considering pressure
         # difference is of interest, errors should cancel out anyways
         source_vapor_pressure = (
-            source_vapor_density*R*self.source.state.temperature[0] /
-            self.source.state.equation[0].molar_mass())
+            source_vapor_density*_R*self.source.state.temperature[0])
         source_liquid_pressure = self._liquid_pseudo_density*g*source_level
         source_total_pressure = source_vapor_pressure+source_liquid_pressure
 
@@ -399,8 +400,7 @@ class UnderPass(Conductor):
             self.sink.volume-sink_volume_with_level)
         sink_vapor_density = self.sink.state.mass[0]/sink_vapor_volume
         sink_vapor_pressure = (
-            sink_vapor_density*R*self.sink.state.temperature[0] /
-            self.sink.state.equation[0].molar_mass())
+            sink_vapor_density*_R*self.sink.state.temperature[0])
         sink_liquid_pressure = self._liquid_pseudo_density*g*sink_level
         sink_total_pressure = sink_vapor_pressure+sink_liquid_pressure
 
