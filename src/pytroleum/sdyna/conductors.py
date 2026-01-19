@@ -341,25 +341,15 @@ class UnderPass(Conductor):
         """Performs liquid distribution among neighboring section so that final values
         of total level are same on both sides."""
 
-        # Possible TODO
-        # Maybe move common volume computations logic somewhere else?
-
-        liquid_common_volume = (
-            self.source.state.mass[1:]/self.source.state.density[1:] +
-            self.sink.state.mass[1:]/self.sink.state.density[1:])
-        liquid_total_volume = np.sum(liquid_common_volume)
-
         # To make this stuff work graduated levels should correspond in neighbouring
         # sections, for more complicated cases there are workarounds, which can be
         # implemented too, but for now we do this
         common_level_graduated = self.source.level_graduated
         common_volume_graduated = self.source.volume_graduated+self.sink.volume_graduated
 
-        self._liquid_volume_fractions = liquid_common_volume/liquid_total_volume
-
         # We get desired level via interpolation then
         liquid_common_level = meter.inverse_graduate(
-            liquid_total_volume, common_level_graduated, common_volume_graduated)
+            self._total_liquid_volume, common_level_graduated, common_volume_graduated)
 
         # return shape is like that for consistency with balance algorithm
         return liquid_common_level, liquid_common_level
@@ -389,17 +379,6 @@ class UnderPass(Conductor):
         sink_volume_with_level = (
             self.sink.compute_volume_with_level(sink_level))
         total_volume_with_level = source_volume_with_level+sink_volume_with_level
-        liquid_common_volume = (
-            self.source.state.mass[1:]/self.source.state.density[1:] +
-            self.sink.state.mass[1:]/self.sink.state.density[1:])
-        liquid_total_volume = np.sum(liquid_common_volume)
-        liquid_reference_density = 0.5*(
-            self.source.state.density[1:]+self.sink.state.density[1:])
-
-        # Should be entirely internal stuff
-        self._liquid_volume_fractions = liquid_common_volume/liquid_total_volume
-        self._liquid_pseudo_density = np.sum(
-            liquid_reference_density*self._liquid_volume_fractions)
 
         # Pressure exerted on the bottom of source section (pseudo-pure liquid - based)
         source_vapor_volume = (
@@ -430,7 +409,7 @@ class UnderPass(Conductor):
         residual_balance = pressure_difference + disbalance
 
         # Conservation-based residual
-        residual_conservation = liquid_total_volume-total_volume_with_level
+        residual_conservation = self._total_liquid_volume-total_volume_with_level
 
         return residual_balance, residual_conservation
 
@@ -471,6 +450,19 @@ class UnderPass(Conductor):
         """Checks if hydrostatic lock is formed, does hydrostatic balance distribution
         if yes and equal level distribution otherwise. For multiphase situation recombines
         phase composition from initial volume fractions."""
+
+        self._common_liquid_volumes = (
+            self.source.state.volume[1:] + self.sink.state.volume[1:])
+        self._total_liquid_volume = np.sum(self._common_liquid_volumes)
+
+        self._liquid_volume_fractions = (
+            self._common_liquid_volumes/self._total_liquid_volume)
+
+        self._liquid_reference_density = 0.5*(
+            self.source.state.density[1:]+self.sink.state.density[1:])
+        self._liquid_pseudo_density = (
+            self._liquid_reference_density*self._liquid_volume_fractions)
+
         if self.is_locked:
             new_levels = self.hydrostatic_balance_distribution()
         else:
