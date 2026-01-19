@@ -527,8 +527,8 @@ class UnderPass(Conductor):
             # Actually compute flow
             flow_area = meter.area_cs_circle_trunc(
                 self.source.diameter, self.edge_level)-meter.area_cs_circle_trunc(
-                    self.source.diameter, self.source.state.level[0])
-            flow_elevation = 0.5*(self.edge_level+self.source.state.level[0])
+                    self.source.diameter, self.source.state.level[1])
+            flow_elevation = 0.5*(self.edge_level+self.source.state.level[1])
             vapor_mass_flow_rate = efflux.compressible(
                 flow_area, self.discharge_coefficient,
                 self.source.state.equation[0].cpmass() /
