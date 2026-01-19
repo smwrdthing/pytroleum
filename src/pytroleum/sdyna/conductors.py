@@ -460,7 +460,7 @@ class UnderPass(Conductor):
 
         self._liquid_reference_density = 0.5*(
             self.source.state.density[1:]+self.sink.state.density[1:])
-        self._liquid_pseudo_density = (
+        self._liquid_pseudo_density = np.sum(
             self._liquid_reference_density*self._liquid_volume_fractions)
 
         self.check_if_locked()
