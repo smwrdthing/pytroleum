@@ -330,8 +330,6 @@ class UnderPass(Conductor):
         self.source: Section
         self.sink: Section
 
-    def compute_common
-
     def check_if_locked(self):
         """Switches corresponding flag if locking conditions are met/not met."""
         self.is_locked = False
