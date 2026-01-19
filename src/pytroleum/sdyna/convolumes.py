@@ -12,6 +12,8 @@ from numpy import float64
 from pytroleum.sdyna.interfaces import Conductor
 from pytroleum.sdyna.opdata import StateData
 
+_NUMBER_OF_GRADUATION_POINTS = 500
+
 
 class ControlVolume(ABC):
 
@@ -193,7 +195,7 @@ class SectionHorizontal(ControlVolume):
         self.volume = self.volume_pure + self.volume_modificator(diameter)
 
         self.level_graduated, self.volume_graduated = meter.graduate(
-            0, diameter, self.compute_volume_with_level)
+            0, diameter, self.compute_volume_with_level, _NUMBER_OF_GRADUATION_POINTS)
         self.volume_graduated = (
             self.volume_graduated + self.volume_modificator(self.level_graduated))
 
