@@ -330,6 +330,8 @@ class UnderPass(Conductor):
         self.source: Section
         self.sink: Section
 
+    def compute_common
+
     def check_if_locked(self):
         """Switches corresponding flag if locking conditions are met/not met."""
         self.is_locked = False
@@ -463,6 +465,8 @@ class UnderPass(Conductor):
         self._liquid_pseudo_density = (
             self._liquid_reference_density*self._liquid_volume_fractions)
 
+        self.check_if_locked()
+
         if self.is_locked:
             new_levels = self.hydrostatic_balance_distribution()
         else:
@@ -561,7 +565,6 @@ class UnderPass(Conductor):
             self.flow.energy_flow[self.of_phase] = energy_flow
 
     def advance(self):
-        self.check_if_locked()
         self.distribute()  # NOTE : this disrupted solver in legacy, be careful
         self.compute_vapor_flow()
         self.propagate_flow()
