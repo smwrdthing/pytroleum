@@ -754,11 +754,11 @@ class FurnacePolynomial(Conductor):
         top_boundary = np.zeros_like(integral_domain)
 
         bottom_boundary[1:-1] = self.center_distance/2 - np.sqrt(
-            (self.center_distance/2)**2 - (integral_domain-self.elevation)**2)
+            (self.center_distance/2)**2 - (integral_domain[1:-1]-self.elevation)**2)
         bottom_boundary[[0, -1]] = self.center_distance/2
 
         top_boundary[1:-1] = self.center_distance/2 + np.sqrt(
-            (self.center_distance/2)**2 - (integral_domain-self.elevation)**2)
+            (self.center_distance/2)**2 - (integral_domain[1:-1]-self.elevation)**2)
         top_boundary[[0, -1]] = self.center_distance/2
 
         bottom_func = integral_func**2/2*(
