@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 import numpy as np
+
 from scipy.constants import g, R
 from scipy.optimize import fsolve
+from scipy.integrate import cumulative_trapezoid
+
 from pytroleum import meter
 from pytroleum.tport import efflux
 from pytroleum.sdyna.opdata import FlowData, StateData
@@ -13,6 +16,8 @@ from numpy.typing import NDArray
 from numpy import float64
 
 # TODO : sort out type specifications and actual assignments in ints
+
+_FURNACE_VOLUME_INTEGRATION_SIZE = 500
 
 
 class Conductor(ABC):
@@ -696,24 +701,88 @@ class OverPass(Conductor):
 class FurnacePolynomial(Conductor):
 
     def __init__(
-            self, of_phase: int,
-            minmax_fuel_flow: tuple[float, float], elevation: float,
-            diameter: float, center_distance: float, in_control_volume: ControlVolume,
+            self, of_phase: int, minmax_fuel_flow: tuple[float, float],
+            elevation: float, length: float, diameter: float,
+            center_distance: float, in_control_volume: ControlVolume,
             coeffs: NDArray[float64] = np.array([21.62, 10.59])*1e3) -> None:
 
         super().__init__(of_phase, None, in_control_volume)
 
         self.of_phase = of_phase
+
         self.min_fuel_flow, self.max_fuel_flow = minmax_fuel_flow
         self.range_fuel_flow = self.max_fuel_flow-self.min_fuel_flow
+        self.fuel_flow = self.min_fuel_flow
+
         self.elevation = elevation
+        self.length = length
         self.diameter = diameter
         self.center_distance = center_distance
 
-        self.fuel_flow = self.min_fuel_flow
+        self.min_level = self.elevation - self.diameter/2
+        self.max_level = self.elevation + self.diameter/2
 
         self.coeffs = coeffs
         self.controller: PropIntDiff | None
+
+    def compute_volume_with_level(self, level):
+
+        straight_part_volume = np.zeros_like(level)
+        torus_part_volume = np.zeros_like(level)
+        covered_part_volume = np.zeros_like(level)
+
+        in_domain = (level >= self.min_level)*(level <= self.max_level)
+        over_domain = (level >= self.max_level)
+
+        # Look into legacy code maybe?
+        straight_part_volume[in_domain] = meter.area_cs_circle_trunc(
+            self.diameter, level[in_domain]-self.min_level)*self.length
+        straight_part_volume[over_domain] = 2 * \
+            np.pi*self.diameter**2/4*self.length
+
+        torus_part_volume[in_domain] = meter.area_cs_circle_trunc(
+            self.diameter, level[in_domain]-self.min_level)*np.pi*self.center_distance/2
+        torus_part_volume[over_domain] = np.pi * \
+            self.diameter**2/4*np.pi*self.center_distance/2
+
+        integral_domain = np.linspace(
+            self.min_level, self.max_level, _FURNACE_VOLUME_INTEGRATION_SIZE)
+        integral_func = np.sqrt(
+            (self.diameter/2)**2 - (integral_domain-self.diameter/2)**2)
+
+        bottom_boundary = np.zeros_like(integral_domain)
+        top_boundary = np.zeros_like(integral_domain)
+
+        bottom_boundary[1:-1] = self.center_distance/2 - np.sqrt(
+            (self.center_distance/2)**2 - (integral_domain-self.elevation)**2)
+        bottom_boundary[[0, -1]] = self.center_distance/2
+
+        top_boundary[1:-1] = self.center_distance/2 + np.sqrt(
+            (self.center_distance/2)**2 - (integral_domain-self.elevation)**2)
+        top_boundary[[0, -1]] = self.center_distance/2
+
+        bottom_func = integral_func**2/2*(
+            np.arcsin(bottom_boundary/integral_func) +
+            bottom_boundary/integral_func*np.sqrt(1-(bottom_boundary/integral_func)**2))
+        top_func = integral_func**2/2*(
+            np.arcsin(top_boundary/integral_func) +
+            top_boundary/integral_func*np.sqrt(1-(top_boundary/integral_func)**2))
+
+        if isinstance(self.sink, Section):
+            integral_value = (
+                2*self.sink.length_left_semiaxis/(self.sink.diameter/2) *
+                cumulative_trapezoid(top_func-bottom_func,
+                                     integral_domain, initial=0.0))
+        else:
+            integral_value = np.zeros_like(integral_domain)
+
+        covered_part_volume[in_domain] = np.interp(
+            level[in_domain], integral_domain, integral_value)
+        covered_part_volume[over_domain] = integral_value[-1]
+
+        volume = straight_part_volume+torus_part_volume+covered_part_volume
+
+        return volume
 
     def compute_heat_flux(self):
         """Compute heat flux produced by furnace with polynomial approximation and fuel
