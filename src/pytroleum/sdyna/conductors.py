@@ -737,55 +737,55 @@ class FurnacePolynomial(Conductor):
         torus_part_volume = np.zeros_like(level)
         covered_part_volume = np.zeros_like(level)
 
-        in_domain = (level >= self.min_level)*(level <= self.max_level)
-        over_domain = (level >= self.max_level)
-
-        # Look into legacy code maybe?
-        straight_part_volume[in_domain] = meter.area_cs_circle_trunc(
-            self.diameter, level[in_domain]-self.min_level)*self.length
-        straight_part_volume[over_domain] = 2 * \
-            np.pi*self.diameter**2/4*self.length
-
-        torus_part_volume[in_domain] = meter.area_cs_circle_trunc(
-            self.diameter, level[in_domain]-self.min_level)*self.torus_length
-        torus_part_volume[over_domain] = self.total_cross_area * \
-            self.torus_length
-
-        integral_domain = np.linspace(
-            self.min_level, self.max_level, _FURNACE_VOLUME_INTEGRATION_SIZE)
-        first_integral_param = np.sqrt(
-            self.radius**2 - (integral_domain-self.radius)**2)
-
-        bottom_boundary = np.zeros_like(integral_domain)
-        top_boundary = np.zeros_like(integral_domain)
-
-        bottom_boundary = self.center_half_distance - np.sqrt(
-            self.radius**2 - (integral_domain-self.elevation)**2)
-
-        top_boundary = self.center_half_distance + np.sqrt(
-            self.radius**2 - (integral_domain-self.elevation)**2)
-
-        bottom_nd_param = bottom_boundary/first_integral_param
-        bottom_func = first_integral_param**2/2*(
-            np.arcsin(bottom_nd_param) + bottom_nd_param*np.sqrt(1-bottom_nd_param**2))
-
-        top_nd_param = top_boundary/first_integral_param
-        top_func = first_integral_param**2/2*(
-            np.arcsin(top_nd_param) + top_nd_param*np.sqrt(1-top_nd_param**2))
-
-        second_integral_func = top_func-bottom_func
-
         if isinstance(self.sink, Section):
-            integral_value = (
-                2*self.sink.length_left_semiaxis/(self.sink.diameter/2) *
-                cumulative_trapezoid(second_integral_func,
-                                     integral_domain, initial=0.0))
-        else:
-            integral_value = np.zeros_like(integral_domain)
 
-        covered_part_volume[in_domain] = np.interp(
-            level[in_domain], integral_domain, integral_value)
-        covered_part_volume[over_domain] = integral_value[-1]
+            in_domain = (level >= self.min_level)*(level <= self.max_level)
+            over_domain = (level >= self.max_level)
+
+            cover_radius = self.sink.diameter/2
+            cover_length = self.sink.length_left_semiaxis
+
+            straight_part_volume[in_domain] = meter.area_cs_circle_trunc(
+                self.diameter, level[in_domain]-self.min_level)*self.length
+            straight_part_volume[over_domain] = 2 * \
+                np.pi*self.diameter**2/4*self.length
+
+            torus_part_volume[in_domain] = meter.area_cs_circle_trunc(
+                self.diameter, level[in_domain]-self.min_level)*self.torus_length
+            torus_part_volume[over_domain] = self.total_cross_area * \
+                self.torus_length
+
+            integral_domain = np.linspace(
+                self.min_level, self.max_level, _FURNACE_VOLUME_INTEGRATION_SIZE)
+            first_integral_param = np.sqrt(
+                cover_radius**2 - (integral_domain-cover_radius)**2)
+
+            bottom_boundary = np.zeros_like(integral_domain)
+            top_boundary = np.zeros_like(integral_domain)
+
+            bottom_boundary = self.center_half_distance - np.sqrt(
+                self.radius**2 - (integral_domain-self.elevation)**2)
+
+            top_boundary = self.center_half_distance + np.sqrt(
+                self.radius**2 - (integral_domain-self.elevation)**2)
+
+            bottom_nd_param = bottom_boundary/first_integral_param
+            bottom_func = first_integral_param**2/2*(
+                np.arcsin(bottom_nd_param) +
+                bottom_nd_param * np.sqrt(1-bottom_nd_param**2))
+
+            top_nd_param = top_boundary/first_integral_param
+            top_func = first_integral_param**2/2*(
+                np.arcsin(top_nd_param) + top_nd_param*np.sqrt(1-top_nd_param**2))
+
+            second_integral_func = top_func-bottom_func
+
+            integral_value = 2*cover_length/cover_radius * cumulative_trapezoid(
+                second_integral_func, integral_domain, initial=0.0)
+
+            covered_part_volume[in_domain] = np.interp(
+                level[in_domain], integral_domain, integral_value)
+            covered_part_volume[over_domain] = integral_value[-1]
 
         volume = straight_part_volume+torus_part_volume+covered_part_volume
 
