@@ -659,10 +659,12 @@ class OverPass(Conductor):
             other_liquid_flow_rates_outlet = np.array([0.0])
             for inlet in self.source.inlets:
                 if inlet is not self:
-                    other_liquid_flow_rates_inlet += inlet.flow.mass_flow_rate[1:]
+                    other_liquid_flow_rates_inlet = other_liquid_flow_rates_inlet + \
+                        inlet.flow.mass_flow_rate[1:]
             for outlet in self.source.outlets:
                 if outlet is not self:
-                    other_liquid_flow_rates_outlet += outlet.flow.mass_flow_rate[1:]
+                    other_liquid_flow_rates_outlet = other_liquid_flow_rates_outlet + \
+                        outlet.flow.mass_flow_rate[1:]
 
             other_liquid_net_flow = (
                 other_liquid_flow_rates_inlet - other_liquid_flow_rates_outlet)
