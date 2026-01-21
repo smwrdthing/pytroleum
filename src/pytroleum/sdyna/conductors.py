@@ -719,6 +719,12 @@ class FurnacePolynomial(Conductor):
         self.diameter = diameter
         self.center_distance = center_distance
 
+        # secondary geometry parameters
+        self.radius = self.diameter/2  # TODO recast to property?
+        self.center_half_distance = center_distance/2
+        self.torus_length = np.pi*self.center_half_distance
+        self.total_cross_area = np.pi*self.diameter**2/4
+
         self.min_level = self.elevation - self.diameter/2
         self.max_level = self.elevation + self.diameter/2
 
@@ -741,37 +747,40 @@ class FurnacePolynomial(Conductor):
             np.pi*self.diameter**2/4*self.length
 
         torus_part_volume[in_domain] = meter.area_cs_circle_trunc(
-            self.diameter, level[in_domain]-self.min_level)*np.pi*self.center_distance/2
-        torus_part_volume[over_domain] = np.pi * \
-            self.diameter**2/4*np.pi*self.center_distance/2
+            self.diameter, level[in_domain]-self.min_level)*self.torus_length
+        torus_part_volume[over_domain] = self.total_cross_area * \
+            self.torus_length
 
         integral_domain = np.linspace(
             self.min_level, self.max_level, _FURNACE_VOLUME_INTEGRATION_SIZE)
-        integral_func = np.sqrt(
-            (self.diameter/2)**2 - (integral_domain-self.diameter/2)**2)
+        first_integral_param = np.sqrt(
+            self.radius**2 - (integral_domain-self.radius)**2)
 
         bottom_boundary = np.zeros_like(integral_domain)
         top_boundary = np.zeros_like(integral_domain)
 
-        bottom_boundary[1:-1] = self.center_distance/2 - np.sqrt(
-            (self.center_distance/2)**2 - (integral_domain[1:-1]-self.elevation)**2)
-        bottom_boundary[[0, -1]] = self.center_distance/2
+        bottom_boundary[1:-1] = self.center_half_distance - np.sqrt(
+            self.radius**2 - (integral_domain[1:-1]-self.elevation)**2)
+        bottom_boundary[[0, -1]] = self.center_half_distance
 
-        top_boundary[1:-1] = self.center_distance/2 + np.sqrt(
-            (self.center_distance/2)**2 - (integral_domain[1:-1]-self.elevation)**2)
-        top_boundary[[0, -1]] = self.center_distance/2
+        top_boundary[1:-1] = self.center_half_distance + np.sqrt(
+            self.radius**2 - (integral_domain[1:-1]-self.elevation)**2)
+        top_boundary[[0, -1]] = self.center_half_distance
 
-        bottom_func = integral_func**2/2*(
-            np.arcsin(bottom_boundary/integral_func) +
-            bottom_boundary/integral_func*np.sqrt(1-(bottom_boundary/integral_func)**2))
-        top_func = integral_func**2/2*(
-            np.arcsin(top_boundary/integral_func) +
-            top_boundary/integral_func*np.sqrt(1-(top_boundary/integral_func)**2))
+        bottom_nd_param = bottom_boundary/first_integral_param
+        bottom_func = first_integral_param**2/2*(
+            np.arcsin(bottom_nd_param) + bottom_nd_param*np.sqrt(1-bottom_nd_param**2))
+
+        top_nd_param = top_boundary/first_integral_param
+        top_func = first_integral_param**2/2*(
+            np.arcsin(top_nd_param) + top_nd_param*np.sqrt(1-top_nd_param**2))
+
+        second_integral_func = top_func-bottom_func
 
         if isinstance(self.sink, Section):
             integral_value = (
                 2*self.sink.length_left_semiaxis/(self.sink.diameter/2) *
-                cumulative_trapezoid(top_func-bottom_func,
+                cumulative_trapezoid(second_integral_func,
                                      integral_domain, initial=0.0))
         else:
             integral_value = np.zeros_like(integral_domain)
