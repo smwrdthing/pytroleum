@@ -349,8 +349,9 @@ class UnderPass(Conductor):
         # To make this stuff work graduated levels should correspond in neighbouring
         # sections, for more complicated cases there are workarounds, which can be
         # implemented too, but for now we do this
-        common_level_graduated = self.source.level_graduated
-        common_volume_graduated = self.source.volume_graduated+self.sink.volume_graduated
+        common_level_graduated = self.source._level_graduated
+        common_volume_graduated = self.source._volume_graduated + \
+            self.sink._volume_graduated
 
         # We get desired level via interpolation then
         liquid_common_level = meter.inverse_graduate(

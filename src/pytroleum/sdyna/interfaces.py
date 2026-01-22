@@ -44,8 +44,8 @@ class Section(Protocol):
     net_mass_flow: NDArray[float64]
     net_energy_flow: NDArray[float64]
     volume: float | float64
-    level_graduated: NDArray[float64]
-    volume_graduated: NDArray[float64]
+    _level_graduated: NDArray[float64]
+    _volume_graduated: NDArray[float64]
 
     def connect_inlet(self, conductor: Conductor):
         ...
