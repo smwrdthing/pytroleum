@@ -191,13 +191,13 @@ class SectionHorizontal(ControlVolume):
         self.diameter = diameter
         self.volume_modificator = volume_modificator
 
-        self.volume_pure = self.compute_volume_with_level(diameter)
-        self.volume = self.volume_pure + self.volume_modificator(diameter)
+        self._volume_pure = self.compute_volume_with_level(diameter)
+        self.volume = self._volume_pure + self.volume_modificator(diameter)
 
-        self.level_graduated, self.volume_graduated = meter.graduate(
+        self._level_graduated, self._volume_graduated = meter.graduate(
             0, diameter, self.compute_volume_with_level, _NUMBER_OF_GRADUATION_POINTS)
-        self.volume_graduated = (
-            self.volume_graduated + self.volume_modificator(self.level_graduated))
+        self._volume_graduated = (
+            self._volume_graduated + self.volume_modificator(self._level_graduated))
 
     @overload
     def compute_volume_with_level(self, level: float | float64) -> float | float64:
@@ -228,7 +228,8 @@ class SectionHorizontal(ControlVolume):
 
     def compute_level_with_volume(self, volume):
         """Returns level corresponding to provided volume in horizontal section"""
-        return meter.inverse_graduate(volume, self.level_graduated, self.volume_graduated)
+        return meter.inverse_graduate(
+            volume, self._level_graduated, self._volume_graduated)
 
     def compute_fluid_level(self) -> None:
         """Computes fluid level from fluid volume"""
