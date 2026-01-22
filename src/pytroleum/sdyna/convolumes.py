@@ -21,8 +21,8 @@ class ControlVolume(ABC):
         self.outlets: list[Conductor] = []
         self.inlets: list[Conductor] = []
         self.volume: float | float64 = np.inf
-        self.net_mass_flow = np.zeros(1)
-        self.net_energy_flow = np.zeros(1)
+        self._net_mass_flow = np.zeros(1)
+        self._net_energy_flow = np.zeros(1)
         self.state: StateData
 
     # TODO Introduce custom decorator for iterable inputs
@@ -111,8 +111,8 @@ class ControlVolume(ABC):
 
     def reset_flow_rates(self):
         """Assigns zero for net flow in control volume"""
-        self.net_mass_flow = np.zeros_like(self.net_mass_flow)
-        self.net_energy_flow = np.zeros_like(self.net_energy_flow)
+        self._net_mass_flow = np.zeros_like(self._net_mass_flow)
+        self._net_energy_flow = np.zeros_like(self._net_energy_flow)
 
     @abstractmethod
     def advance(self) -> None:

@@ -177,8 +177,8 @@ class DynamicNetwork(ABC):
             start = i*self._number_of_phases
             stop = start+self._number_of_phases
 
-            self._mass_flows[start:stop] = cv.net_mass_flow
-            self._energy_flows[start:stop] = cv.net_energy_flow
+            self._mass_flows[start:stop] = cv._net_mass_flow
+            self._energy_flows[start:stop] = cv._net_energy_flow
 
         self._flows[:self._state_vector_size//2] = self._mass_flows
         self._flows[self._state_vector_size//2:] = self._energy_flows

@@ -14,8 +14,8 @@ class ControlVolume(Protocol):
     outlets: list[Conductor]
     inlets: list[Conductor]
     state: StateData
-    net_mass_flow: NDArray[float64]
-    net_energy_flow: NDArray[float64]
+    _net_mass_flow: NDArray[float64]
+    _net_energy_flow: NDArray[float64]
 
     # def __init__(self) -> None:
     #     ...
@@ -41,8 +41,8 @@ class Section(Protocol):
     outlets: list[Conductor]
     inlets: list[Conductor]
     state: StateData
-    net_mass_flow: NDArray[float64]
-    net_energy_flow: NDArray[float64]
+    _net_mass_flow: NDArray[float64]
+    _net_energy_flow: NDArray[float64]
     volume: float | float64
     _level_graduated: NDArray[float64]
     _volume_graduated: NDArray[float64]

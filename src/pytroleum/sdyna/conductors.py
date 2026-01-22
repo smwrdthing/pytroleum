@@ -59,11 +59,11 @@ class Conductor(ABC):
     def propagate_flow(self):
         """Contributes flow rate values to net flow attributes of source and sink with
         appropriate signs."""
-        self.source.net_mass_flow = self.source.net_mass_flow-self.flow.mass_flow_rate
-        self.source.net_energy_flow = self.source.net_energy_flow-self.flow.energy_flow
+        self.source._net_mass_flow = self.source._net_mass_flow-self.flow.mass_flow_rate
+        self.source._net_energy_flow = self.source._net_energy_flow-self.flow.energy_flow
 
-        self.sink.net_mass_flow = self.sink.net_mass_flow + self.flow.mass_flow_rate
-        self.sink.net_energy_flow = self.sink.net_energy_flow + self.flow.energy_flow
+        self.sink._net_mass_flow = self.sink._net_mass_flow + self.flow.mass_flow_rate
+        self.sink._net_energy_flow = self.sink._net_energy_flow + self.flow.energy_flow
 
     @abstractmethod
     def advance(self) -> None:
