@@ -742,15 +742,15 @@ class FurnacePolynomial(Conductor):
         covered_part_volume = np.zeros_like(level)
 
         in_domain = (level >= self.min_level)*(level <= self.max_level)
-        over_domain = (level >= self.max_level)
+        over_domain = (level > self.max_level)
 
         cover_radius = self.sink.diameter/2
         cover_length = self.sink.length_left_semiaxis
 
-        straight_part_volume[in_domain] = meter.area_cs_circle_trunc(
+        straight_part_volume[in_domain] = 2*meter.area_cs_circle_trunc(
             self.diameter, level[in_domain]-self.min_level)*self.length
         straight_part_volume[over_domain] = 2 * \
-            np.pi*self.diameter**2/4*self.length
+            self.total_cross_area*self.length
 
         torus_part_volume[in_domain] = meter.area_cs_circle_trunc(
             self.diameter, level[in_domain]-self.min_level)*self.torus_length
