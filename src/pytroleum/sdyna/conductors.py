@@ -156,9 +156,9 @@ class Valve(Conductor):
         upstream_state = self.source.state
         downstream_state = self.sink.state
 
-        if self.controller is not None:
+        if isinstance(self.controller, PropIntDiff):
             # direct assignment corresponds to controller signal interpretation
-            self.opening = self.controller.signal
+            self.opening = self.controller._signal
 
         if self.of_phase > 0:  # conductor deals with liquid phase
 
@@ -809,7 +809,7 @@ class FurnacePolynomial(Conductor):
 
         output = 1
         if self.controller is not None:
-            output = self.controller.signal
+            output = self.controller._signal
 
         fuel_flow = self.min_fuel_flow+output*self.range_fuel_flow
         heat = np.polynomial.polynomial.polyval(
