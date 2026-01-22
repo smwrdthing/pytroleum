@@ -879,6 +879,25 @@ class PhaseInterface(Conductor):
 
             self.flow.mass_flow_rate[of_light_phase] = evaporation_rate
 
+            # NOTE
+            # This should fix issues with temperature drop, delet note after successfull
+            # troubleshooting
+            self.flow.velocity[of_light_phase] = (
+                evaporation_rate/evaporation_area/saturation_density)
+            self.flow.density[of_light_phase] = saturation_density
+            self.flow.pressure[of_light_phase] = saturation_pressure
+            self.flow.temperature[of_light_phase] = self.saturation_state.temperature
+            self.flow.energy_specific[of_light_phase] = \
+                self.saturation_state.energy_specific[of_light_phase]
+
+            self.flow.energy_specific_flow[of_light_phase] = (
+                self.flow.energy_specific[of_light_phase] +
+                self.flow.pressure[of_light_phase] / self.flow.density[of_light_phase] +
+                self.flow.velocity[of_light_phase]**2/2)
+            self.flow.energy_flow[of_light_phase] = \
+                self.flow.energy_flow[of_light_phase] + \
+                self.flow.energy_specific_flow[of_light_phase]*evaporation_rate
+
     def advance(self):
         self.compute_flow()
         self.propagate_flow()
