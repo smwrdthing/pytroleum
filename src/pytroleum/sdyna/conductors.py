@@ -886,7 +886,8 @@ class PhaseInterface(Conductor):
                 evaporation_rate/evaporation_area/saturation_density)
             self.flow.density[of_light_phase] = saturation_density
             self.flow.pressure[of_light_phase] = saturation_pressure
-            self.flow.temperature[of_light_phase] = self.saturation_state.temperature
+            self.flow.temperature[of_light_phase] = \
+                self.saturation_state.temperature[of_light_phase]
             self.flow.energy_specific[of_light_phase] = \
                 self.saturation_state.energy_specific[of_light_phase]
 
