@@ -12,6 +12,8 @@ from numpy import float64
 from pytroleum.sdyna.interfaces import Conductor
 from pytroleum.sdyna.opdata import StateData
 
+_NUMBER_OF_GRADUATION_POINTS = 500
+
 
 class ControlVolume(ABC):
 
@@ -129,17 +131,17 @@ class Atmosphere(ControlVolume):
         # Possible TODO :
         # Implement selector-method to set standard temperature and pressure for
         # specified STP refernce
-        eos_air = factory_eos({"air": 1}, with_state=(
+        _eos_air = factory_eos({"air": 1}, with_state=(
             CoolConst.PT_INPUTS, self._STANDARD_PRESSURE, self._STANDARD_TEMPERATURE))
 
         self.state = StateData(
-            equation=[eos_air],
+            equation=[_eos_air],
             pressure=np.array([self._STANDARD_PRESSURE]),
             temperature=np.array([self._STANDARD_TEMPERATURE]),
-            density=np.array([eos_air.rhomass()]),
-            energy_specific=np.array([eos_air.umass()]),
-            dynamic_viscosity=np.array([eos_air.viscosity()]),
-            thermal_conductivity=np.array([eos_air.conductivity()]),
+            density=np.array([_eos_air.rhomass()]),
+            energy_specific=np.array([_eos_air.umass()]),
+            dynamic_viscosity=np.array([_eos_air.viscosity()]),
+            thermal_conductivity=np.array([_eos_air.conductivity()]),
             mass=np.array([np.inf]),
             energy=np.array([np.inf]),
             level=np.array([np.inf]),
@@ -193,7 +195,7 @@ class SectionHorizontal(ControlVolume):
         self.volume = self.volume_pure + self.volume_modificator(diameter)
 
         self.level_graduated, self.volume_graduated = meter.graduate(
-            0, diameter, self.compute_volume_with_level)
+            0, diameter, self.compute_volume_with_level, _NUMBER_OF_GRADUATION_POINTS)
         self.volume_graduated = (
             self.volume_graduated + self.volume_modificator(self.level_graduated))
 

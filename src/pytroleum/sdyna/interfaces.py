@@ -47,9 +47,6 @@ class Section(Protocol):
     level_graduated: NDArray[float64]
     volume_graduated: NDArray[float64]
 
-    def __init__(self) -> None:
-        ...
-
     def connect_inlet(self, conductor: Conductor):
         ...
 
@@ -78,11 +75,6 @@ class Conductor(Protocol):
     sink: ControlVolume
     flow: FlowData
     controller: PropIntDiff | StartStop | None
-
-    def __init__(self, of_phase: int | Iterable[int],
-                 source: ControlVolume | None,
-                 sink: ControlVolume | None) -> None:
-        ...
 
     def connect_source(self, convolume: ControlVolume) -> None:
         ...

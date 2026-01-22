@@ -331,8 +331,7 @@ if __name__ == "__main__":
         s1.compute_volume_with_level,
         np.array([2e5, 2e5]),
         np.array([300, 300]),
-        np.array([1, 0.4]),
-        False)
+        np.array([1, 0.4]))
 
     s2.state = factory_state(
         [factory_eos({"air": 1}, with_state=thermodynamic_state),
@@ -340,8 +339,7 @@ if __name__ == "__main__":
         s2.compute_volume_with_level,
         np.array([2e5, 2e5]),
         np.array([300, 300]),
-        np.array([1, 0.4]),
-        False)
+        np.array([1, 0.4]))
 
     inlet = Fixed([0, 1], sink=s2)
     inlet.flow = factory_flow(
@@ -351,9 +349,7 @@ if __name__ == "__main__":
         np.array([300, 300]),
         np.pi*(50e-3)**2/4,
         0.9,
-        np.array([0, 1], dtype=np.float64),
-        False
-    )
+        np.array([0, 1], dtype=np.float64))
 
     vlv.opening = 0.7
     vlv.flow = factory_flow(
@@ -363,9 +359,7 @@ if __name__ == "__main__":
         np.array([275, 275]),
         vlv.area_valve*vlv.opening,
         vlv.elevation,
-        np.array([0, 0], dtype=np.float64),
-        False
-    )
+        np.array([0, 0], dtype=np.float64))
 
     class GenericDynamic(DynamicNetwork):
         # Can't instantiate ABC, need dummy subclass
