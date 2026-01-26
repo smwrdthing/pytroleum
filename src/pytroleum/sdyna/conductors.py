@@ -707,7 +707,7 @@ class FurnacePolynomial(Conductor):
             self, of_phase: int, minmax_fuel_flow: tuple[float, float],
             elevation: float, length: float, diameter: float,
             center_distance: float, in_section: Section,
-            coeffs: NDArray[float64] = np.array([21_620.0, 2.942])) -> None:
+            coeffs: NDArray[float64] = np.array([21_620.0, 38_124_000.0])) -> None:
 
         super().__init__(of_phase, None, in_section)
 
