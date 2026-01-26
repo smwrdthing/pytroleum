@@ -707,7 +707,7 @@ class FurnacePolynomial(Conductor):
             self, of_phase: int, minmax_fuel_flow: tuple[float, float],
             elevation: float, length: float, diameter: float,
             center_distance: float, in_section: Section,
-            coeffs: NDArray[float64] = np.array([21.62, 10.59])*1e3) -> None:
+            coeffs: NDArray[float64] = np.array([21_620.0, 2.942])) -> None:
 
         super().__init__(of_phase, None, in_section)
 
@@ -805,8 +805,8 @@ class FurnacePolynomial(Conductor):
 
         # Furnace activates only when heated layer fully encloses it
         enclosed = (
-            (upper_layer_level >= self.elevation+self.diameter/2) and
-            (bottom_layer_level <= self.elevation-self.diameter/2))
+            (upper_layer_level >= self.max_level) and
+            (bottom_layer_level <= self.min_level))
 
         output = 1
         if self.controller is not None:
