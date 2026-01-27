@@ -19,6 +19,8 @@ from numpy import float64
 
 _FURNACE_VOLUME_INTEGRATION_SIZE = 500
 
+_PUMP_NO_REAL_ROOTS_MESSAGE = "No real roots for pump with given arrangement were found"
+
 
 class Conductor(ABC):
 
@@ -244,6 +246,7 @@ class CentrifugalPump(Conductor):
         self.coefficients: tuple[float, float, float] | NDArray[float64]
         self.resistance_coeff: float
         self.angular_velocity: float
+        self.max_angular_velocity: float
         self.flow_area: float  # maybe better to do this in base class
 
         super().__init__(of_phase, source, sink)
@@ -280,12 +283,21 @@ class CentrifugalPump(Conductor):
         energy_specific = self.source.state.energy_specific[self.of_phase]
         pressure_difference = downstream_pressure-upstream_pressure
 
+        output = 1.0
+        if self.controller is not None:
+            output = self.controller._signal
+        self.angular_velocity = self.max_angular_velocity*output
+
         static_head_difference = pressure_difference/density/g
         k1, k2, k3 = self.coefficients
         A = k3 + self.resistance_coeff/(2*g*self.flow_area**2)
         B = 2*k2*self.angular_velocity
         C = static_head_difference - k1*self.angular_velocity**2
-        D = np.sqrt(B**2-4*A*C)
+
+        D = B**2-4*A*C
+        if D < 0:
+            raise RuntimeError(_PUMP_NO_REAL_ROOTS_MESSAGE)
+
         volumetric_flow_rate = (np.sqrt(D)-B)/(2*A)
 
         mass_flow_rate = 0
