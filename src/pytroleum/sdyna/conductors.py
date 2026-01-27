@@ -263,7 +263,7 @@ class CentrifugalPump(Conductor):
         for flow_rate, head in zip(volume_flow_rates, heads):
             coeff_matrix.append([
                 angular_velocity**2,
-                -2*angular_velocity*flow_rate,
+                2*angular_velocity*flow_rate,
                 -flow_rate**2])
             free_vector.append(head)
         self.coefficients = np.linalg.solve(coeff_matrix, free_vector)
