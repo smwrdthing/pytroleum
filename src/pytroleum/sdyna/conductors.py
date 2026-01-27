@@ -306,7 +306,8 @@ class CentrifugalPump(Conductor):
         # For physical reasons we need only bigger root, so we only consider one with
         # plus sign
 
-        mass_flow_rate = volumetric_flow_rate*(volumetric_flow_rate >= 0)
+        mass_flow_rate = density*volumetric_flow_rate * \
+            (volumetric_flow_rate >= 0)
 
         velocity = mass_flow_rate/density/self.flow_area
         energy_specific_flow = (
