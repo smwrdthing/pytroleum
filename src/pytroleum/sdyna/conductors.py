@@ -291,7 +291,7 @@ class CentrifugalPump(Conductor):
         static_head_difference = pressure_difference/density/g
         k1, k2, k3 = self.coefficients
         A = k3 + self.resistance_coeff/(2*g*self.flow_area**2)
-        B = 2*k2*self.angular_velocity
+        B = -2*k2*self.angular_velocity
         C = static_head_difference - k1*self.angular_velocity**2
 
         D = B**2-4*A*C
