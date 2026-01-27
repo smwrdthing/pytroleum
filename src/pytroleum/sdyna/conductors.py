@@ -19,8 +19,6 @@ from numpy import float64
 
 _FURNACE_VOLUME_INTEGRATION_SIZE = 500
 
-_PUMP_NO_REAL_ROOTS_MESSAGE = "No real roots for pump with given arrangement were found"
-
 
 class Conductor(ABC):
 
@@ -295,14 +293,20 @@ class CentrifugalPump(Conductor):
         C = static_head_difference - k1*self.angular_velocity**2
 
         D = B**2-4*A*C
-        if D < 0:
-            raise RuntimeError(_PUMP_NO_REAL_ROOTS_MESSAGE)
+        D = D*(D >= 0)
+
+        # NOTE:
+        # Negative discriminant indicates situations without intersections
+        # of network resistance curve and pump curve, meaning that pump cannot
+        # satisfy network's needs, in this case we "turn off" the pump
 
         volumetric_flow_rate = (np.sqrt(D)-B)/(2*A)
 
-        mass_flow_rate = 0
-        if volumetric_flow_rate > 0:
-            mass_flow_rate = volumetric_flow_rate*density
+        # NOTE
+        # For physical reasons we need only bigger root, so we only consider one with
+        # plus sign
+
+        mass_flow_rate = volumetric_flow_rate*(volumetric_flow_rate >= 0)
 
         velocity = mass_flow_rate/density/self.flow_area
         energy_specific_flow = (
