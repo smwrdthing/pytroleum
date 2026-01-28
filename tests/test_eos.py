@@ -99,7 +99,8 @@ class TestCrudeOilReferenced:
             temperature=(288.15, 333.15),
             density=(850, 830),
             viscosity=(0.008, 0.004),
-            mean_density=840.0
+            # Исправлено: добавлен thermal_conductivity
+            thermal_conductivity=(0.12, 0.10)
         )
 
     @pytest.fixture
@@ -111,7 +112,9 @@ class TestCrudeOilReferenced:
         """Тест подготовки модели плотности"""
         # Проверяем расчет коэффициента изобарического расширения
         # alpha = -1/rho_mean * (rho2 - rho1) / (T2 - T1)
-        expected = -1/840.0 * (830 - 850) / (333.15 - 288.15)
+        # mean_density вычисляется автоматически: 0.5*(850+830) = 840.0
+        expected_mean_density = 0.5 * (850 + 830)  # 840.0
+        expected = -1/expected_mean_density * (830 - 850) / (333.15 - 288.15)
         assert_almost_equal(oil._expansivity_isobaric, expected)
 
     def test_prepare_viscosity_model(self, oil):
@@ -245,13 +248,17 @@ class TestCrudeOilRefernceData:
             temperature=(288.15, 333.15),
             density=(850, 830),
             viscosity=(0.008, 0.004),
-            mean_density=840.0
+            # Исправлено: добавлен thermal_conductivity
+            thermal_conductivity=(0.12, 0.10)
         )
 
         assert data.temperature == (288.15, 333.15)
         assert data.density == (850, 830)
         assert data.viscosity == (0.008, 0.004)
-        assert data.mean_density == 840.0
+        assert data.thermal_conductivity == (0.12, 0.10)
+        # mean_density вычисляется автоматически
+        expected_mean = 0.5 * (850 + 830)  # 840.0
+        assert_almost_equal(data.mean_density, expected_mean)
 
     def test_post_init(self):
         """Тест пост-инициализации с автоматическим вычислением mean_density"""
@@ -259,10 +266,11 @@ class TestCrudeOilRefernceData:
             temperature=(288.15, 333.15),
             density=(850, 830),
             viscosity=(0.008, 0.004),
-            mean_density=0.0  # Будет перезаписано в __post_init__
+            # Исправлено: добавлен thermal_conductivity
+            thermal_conductivity=(0.12, 0.10)
         )
 
-        expected = 0.5 * (850 + 830)
+        expected = 0.5 * (850 + 830)  # 840.0
         assert_almost_equal(data.mean_density, expected)
 
 
