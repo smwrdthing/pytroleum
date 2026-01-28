@@ -7,6 +7,7 @@ from pytroleum.sdyna.conductors import _compute_pressure_for
 
 
 def visualize_pressure_profile():
+
     h0 = 2.0  # м
     h1 = 1.4  # м
     h2 = 0.6  # м
@@ -20,6 +21,16 @@ def visualize_pressure_profile():
     p1 = p0 + rho_oil * g * (h1 - h2)
     p2 = p0 + rho_oil * g * (h1 - h2) + rho_water * g * (h2 - 0)
 
+    # Дополнительные контрольные точки
+    h01 = 1.7
+    h12 = 1.0
+    h20 = 0.3
+
+    # Давления в дополнительных точках
+    p00 = p0
+    p01 = p0+rho_oil * g * (h1 - h12)
+    p20 = p0+rho_oil * g * (h1 - h2) + rho_water * g * (h2 - h20)
+
     levels = np.array([h0, h1, h2])
     pressures = np.array([p0, p1, p2])
 
@@ -29,20 +40,16 @@ def visualize_pressure_profile():
     pressure_values = np.array([_compute_pressure_for(
         h, levels, pressures) for h in heights])
 
-    # Точки интерполяции
+    # NOTE _compute_pressure_for должна работать с массивами тоже, так что по идее
+    # NOTE можно обойтись без цикла
+
+    # Точки интерполяции (граничные)
     interp_heights = np.array([0, h2, h1, h0])
     interp_pressures = np.array([p2, p1, p0, p0])
 
     # Дополнительные контрольные точки
-    test_heights = np.array([0.3, 1.0, 1.7])
-    test_pressures = np.array([_compute_pressure_for(
-        h, levels, pressures) for h in test_heights])
-
-    # NOTE в тестовых точках следует вычислять значения давления без использования
-    # NOTE функции
-    # NOTE
-    # NOTE _compute_pressure_for должна работать с массивами тоже, так что по идее
-    # NOTE можно обойтись без цикла
+    control_heights = np.array([h20, h12, h01])
+    control_pressures = np.array([p20, p01, p00])
 
     # Создаем график
     fig, ax = plt.subplots(figsize=(10, 8))
@@ -63,8 +70,9 @@ def visualize_pressure_profile():
             label='Граничные точки', zorder=5, markerfacecolor='black')
 
     # Дополнительные контрольные точки
-    ax.plot(test_pressures / 1e5, test_heights * 1000, 'rs', markersize=6,
-            label='Контрольные точки', zorder=5)
+    ax.plot(control_pressures / 1e5, control_heights * 1000, 'ro',
+            markersize=8, markerfacecolor='none', markeredgewidth=2,
+            label='Контрольные точки', zorder=6)
 
     # Настройки графика
     ax.set_xlabel('Давление, бар', fontsize=12)
