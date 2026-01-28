@@ -37,8 +37,19 @@ def visualize_pressure_profile():
     # Создаем массив высот для плавного графика
     heights = np.linspace(0, h0, 500)
 
-    pressure_values = np.array([_compute_pressure_for(
-        h, levels, pressures) for h in heights])
+    # pressure_values = np.array([_compute_pressure_for(
+    # h, levels, pressures) for h in heights])
+
+    # NOTE уходим от цикла :
+    # NOTE внутри _compute_pressure_for вызывается np.interp, эта функция работает с numpy
+    # NOTE массивами "из коробки", поэтому heights можно сразу передавать так, pylance
+    # NOTE будет ругаться, потому что у _compute_pressure_for в сигнатуре не прописана
+    # NOTE возможность передачи массивов, но код запустится
+    # NOTE
+    # NOTE Чтобы убрать сообщние об ошибке можно на линии после кода написать
+    # NOTE "# type: ignore", но по-хорошему нужно добавить сигнатуру вызова с массивами
+    # NOTE через overload, если функция умеет с ними работать (пока можем оставить так)
+    pressure_values = _compute_pressure_for(heights, levels, pressures)
 
     # NOTE _compute_pressure_for должна работать с массивами тоже, так что по идее
     # NOTE можно обойтись без цикла
