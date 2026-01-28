@@ -7,39 +7,36 @@ from pytroleum.sdyna.conductors import _compute_pressure_for
 
 
 def visualize_pressure_profile():
-
-    h0 = 2.0
-    h1 = 1.4
-    h2 = 0.6
-    rho_water = 1000.0
-    rho_oil = 850.0
-
-    # NOTE плотность лёгкой жидкости можно попробовать искуственно занизить,
-    # NOTE чтобы на графике было видно излом
+    h0 = 2.0  # м
+    h1 = 1.4  # м
+    h2 = 0.6  # м
+    rho_water = 1000.0  # кг/м³
+    rho_oil = 650.0  # кг/м³
 
     # Давление наверху
-    p0 = 0.1
+    p0 = 101325.0
 
     # Расчет давлений
-    p1 = p0 + rho_oil * g * (h1 - h2) / 1e6
-    p2 = p0 + rho_oil * g * (h1 - h2) / 1e6 + rho_water * g * (h2 - 0) / 1e6
+    p1 = p0 + rho_oil * g * (h1 - h2)
+    p2 = p0 + rho_oil * g * (h1 - h2) + rho_water * g * (h2 - 0)
 
     levels = np.array([h0, h1, h2])
     pressures = np.array([p0, p1, p2])
 
     # Создаем массив высот для плавного графика
     heights = np.linspace(0, h0, 500)
-    pressure_values = [_compute_pressure_for(
-        h, levels, pressures) for h in heights]
+
+    pressure_values = np.array([_compute_pressure_for(
+        h, levels, pressures) for h in heights])
 
     # Точки интерполяции
-    interp_heights = [0, h2, h1, h0]
-    interp_pressures = [p2, p1, p0, p0]
+    interp_heights = np.array([0, h2, h1, h0])
+    interp_pressures = np.array([p2, p1, p0, p0])
 
     # Дополнительные контрольные точки
-    test_heights = [0.3, 1.0, 1.7]
-    test_pressures = [_compute_pressure_for(
-        h, levels, pressures) for h in test_heights]
+    test_heights = np.array([0.3, 1.0, 1.7])
+    test_pressures = np.array([_compute_pressure_for(
+        h, levels, pressures) for h in test_heights])
 
     # NOTE в тестовых точках следует вычислять значения давления без использования
     # NOTE функции
@@ -51,28 +48,27 @@ def visualize_pressure_profile():
     fig, ax = plt.subplots(figsize=(10, 8))
 
     # Области фаз
-    ax.axhspan(h1, h0, alpha=0.2, color='lightblue', label='Газовая зона')
-    ax.axhspan(h2, h1, alpha=0.25, color='gold', label='Нефтяная зона')
-    ax.axhspan(0, h2, alpha=0.2, color='lightgreen', label='Водная зона')
+    ax.axhspan(h1*1000, h0*1000, alpha=0.2,
+               color='lightblue', label='Газовая зона')
+    ax.axhspan(h2*1000, h1*1000, alpha=0.25,
+               color='gold', label='Нефтяная зона')
+    ax.axhspan(0, h2*1000, alpha=0.2, color='lightgreen', label='Водная зона')
 
-    # NOTE высоту в мм, давление в бар, оси можно ограничить от 0 до h0
-    # NOTE (убрать белые области сверху и снизу)
-
-    # Основной профиль давления
-    ax.plot(pressure_values, heights, 'k-', linewidth=2,
+    # Основной профиль давления (высота в мм, давление в бар)
+    ax.plot(pressure_values / 1e5, heights * 1000, 'k-', linewidth=2,
             label='Профиль давления', alpha=0.8, zorder=3)
 
     # Точки интерполяции (граничные)
-    ax.plot(interp_pressures, interp_heights, 'ko', markersize=6,
+    ax.plot(interp_pressures / 1e5, interp_heights * 1000, 'ko', markersize=6,
             label='Граничные точки', zorder=5, markerfacecolor='black')
 
     # Дополнительные контрольные точки
-    ax.plot(test_pressures, test_heights, 'rs', markersize=6,
+    ax.plot(test_pressures / 1e5, test_heights * 1000, 'rs', markersize=6,
             label='Контрольные точки', zorder=5)
 
     # Настройки графика
-    ax.set_xlabel('Давление (МПа)', fontsize=12)
-    ax.set_ylabel('Высота (м)', fontsize=12)
+    ax.set_xlabel('Давление, бар', fontsize=12)
+    ax.set_ylabel('Высота, мм', fontsize=12)
 
     # Сетка
     ax.grid(True, alpha=0.3, linestyle='--')
@@ -80,6 +76,7 @@ def visualize_pressure_profile():
 
     # Легенда
     ax.legend(loc='upper right', fontsize=10)
+    ax.set_ylim(0, h0 * 1000)
 
     plt.tight_layout()
     plt.show()
