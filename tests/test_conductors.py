@@ -14,6 +14,9 @@ def visualize_pressure_profile():
     rho_water = 1000.0
     rho_oil = 850.0
 
+    # NOTE плотность лёгкой жидкости можно попробовать искуственно занизить,
+    # NOTE чтобы на графике было видно излом
+
     # Давление наверху
     p0 = 0.1
 
@@ -38,6 +41,12 @@ def visualize_pressure_profile():
     test_pressures = [_compute_pressure_for(
         h, levels, pressures) for h in test_heights]
 
+    # NOTE в тестовых точках следует вычислять значения давления без использования
+    # NOTE функции
+    # NOTE
+    # NOTE _compute_pressure_for должна работать с массивами тоже, так что по идее
+    # NOTE можно обойтись без цикла
+
     # Создаем график
     fig, ax = plt.subplots(figsize=(10, 8))
 
@@ -45,6 +54,9 @@ def visualize_pressure_profile():
     ax.axhspan(h1, h0, alpha=0.2, color='lightblue', label='Газовая зона')
     ax.axhspan(h2, h1, alpha=0.25, color='gold', label='Нефтяная зона')
     ax.axhspan(0, h2, alpha=0.2, color='lightgreen', label='Водная зона')
+
+    # NOTE высоту в мм, давление в бар, оси можно ограничить от 0 до h0
+    # NOTE (убрать белые области сверху и снизу)
 
     # Основной профиль давления
     ax.plot(pressure_values, heights, 'k-', linewidth=2,
