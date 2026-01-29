@@ -49,7 +49,8 @@ def visualize_pressure_profile():
     # NOTE Чтобы убрать сообщние об ошибке можно на линии после кода написать
     # NOTE "# type: ignore", но по-хорошему нужно добавить сигнатуру вызова с массивами
     # NOTE через overload, если функция умеет с ними работать (пока можем оставить так)
-    pressure_values = _compute_pressure_for(heights, levels, pressures)
+    pressure_values = _compute_pressure_for(
+        heights, levels, pressures)  # type: ignore
 
     # NOTE _compute_pressure_for должна работать с массивами тоже, так что по идее
     # NOTE можно обойтись без цикла
