@@ -13,6 +13,7 @@ from pytroleum.sdyna.interfaces import Conductor
 from pytroleum.sdyna.opdata import StateData
 from pytroleum.sdyna.conductors import Fixed
 
+
 _NUMBER_OF_GRADUATION_POINTS = 500
 
 
@@ -294,6 +295,9 @@ class SectionVertical(ControlVolume):
         self.height = height
         self.volume_modificator = volume_modificator
 
+        self.radius = diameter / 2
+        self.area = np.pi * self.radius ** 2
+
         self._volume_pure = self.compute_volume_with_level(height)
         self.volume = self._volume_pure + self.volume_modificator(height)
 
@@ -312,27 +316,9 @@ class SectionVertical(ControlVolume):
 
     def compute_volume_with_level(self, level):
         """Returns volume corresponding to provided level in vertical cylinder"""
-        # NOTE для заданного диаметра радиус и площадь не меняются от итерации к итерации,
-        # NOTE можно сделать их атрибутами и посчитать один раз в __init__, чтобы не
-        # NOTE считать их каждый раз
-        radius = self.diameter / 2
-        area = np.pi * radius ** 2
 
-        # NOTE этот валидатор лучше убрать, потому что он "нечестен" с пользователем,
-        # NOTE ситуация, когда нам передаётся уровень меньше нуля или больше заданной
-        # NOTE высоты — это ошибка пользователя, и он должен о ней узнать через
-        # NOTE сообщение об ошибке, а не тихо получить какое-то значение
-        # NOTE
-        # NOTE Здесь скорее подошёл бы exception с корректным сообщением, но делать его
-        # NOTE тут тоже не следует, обработка исключений процесс медленный, в этом случае
-        # NOTE передача корректного значения уровня — забота пользователя
-        if isinstance(level, np.ndarray):
-            level_clipped = np.clip(level, 0, self.height)
-        else:
-            level_clipped = min(max(level, 0), self.height)
-
-        volume_pure = area * level_clipped
-        volume_modificator = self.volume_modificator(level_clipped)
+        volume_pure = self.area * level
+        volume_modificator = self.volume_modificator(level)
         volume = volume_pure + volume_modificator
         return volume
 
@@ -346,12 +332,6 @@ class SectionVertical(ControlVolume):
 
     def compute_level_with_volume(self, volume):
         """Returns level corresponding to provided volume in vertical cylinder"""
-
-        # NOTE общий алгоритм inverse_graduate справляется, но он использует интерполяцию
-        # NOTE по массиву заранее вычисленных значений V(h), это нужно было для
-        # NOTE горизонтального сосуда, потому что для него из формулы для объёма нельзя
-        # NOTE выразить уровень, у вертикального сосуда так сделать можно, в таком случае
-        # NOTE лучше использовать формулу
 
         return meter.inverse_graduate(
             volume, self._level_graduated, self._volume_graduated)
@@ -389,110 +369,83 @@ class SectionVertical(ControlVolume):
 if __name__ == "__main__":
     from pytroleum.sdyna.opdata import factory_state, factory_flow
     import matplotlib.pyplot as plt
+    from pytroleum.sdyna.network import DynamicNetwork
 
-    # 1. СОЗДАЕМ ВЕРТИКАЛЬНЫЙ РЕЗЕРВУАР
-    vessel = SectionVertical(1.0, 1.2, lambda h: 0)  # диаметр 1 м, высота 2 м
+    vessel = SectionVertical(1.0, 1.2, lambda h: 0)
 
-    # 2. ТЕРМОДИНАМИЧЕСКОЕ СОСТОЯНИЕ
-    thermodynamic_state = (CoolConst.PT_INPUTS, 1e5, 300)  # 100 кПа, 300 К
+    thermodynamic_state = (CoolConst.PT_INPUTS, 1e5, 300)
 
-    # 3. ИНИЦИАЛИЗИРУЕМ СОСТОЯНИЕ РЕЗЕРВУАРА (две фазы: воздух + вода)
     vessel.state = factory_state(
-        [factory_eos({"air": 1}, with_state=thermodynamic_state),      # воздух
-         factory_eos({"water": 1}, with_state=thermodynamic_state)],   # вода
-        vessel.compute_volume_with_level,  # функция объема
-        # давления: воздух=100 кПа, вода=100 кПа
+        [factory_eos({"air": 1}, with_state=thermodynamic_state),
+         factory_eos({"water": 1}, with_state=thermodynamic_state)],
+        vessel.compute_volume_with_level,
         np.array([1e5, 1e5]),
-        np.array([300, 300]),            # температуры: 300 К
-        np.array([2.0, 0.3]))            # уровни: воздух=2 м, вода=0.5 м
+        np.array([300, 300]),
+        np.array([1.2, 0.3]))
 
-    # 4. СОЗДАЕМ FIXED
     inlet = Fixed([0, 1], sink=vessel)
 
-    # 5. НАСТРАИВАЕМ ПАРАМЕТРЫ ПОТОКА ЧЕРЕЗ FIXED
+    water_density = 1000
+    pipe_diameter = 0.05
+    pipe_area = np.pi * (pipe_diameter / 2) ** 2
+    flow_velocity = 0.8
+    mass_flow_rate = water_density * flow_velocity * pipe_area
+
     inlet.flow = factory_flow(
         [factory_eos({"air": 1}, with_state=thermodynamic_state),
          factory_eos({"water": 1}, with_state=thermodynamic_state)],
-        np.array([1.5e5, 1.5e5]),          # давления на входе: 150 кПа
-        np.array([300, 300]),              # температуры: 300 К
-        np.pi*(0.05)**2/4,
+        np.array([1.5e5, 1.5e5]),
+        np.array([300, 300]),
+        pipe_area,
         0.9,
-        np.array([0, 1], dtype=np.float64))
+        np.array([0.0, mass_flow_rate], dtype=np.float64))
 
-    # 6. ВЫЧИСЛЯЕМ РАСХОД ИЗ ПАРАМЕТРОВ FIXED
-    water_density = 1000  # кг/м³ (плотность воды при 300К)
-    pipe_area = np.pi*(0.05)**2/4  # м²
-    flow_velocity = 0.8  # м/с
-    mass_flow_rate = water_density * flow_velocity * pipe_area  # кг/с
+    class DynamicVerticalvessel(DynamicNetwork):
+        def __init__(self) -> None:
+            super().__init__()
 
-    # Объемный расход (м³/с)
-    volume_flow_rate = mass_flow_rate / water_density
+        def ode_system(self, t, y):
+            return super().ode_system(t, y)
 
-    # 7.ЗАПОЛНЕНИЕ РЕЗЕРВУАРА
+        def advance(self):
+            return super().advance()
 
-    # NOTE здесь нужно использовать код из network, в которому уже организован решатель
-    # NOTE
-    # NOTE надо через наследование создать класс, который будет описывать конкретно эту
-    # NOTE систему, всё подключить и использовать advance пример использования должен был
-    # NOTE остаться в network.py
+    net = DynamicVerticalvessel()
 
-    dt = 1.0  # шаг времени, с
-    t = [0.0]  # массив времени
-    h_water = [vessel.state.level[1]]  # массив уровней воды
+    net.add_control_volume(vessel)
+    net.add_conductor(inlet)
+    net.evaluate_size()
 
-    for step in range(450):
+    vessel.advance()
 
-        # NOTE с учётом заметки выше цикл решателя будет выглядеть очень просто
-        # NOTE >> for step in steps:
-        # NOTE >>     network.advance()
-        # NOTE где network — это объект класса, в котором описана вся система
+    net.prepare_solver(0.1)
 
-        # Обновляем объем воды
-        current_volume_water = vessel.state.volume[1]
-        new_volume_water = current_volume_water + volume_flow_rate * dt
+    t = [0.0]
+    h = [vessel.state.level[1]]
 
-        # Ограничиваем максимальным объемом резервуара
-        total_volume = vessel.volume
-        if new_volume_water > total_volume:
-            new_volume_water = total_volume
-            print(
-                f"Резервуар заполнился на шаге {step} (t = {t[-1]+dt:.1f} с)")
+    for n in range(4500):
+        net.advance()
+        t.append(t[-1] + net.solver.time_step)
+        h.append(vessel.state.level[1])
 
-        # Обновляем состояние резервуара
-        vessel.state.volume[1] = new_volume_water  # объем воды
-        vessel.state.volume[0] = total_volume - \
-            new_volume_water  # объем воздуха
+    t = np.array(t)
+    h = np.array(h)
 
-        # Пересчитываем уровни жидкостей
-        vessel.compute_fluid_level()
-
-        # Сохраняем данные для графика
-        t.append(t[-1] + dt)
-        h_water.append(vessel.state.level[1])
-
-        # Если резервуар полный, останавливаем
-        if new_volume_water >= total_volume:
-            break
-
-    # 8.Аналитическое решение
-    D = 1.0  # диаметр резервуара, м
-    H = 1.2  # высота резервуара, м
+    D = 1.0
+    H = 1.2
     h0 = 0.3
-    A_vessel = np.pi * (D/2)**2  # площадь резервуара, м²
-    t_fill = (H - h0) * A_vessel * water_density / \
-        mass_flow_rate  # время заполнения, с
+    A_vessel = np.pi * (D / 2) ** 2
+    t_fill = (H - h0) * A_vessel * water_density / mass_flow_rate
 
     def h_analytical(t):
         return np.minimum(h0 + (mass_flow_rate / (water_density * A_vessel)) * t, H)
 
-    # Создаем массив времени для аналитического решения
-    t_an = np.linspace(0, t_fill * 1.1, 100)
+    t_an = np.linspace(0, t_fill, 100)
     h_an = h_analytical(t_an)
 
-    # 9. ПОСТРОЕНИЕ ГРАФИКА h от t
     plt.figure(figsize=(10, 6))
 
-    plt.plot(t, h_water, 'b-', linewidth=2, label='Численное решение')
+    plt.plot(t, h, 'b-', linewidth=2, label='Численное решение')
     plt.plot(t_an, h_an, 'r--', linewidth=2, label='Аналитическое решение')
 
     plt.xlabel("Время, с", fontsize=12)
