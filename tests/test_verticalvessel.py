@@ -6,6 +6,7 @@ from pytroleum.sdyna.opdata import factory_state, factory_flow
 from pytroleum.sdyna.network import DynamicNetwork
 from pytroleum.sdyna.convolumes import SectionVertical
 from pytroleum.sdyna.conductors import Fixed
+import pytest
 
 vessel = SectionVertical(1.0, 1.2, lambda h: 0)
 
@@ -83,9 +84,19 @@ def h_analytical(t):
 t_an = np.linspace(0, t_fill, 100)
 h_an = h_analytical(t_an)
 
-h_analytical_t = h_analytical(t)
-error = np.mean(np.abs((h - h_analytical_t) / h_analytical_t) * 100)
-print(f"Средняя относительная ошибка: {error:.4f}%")
+
+def test_error():
+    """Тест на соответствие численного решения аналитическому."""
+    h_analytical_t = h_analytical(t)
+    error = np.mean(np.abs((h - h_analytical_t) / h_analytical_t) * 100)
+    print(f"Средняя относительная ошибка: {error:.4f}%")
+
+    threshold = 1.0  # 1%
+    assert error < threshold
+
+
+# ВЫЗЫВАЕМ ФУНКЦИЮ ДЛЯ ВЫВОДА СООБЩЕНИЯ
+test_error()
 
 plt.figure(figsize=(10, 6))
 
