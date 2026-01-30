@@ -19,7 +19,7 @@ def simulate_pid(K, Ki, Kd, filter_val, T=20, dt=0.01):
 
     while time[-1] < T:
         pid.control(dt, probe)
-        probe += pid.signal
+        probe += pid._signal
         probes.append(probe)
         time.append(time[-1] + dt)
 
