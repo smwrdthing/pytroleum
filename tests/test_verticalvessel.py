@@ -83,6 +83,10 @@ def h_analytical(t):
 t_an = np.linspace(0, t_fill, 100)
 h_an = h_analytical(t_an)
 
+h_analytical_t = h_analytical(t)
+error = np.mean(np.abs((h - h_analytical_t) / h_analytical_t) * 100)
+print(f"Средняя относительная ошибка: {error:.4f}%")
+
 plt.figure(figsize=(10, 6))
 
 plt.plot(t, h, 'b-', linewidth=2, label='Численное решение')
