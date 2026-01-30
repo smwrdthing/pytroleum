@@ -312,9 +312,20 @@ class SectionVertical(ControlVolume):
 
     def compute_volume_with_level(self, level):
         """Returns volume corresponding to provided level in vertical cylinder"""
+        # NOTE для заданного диаметра радиус и площадь не меняются от итерации к итерации,
+        # NOTE можно сделать их атрибутами и посчитать один раз в __init__, чтобы не
+        # NOTE считать их каждый раз
         radius = self.diameter / 2
         area = np.pi * radius ** 2
 
+        # NOTE этот валидатор лучше убрать, потому что он "нечестен" с пользователем,
+        # NOTE ситуация, когда нам передаётся уровень меньше нуля или больше заданной
+        # NOTE высоты — это ошибка пользователя, и он должен о ней узнать через
+        # NOTE сообщение об ошибке, а не тихо получить какое-то значение
+        # NOTE
+        # NOTE Здесь скорее подошёл бы exception с корректным сообщением, но делать его
+        # NOTE тут тоже не следует, обработка исключений процесс медленный, в этом случае
+        # NOTE передача корректного значения уровня — забота пользователя
         if isinstance(level, np.ndarray):
             level_clipped = np.clip(level, 0, self.height)
         else:
@@ -335,6 +346,13 @@ class SectionVertical(ControlVolume):
 
     def compute_level_with_volume(self, volume):
         """Returns level corresponding to provided volume in vertical cylinder"""
+
+        # NOTE общий алгоритм inverse_graduate справляется, но он использует интерполяцию
+        # NOTE по массиву заранее вычисленных значений V(h), это нужно было для
+        # NOTE горизонтального сосуда, потому что для него из формулы для объёма нельзя
+        # NOTE выразить уровень, у вертикального сосуда так сделать можно, в таком случае
+        # NOTE лучше использовать формулу
+
         return meter.inverse_graduate(
             volume, self._level_graduated, self._volume_graduated)
 
@@ -411,11 +429,24 @@ if __name__ == "__main__":
     volume_flow_rate = mass_flow_rate / water_density
 
     # 7.ЗАПОЛНЕНИЕ РЕЗЕРВУАРА
+
+    # NOTE здесь нужно использовать код из network, в которому уже организован решатель
+    # NOTE
+    # NOTE надо через наследование создать класс, который будет описывать конкретно эту
+    # NOTE систему, всё подключить и использовать advance пример использования должен был
+    # NOTE остаться в network.py
+
     dt = 1.0  # шаг времени, с
     t = [0.0]  # массив времени
     h_water = [vessel.state.level[1]]  # массив уровней воды
 
     for step in range(450):
+
+        # NOTE с учётом заметки выше цикл решателя будет выглядеть очень просто
+        # NOTE >> for step in steps:
+        # NOTE >>     network.advance()
+        # NOTE где network — это объект класса, в котором описана вся система
+
         # Обновляем объем воды
         current_volume_water = vessel.state.volume[1]
         new_volume_water = current_volume_water + volume_flow_rate * dt
