@@ -60,7 +60,7 @@ def test_pid():
     plt.figure(figsize=(10, 6))
     for name, data in results.items():
         plt.plot(data["time"], data["probes"],
-                 label=f"{name}: {data['final']:.4f}")
+                 label=f"{name}")
 
     plt.axhline(y=1.0, color='r', linestyle='--', alpha=0.5, label='Setpoint')
     plt.title(f'Probe от времени при разных коэффициентах (T={T})')
@@ -68,5 +68,8 @@ def test_pid():
     plt.ylabel('probe [-]')
     plt.legend()
     plt.grid(True)
-    plt.savefig('pid_comparison.png')
     plt.show()
+
+
+if __name__ == "__main__":
+    test_pid()
