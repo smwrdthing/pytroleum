@@ -56,19 +56,20 @@ def test_pid():
     assert np.allclose(final_values, final_values[0], rtol=0.001), \
         f"Установившиеся значения различаются: {final_values}"
 
-    # Сохраняем график
-    plt.figure(figsize=(10, 6))
-    for name, data in results.items():
-        plt.plot(data["time"], data["probes"],
-                 label=f"{name}")
+    if __name__ == "__main__":
 
-    plt.axhline(y=1.0, color='r', linestyle='--', alpha=0.5, label='Setpoint')
-    plt.title(f'Probe от времени при разных коэффициентах (T={T})')
-    plt.xlabel('time [-]')
-    plt.ylabel('probe [-]')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+        plt.figure(figsize=(10, 6))
+        for name, data in results.items():
+            plt.plot(data["time"], data["probes"], label=f"{name}")
+
+        plt.axhline(y=1.0, color='r', linestyle='--',
+                    alpha=0.5, label='Setpoint')
+        plt.title(f'Probe от времени при разных коэффициентах (T={T})')
+        plt.xlabel('time [-]')
+        plt.ylabel('probe [-]')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
 
 if __name__ == "__main__":

@@ -98,17 +98,18 @@ def test_error():
 # ВЫЗЫВАЕМ ФУНКЦИЮ ДЛЯ ВЫВОДА СООБЩЕНИЯ
 test_error()
 
-plt.figure(figsize=(10, 6))
+if __name__ == "__main__":
+    plt.figure(figsize=(10, 6))
 
-plt.plot(t, h, 'b-', linewidth=2, label='Численное решение')
-plt.plot(t_an, h_an, 'r--', linewidth=2, label='Аналитическое решение')
+    plt.plot(t, h, 'b-', linewidth=2, label='Численное решение')
+    plt.plot(t_an, h_an, 'r--', linewidth=2, label='Аналитическое решение')
 
-plt.xlabel("Время, с", fontsize=12)
-plt.ylabel("Уровень воды, м", fontsize=12)
-plt.grid(True, alpha=0.3)
-plt.axhline(y=vessel.height, color='black', linestyle='--',
-            alpha=0.7, label=f'Макс. уровень: {vessel.height} м')
-plt.legend(loc='lower right')
-plt.ylim(0, 1.3)
-plt.xlim(0, 450)
-plt.show()
+    plt.xlabel("Время, с", fontsize=12)
+    plt.ylabel("Уровень воды, м", fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.axhline(y=vessel.height, color='black', linestyle='--',
+                alpha=0.7, label=f'Макс. уровень: {vessel.height} м')
+    plt.legend(loc='lower right')
+    plt.ylim(0, 1.3)
+    plt.xlim(0, 450)
+    plt.show()
