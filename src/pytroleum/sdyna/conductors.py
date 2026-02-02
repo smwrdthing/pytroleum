@@ -40,6 +40,8 @@ class Conductor(ABC):
         self.of_phase = of_phase
         self.controller: PropIntDiff | StartStop | None = None
 
+        self._area: float
+
         self.flow: FlowData
 
     def connect_source(self, convolume: ControlVolume) -> None:
@@ -98,7 +100,7 @@ class Valve(Conductor):
         super().__init__(of_phase, source, sink)
 
         self.diameter_pipe = diameter_pipe
-        self.diameter_valve = diameter_valve
+        self.diameter = diameter_valve
         self.discharge_coefficient = discharge_coefficient
         self.elevation = elevation
         self.opening = opening
@@ -119,13 +121,13 @@ class Valve(Conductor):
 
     # getter/setter for valve diameter ---------------------------------------------------
     @property
-    def diameter_valve(self) -> float | float64:
-        return self._diameter_valve
+    def diameter(self) -> float | float64:
+        return self._diameter
 
-    @diameter_valve.setter
-    def diameter_valve(self, new_diameter_valve) -> None:
-        self._diameter_valve = new_diameter_valve
-        self._area_valve = np.pi*new_diameter_valve**2/4
+    @diameter.setter
+    def diameter(self, new_diameter_valve) -> None:
+        self._diameter = new_diameter_valve
+        self._area = np.pi*new_diameter_valve**2/4
     # ------------------------------------------------------------------------------------
 
     # getter/setter for pipe area  -------------------------------------------------------
@@ -141,13 +143,13 @@ class Valve(Conductor):
 
     # getter/setter for valve area -------------------------------------------------------
     @property
-    def area_valve(self) -> float | float64:
-        return self._area_valve
+    def area(self) -> float | float64:
+        return self._area
 
-    @area_valve.setter
-    def area_valve(self, new_area_vale) -> None:
-        self._area_valve = new_area_vale
-        self._diameter_valve = np.sqrt(4*new_area_vale/np.pi)
+    @area.setter
+    def area(self, new_area_vale) -> None:
+        self._area = new_area_vale
+        self._diameter = np.sqrt(4*new_area_vale/np.pi)
     # ------------------------------------------------------------------------------------
 
     def compute_flow(self):
@@ -168,7 +170,7 @@ class Valve(Conductor):
                 self.elevation, downstream_state.level, downstream_state.pressure)
 
             mass_flow_rate = efflux.incompressible(
-                self.area_valve*self.opening,
+                self.area*self.opening,
                 self.area_pipe,
                 self.discharge_coefficient,
                 upstream_state.density[self.of_phase],
@@ -181,7 +183,7 @@ class Valve(Conductor):
             downstream_pressure = downstream_state.pressure[self.of_phase]
 
             mass_flow_rate = efflux.compressible(
-                self.area_valve*self.opening,
+                self.area*self.opening,
                 self.discharge_coefficient,
 
                 # eos makes storing k and R excessive
@@ -245,7 +247,6 @@ class CentrifugalPump(Conductor):
         self.resistance_coeff: float
         self.angular_velocity: float
         self.max_angular_velocity: float
-        self.flow_area: float  # maybe better to do this in base class
 
         super().__init__(of_phase, source, sink)
 
@@ -288,7 +289,7 @@ class CentrifugalPump(Conductor):
 
         static_head_difference = pressure_difference/density/g
         k1, k2, k3 = self.coefficients
-        A = k3 + self.resistance_coeff/(2*g*self.flow_area**2)
+        A = k3 + self.resistance_coeff/(2*g*self._area**2)
         B = -2*k2*self.angular_velocity
         C = static_head_difference - k1*self.angular_velocity**2
 
@@ -309,7 +310,7 @@ class CentrifugalPump(Conductor):
         mass_flow_rate = density*volumetric_flow_rate * \
             (volumetric_flow_rate >= 0)
 
-        velocity = mass_flow_rate/density/self.flow_area
+        velocity = mass_flow_rate/density/self._area
         energy_specific_flow = (
             energy_specific + pressure/density + g*self.elevation + velocity**2/2)
         flow_energy = energy_specific_flow*mass_flow_rate
