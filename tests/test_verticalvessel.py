@@ -8,8 +8,35 @@ from pytroleum.sdyna.convolumes import SectionVertical
 from pytroleum.sdyna.conductors import Fixed
 import pytest
 
-vessel = SectionVertical(1.0, 1.2, lambda h: 0)
+"""
+Testing the pytroleum solver.
 
+Objective:
+    To verify correct operation by comparing the numerical solution of a vessel filling
+problem with an analytical solution.
+
+Description:
+    - Vertical vessel: diameter 1 m, height 1.2 m
+    - Initial water level: 0.3 m
+    - Water is supplied through a Fixed conductor at constant flow rate
+    - Filling up to maximum level is simulated
+
+Analytical solution:
+    h(t) = h0 + (Gw / (ρ * A)) * t
+where:
+    h - liquid level, m
+    Gw - mass flow rate, kg/s
+    ρ = 1000 kg/m³ (water density)
+    A - cross-sectional area of the vessel, m²
+    H = 1.2 m (maximum height), h0 = 0.3 m (initial level)
+
+Success criterion:
+    The mean relative error between the numerical and analytical solution
+must be less than 1%.
+"""
+
+# Create vessel and set initial conditions
+vessel = SectionVertical(1.0, 1.2, lambda h: 0)
 thermodynamic_state = (CoolConst.PT_INPUTS, 1e5, 300)
 
 vessel.state = factory_state(
@@ -20,6 +47,7 @@ vessel.state = factory_state(
     np.array([300, 300]),
     np.array([1.2, 0.3]))
 
+# Create inlet with constant water flow
 inlet = Fixed([0, 1], sink=vessel)
 
 water_density = 1000
@@ -49,16 +77,15 @@ class DynamicVerticalvessel(DynamicNetwork):
         return super().advance()
 
 
+# Setup network
 net = DynamicVerticalvessel()
-
 net.add_control_volume(vessel)
 net.add_conductor(inlet)
 net.evaluate_size()
-
 vessel.advance()
-
 net.prepare_solver(0.1)
 
+# Run simulation
 t = [0.0]
 h = [vessel.state.level[1]]
 
@@ -70,6 +97,7 @@ for n in range(4500):
 t = np.array(t)
 h = np.array(h)
 
+# Analytical solution parameters
 D = 1.0
 H = 1.2
 h0 = 0.3
@@ -78,37 +106,36 @@ t_fill = (H - h0) * A_vessel * water_density / mass_flow_rate
 
 
 def h_analytical(t):
+    """Analytical solution for water level."""
     return np.minimum(h0 + (mass_flow_rate / (water_density * A_vessel)) * t, H)
 
-
-t_an = np.linspace(0, t_fill, 100)
-h_an = h_analytical(t_an)
+# Test function
 
 
 def test_error():
-    """Тест на соответствие численного решения аналитическому."""
+    """Test that numerical solution matches analytical within 1%."""
     h_analytical_t = h_analytical(t)
     error = np.mean(np.abs((h - h_analytical_t) / h_analytical_t) * 100)
-    print(f"Средняя относительная ошибка: {error:.4f}%")
-
+    print(f"Mean relative error: {error:.4f}%")
     threshold = 1.0  # 1%
     assert error < threshold
 
 
-# ВЫЗЫВАЕМ ФУНКЦИЮ ДЛЯ ВЫВОДА СООБЩЕНИЯ
 test_error()
 
 if __name__ == "__main__":
+    # Plot results
+    t_an = np.linspace(0, t_fill, 100)
+    h_an = h_analytical(t_an)
+
     plt.figure(figsize=(10, 6))
-
-    plt.plot(t, h, 'b-', linewidth=2, label='Численное решение')
-    plt.plot(t_an, h_an, 'r--', linewidth=2, label='Аналитическое решение')
-
-    plt.xlabel("Время, с", fontsize=12)
-    plt.ylabel("Уровень воды, м", fontsize=12)
+    plt.plot(t, h, 'b-', linewidth=2, label='Numerical solution')
+    plt.plot(t_an, h_an, 'r--', linewidth=2, label='Analytical solution')
+    plt.xlabel("Time, s", fontsize=12)
+    plt.ylabel("Water level, m", fontsize=12)
     plt.grid(True, alpha=0.3)
     plt.axhline(y=vessel.height, color='black', linestyle='--',
-                alpha=0.7, label=f'Макс. уровень: {vessel.height} м')
+                alpha=0.7, label=f'Max. level: {vessel.height} м')
     plt.legend(loc='lower right')
     plt.ylim(0, 1.3)
     plt.xlim(0, 450)
