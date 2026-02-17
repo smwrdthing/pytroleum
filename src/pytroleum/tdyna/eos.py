@@ -1,7 +1,7 @@
 # Interfaces for Equation of State
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Iterable, overload
 import numpy as np
 from numpy import float64
@@ -41,7 +41,9 @@ class AbstractStateImitator(ABC):
         self._mole_fractions: Iterable[float]
 
         self._heat_capacity_isochoric: float
+        self._heat_capacity_isobaric: float
         self._dynamic_viscosity: float
+        self._thermal_conductivity: float
         self._pressure: float
         self._temperature: float
         self._density: float
@@ -55,6 +57,10 @@ class AbstractStateImitator(ABC):
     def cvmass(self):
         """Returns isochoric heat capacity of fluid."""
         return self._heat_capacity_isochoric
+
+    def cpmass(self):
+        """Returns isochoric heat capacity of fluid."""
+        return self._heat_capacity_isobaric
 
     def p(self):
         """Returns pressure."""
@@ -71,6 +77,12 @@ class AbstractStateImitator(ABC):
     def umass(self):
         """Returns mass-based specific internal energy."""
         return self._mass_specific_energy
+
+    def viscosity(self):
+        return self._dynamic_viscosity
+
+    def conductivity(self):
+        return self._thermal_conductivity
 
     def set_mole_fractions(self, mole_fractions: Iterable[float]):
         """Sets new molar compositin of fluid."""
@@ -185,6 +197,7 @@ class CrudeOilHardcoded(AbstractStateImitator):
     _DENSITY: float = 830
     _DYNAMIC_VISCOSITY: float = 6e-3
     _HEAT_CAPACITY: float = 2300
+    _THERMAL_CONDUCTIVITY: float = 0.6
 
     def __init__(self) -> None:
         super().__init__(self._BACKEND, CRUDE_OIL[0])
@@ -192,6 +205,7 @@ class CrudeOilHardcoded(AbstractStateImitator):
         self._dynamic_viscosity = self._DYNAMIC_VISCOSITY
         self._heat_capacity_isochoric = self._HEAT_CAPACITY
         self._heat_capacity_isobaric = self._HEAT_CAPACITY
+        self._thermal_conductivity = self._THERMAL_CONDUCTIVITY
 
     def default(self) -> None:
         """Sets default harcoded parameters for oil."""
@@ -258,6 +272,7 @@ class CrudeOilReferenced(AbstractStateImitator):
         self.reference = reference
         self._prepare_density_model()
         self._prepare_viscosity_model()
+        self._prepare_conductivity_model()
 
         # Set default state and compute parameters
         self._pressure = self._DEFAULT_PRESSURE
@@ -285,7 +300,14 @@ class CrudeOilReferenced(AbstractStateImitator):
         mu1, mu2 = self.reference.viscosity
         self._viscosity_model_power = T1*T2/(T1-T2)*np.log(mu2/mu1)
         self._viscosity_model_coeff = mu1*np.exp(
-            self._viscosity_model_power/T1)
+            -self._viscosity_model_power/T1)
+
+    def _prepare_conductivity_model(self):
+
+        lam1, lam2 = self.reference.thermal_conductivity
+        T1, T2 = self.reference.temperature
+
+        self._thermal_conductivity_slope = (lam2-lam1)/(T2-T1)
 
     # NOTE :
     # methods for specific and api gravity computations are only called once during
@@ -323,6 +345,13 @@ class CrudeOilReferenced(AbstractStateImitator):
     def _compute_mass_specific_energy(self) -> None:
         """Computes mass specific internal energy."""
         self._mass_specific_energy = self._heat_capacity_isochoric*self._temperature
+
+    def _compute_thermal_conductivity(self) -> None:
+
+        self._thermal_conductivity = (
+            self._thermal_conductivity_slope*(
+                self._temperature-self.reference.temperature[0]) +
+            self.reference.thermal_conductivity[0])
 
     def first_partial_deriv(
             self, of_parameter_key: int,
@@ -368,7 +397,9 @@ class CrudeOilRefernceData:
     temperature: tuple[float, float]
     density: tuple[float, float]
     viscosity: tuple[float, float]
-    mean_density: float | float64
+    thermal_conductivity: tuple[float, float]
+
+    mean_density: float | float64 = field(init=False)
 
     def __post_init__(self):
         self.mean_density = 0.5*(self.density[0]+self.density[1])

@@ -14,8 +14,8 @@ class ControlVolume(Protocol):
     outlets: list[Conductor]
     inlets: list[Conductor]
     state: StateData
-    net_mass_flow: NDArray[float64]
-    net_energy_flow: NDArray[float64]
+    _net_mass_flow: NDArray[float64]
+    _net_energy_flow: NDArray[float64]
 
     # def __init__(self) -> None:
     #     ...
@@ -41,14 +41,11 @@ class Section(Protocol):
     outlets: list[Conductor]
     inlets: list[Conductor]
     state: StateData
-    net_mass_flow: NDArray[float64]
-    net_energy_flow: NDArray[float64]
+    _net_mass_flow: NDArray[float64]
+    _net_energy_flow: NDArray[float64]
     volume: float | float64
-    level_graduated: NDArray[float64]
-    volume_graduated: NDArray[float64]
-
-    def __init__(self) -> None:
-        ...
+    _level_graduated: NDArray[float64]
+    _volume_graduated: NDArray[float64]
 
     def connect_inlet(self, conductor: Conductor):
         ...
@@ -78,11 +75,6 @@ class Conductor(Protocol):
     sink: ControlVolume
     flow: FlowData
     controller: PropIntDiff | StartStop | None
-
-    def __init__(self, of_phase: int | Iterable[int],
-                 source: ControlVolume | None,
-                 sink: ControlVolume | None) -> None:
-        ...
 
     def connect_source(self, convolume: ControlVolume) -> None:
         ...

@@ -11,6 +11,10 @@ from numpy.typing import NDArray
 from numpy import float64
 from pytroleum.sdyna.interfaces import Conductor
 from pytroleum.sdyna.opdata import StateData
+from pytroleum.sdyna.conductors import Fixed
+
+
+_NUMBER_OF_GRADUATION_POINTS = 500
 
 
 class ControlVolume(ABC):
@@ -19,8 +23,8 @@ class ControlVolume(ABC):
         self.outlets: list[Conductor] = []
         self.inlets: list[Conductor] = []
         self.volume: float | float64 = np.inf
-        self.net_mass_flow = np.zeros(1)
-        self.net_energy_flow = np.zeros(1)
+        self._net_mass_flow = np.zeros(1)
+        self._net_energy_flow = np.zeros(1)
         self.state: StateData
 
     # TODO Introduce custom decorator for iterable inputs
@@ -109,8 +113,8 @@ class ControlVolume(ABC):
 
     def reset_flow_rates(self):
         """Assigns zero for net flow in control volume"""
-        self.net_mass_flow = np.zeros_like(self.net_mass_flow)
-        self.net_energy_flow = np.zeros_like(self.net_energy_flow)
+        self._net_mass_flow = np.zeros_like(self._net_mass_flow)
+        self._net_energy_flow = np.zeros_like(self._net_energy_flow)
 
     @abstractmethod
     def advance(self) -> None:
@@ -129,17 +133,17 @@ class Atmosphere(ControlVolume):
         # Possible TODO :
         # Implement selector-method to set standard temperature and pressure for
         # specified STP refernce
-        eos_air = factory_eos({"air": 1}, with_state=(
+        _eos_air = factory_eos({"air": 1}, with_state=(
             CoolConst.PT_INPUTS, self._STANDARD_PRESSURE, self._STANDARD_TEMPERATURE))
 
         self.state = StateData(
-            equation=[eos_air],
+            equation=[_eos_air],
             pressure=np.array([self._STANDARD_PRESSURE]),
             temperature=np.array([self._STANDARD_TEMPERATURE]),
-            density=np.array([eos_air.rhomass()]),
-            energy_specific=np.array([eos_air.umass()]),
-            dynamic_viscosity=np.array([eos_air.viscosity()]),
-            thermal_conductivity=np.array([eos_air.conductivity()]),
+            density=np.array([_eos_air.rhomass()]),
+            energy_specific=np.array([_eos_air.umass()]),
+            dynamic_viscosity=np.array([_eos_air.viscosity()]),
+            thermal_conductivity=np.array([_eos_air.conductivity()]),
             mass=np.array([np.inf]),
             energy=np.array([np.inf]),
             level=np.array([np.inf]),
@@ -189,13 +193,13 @@ class SectionHorizontal(ControlVolume):
         self.diameter = diameter
         self.volume_modificator = volume_modificator
 
-        self.volume_pure = self.compute_volume_with_level(diameter)
-        self.volume = self.volume_pure + self.volume_modificator(diameter)
+        self._volume_pure = self.compute_volume_with_level(diameter)
+        self.volume = self._volume_pure + self.volume_modificator(diameter)
 
-        self.level_graduated, self.volume_graduated = meter.graduate(
-            0, diameter, self.compute_volume_with_level)
-        self.volume_graduated = (
-            self.volume_graduated + self.volume_modificator(self.level_graduated))
+        self._level_graduated, self._volume_graduated = meter.graduate(
+            0, diameter, self.compute_volume_with_level, _NUMBER_OF_GRADUATION_POINTS)
+        self._volume_graduated = (
+            self._volume_graduated + self.volume_modificator(self._level_graduated))
 
     @overload
     def compute_volume_with_level(self, level: float | float64) -> float | float64:
@@ -226,7 +230,8 @@ class SectionHorizontal(ControlVolume):
 
     def compute_level_with_volume(self, volume):
         """Returns level corresponding to provided volume in horizontal section"""
-        return meter.inverse_graduate(volume, self.level_graduated, self.volume_graduated)
+        return meter.inverse_graduate(
+            volume, self._level_graduated, self._volume_graduated)
 
     def compute_fluid_level(self) -> None:
         """Computes fluid level from fluid volume"""
@@ -285,9 +290,170 @@ class SectionVertical(ControlVolume):
             volume_modificator
     ):
         super().__init__()
+
         self.diameter = diameter
         self.height = height
         self.volume_modificator = volume_modificator
 
-    def advance(self):
-        pass
+        self.radius = diameter / 2
+        self.area = np.pi * self.radius ** 2
+
+        self._volume_pure = self.compute_volume_with_level(height)
+        self.volume = self._volume_pure + self.volume_modificator(height)
+
+        self._level_graduated, self._volume_graduated = meter.graduate(
+            0, height, self.compute_volume_with_level, _NUMBER_OF_GRADUATION_POINTS)
+        self._volume_graduated = (
+            self._volume_graduated + self.volume_modificator(self._level_graduated))
+
+    @overload
+    def compute_volume_with_level(self, level: float | float64) -> float | float64:
+        ...
+
+    @overload
+    def compute_volume_with_level(self, level: NDArray[float64]) -> NDArray[float64]:
+        ...
+
+    def compute_volume_with_level(self, level):
+        """Returns volume corresponding to provided level in vertical cylinder"""
+
+        volume_pure = self.area * level
+        volume_modificator = self.volume_modificator(level)
+        volume = volume_pure + volume_modificator
+        return volume
+
+    @overload
+    def compute_level_with_volume(self, volume: float | float64) -> float | float64:
+        ...
+
+    @overload
+    def compute_level_with_volume(self, volume: NDArray[float64]) -> NDArray[float64]:
+        ...
+
+    def compute_level_with_volume(self, volume):
+        """Returns level corresponding to provided volume in vertical cylinder"""
+
+        return meter.inverse_graduate(
+            volume, self._level_graduated, self._volume_graduated)
+
+    def compute_fluid_level(self) -> None:
+        """Computes fluid level from fluid volume"""
+        self.state.level = self.compute_level_with_volume(
+            np.flip(np.cumsum(np.flip(self.state.volume))))
+
+    def compute_liquid_pressure(self) -> None:
+        """Computes liquid's pressure profile for layered multiphase situation"""
+        layers_thickness = -np.diff(self.state.level[1:], append=0)
+        individual_hydrostatic_head = self.state.density[1:]*g*layers_thickness
+        cumulative_hydrostatic_head = np.cumsum(individual_hydrostatic_head)
+        self.state.pressure[1:] = (
+            self.state.pressure[0] + cumulative_hydrostatic_head)
+
+    def compute_secondary_parameters(self) -> None:
+        """Determines values of state parameters from masses and energies"""
+        self.compute_fluid_energy_specific()
+        self.compute_fluid_temperature()
+        self.compute_liquid_density()
+        self.compute_fluid_volume()
+        self.compute_vapor_density()
+        self.compute_vapor_pressure()
+        self.compute_fluid_level()
+        self.compute_liquid_pressure()
+
+    def advance(self) -> None:
+        self.reset_flow_rates()
+        self.compute_secondary_parameters()
+        self.update_equations_of_state()
+
+
+if __name__ == "__main__":
+    from pytroleum.sdyna.opdata import factory_state, factory_flow
+    import matplotlib.pyplot as plt
+    from pytroleum.sdyna.network import DynamicNetwork
+
+    vessel = SectionVertical(1.0, 1.2, lambda h: 0)
+
+    thermodynamic_state = (CoolConst.PT_INPUTS, 1e5, 300)
+
+    vessel.state = factory_state(
+        [factory_eos({"air": 1}, with_state=thermodynamic_state),
+         factory_eos({"water": 1}, with_state=thermodynamic_state)],
+        vessel.compute_volume_with_level,
+        np.array([1e5, 1e5]),
+        np.array([300, 300]),
+        np.array([1.2, 0.3]))
+
+    inlet = Fixed([0, 1], sink=vessel)
+
+    water_density = 1000
+    pipe_diameter = 0.05
+    pipe_area = np.pi * (pipe_diameter / 2) ** 2
+    flow_velocity = 0.8
+    mass_flow_rate = water_density * flow_velocity * pipe_area
+
+    inlet.flow = factory_flow(
+        [factory_eos({"air": 1}, with_state=thermodynamic_state),
+         factory_eos({"water": 1}, with_state=thermodynamic_state)],
+        np.array([1.5e5, 1.5e5]),
+        np.array([300, 300]),
+        pipe_area,
+        0.9,
+        np.array([0.0, mass_flow_rate], dtype=np.float64))
+
+    class DynamicVerticalvessel(DynamicNetwork):
+        def __init__(self) -> None:
+            super().__init__()
+
+        def ode_system(self, t, y):
+            return super().ode_system(t, y)
+
+        def advance(self):
+            return super().advance()
+
+    net = DynamicVerticalvessel()
+
+    net.add_control_volume(vessel)
+    net.add_conductor(inlet)
+    net.evaluate_size()
+
+    vessel.advance()
+
+    net.prepare_solver(0.1)
+
+    t = [0.0]
+    h = [vessel.state.level[1]]
+
+    for n in range(4500):
+        net.advance()
+        t.append(t[-1] + net.solver.time_step)
+        h.append(vessel.state.level[1])
+
+    t = np.array(t)
+    h = np.array(h)
+
+    D = 1.0
+    H = 1.2
+    h0 = 0.3
+    A_vessel = np.pi * (D / 2) ** 2
+    t_fill = (H - h0) * A_vessel * water_density / mass_flow_rate
+
+    def h_analytical(t):
+        return np.minimum(h0 + (mass_flow_rate / (water_density * A_vessel)) * t, H)
+
+    t_an = np.linspace(0, t_fill, 100)
+    h_an = h_analytical(t_an)
+
+    plt.figure(figsize=(10, 6))
+
+    plt.plot(t, h, 'b-', linewidth=2, label='Численное решение')
+    plt.plot(t_an, h_an, 'r--', linewidth=2, label='Аналитическое решение')
+
+    plt.xlabel("Время, с", fontsize=12)
+    plt.ylabel("Уровень воды, м", fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.axhline(y=vessel.height, color='black', linestyle='--',
+                alpha=0.7, label=f'Макс. уровень: {vessel.height} м')
+    plt.legend(loc='lower right')
+    plt.ylim(0, 1.3)
+    plt.xlim(0, 450)
+    plt.show()

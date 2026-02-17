@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 import numpy as np
+
 from scipy.constants import g, R
-from scipy.optimize import newton
+from scipy.optimize import fsolve
+from scipy.integrate import cumulative_trapezoid
+
 from pytroleum import meter
 from pytroleum.tport import efflux
 from pytroleum.sdyna.opdata import FlowData, StateData
@@ -14,6 +17,8 @@ from numpy import float64
 
 # TODO : sort out type specifications and actual assignments in ints
 
+_FURNACE_VOLUME_INTEGRATION_SIZE = 500
+
 
 class Conductor(ABC):
 
@@ -24,12 +29,18 @@ class Conductor(ABC):
 
         if source is None:
             from pytroleum.sdyna.convolumes import Atmosphere
-            self.source = Atmosphere()
+            source = Atmosphere()
         if sink is None:
             from pytroleum.sdyna.convolumes import Atmosphere
-            self.sink = Atmosphere()
+            sink = Atmosphere()
+
+        self.connect_source(source)
+        self.connect_sink(sink)
+
         self.of_phase = of_phase
         self.controller: PropIntDiff | StartStop | None = None
+
+        self._area: float
 
         self.flow: FlowData
 
@@ -50,11 +61,11 @@ class Conductor(ABC):
     def propagate_flow(self):
         """Contributes flow rate values to net flow attributes of source and sink with
         appropriate signs."""
-        self.source.net_mass_flow = self.source.net_mass_flow-self.flow.mass_flow_rate
-        self.source.net_energy_flow = self.source.net_energy_flow-self.flow.energy_flow
+        self.source._net_mass_flow = self.source._net_mass_flow-self.flow.mass_flow_rate
+        self.source._net_energy_flow = self.source._net_energy_flow-self.flow.energy_flow
 
-        self.sink.net_mass_flow = self.sink.net_mass_flow + self.flow.mass_flow_rate
-        self.sink.net_energy_flow = self.sink.net_energy_flow + self.flow.energy_flow
+        self.sink._net_mass_flow = self.sink._net_mass_flow + self.flow.mass_flow_rate
+        self.sink._net_energy_flow = self.sink._net_energy_flow + self.flow.energy_flow
 
     @abstractmethod
     def advance(self) -> None:
@@ -89,7 +100,7 @@ class Valve(Conductor):
         super().__init__(of_phase, source, sink)
 
         self.diameter_pipe = diameter_pipe
-        self.diameter_valve = diameter_valve
+        self.diameter = diameter_valve
         self.discharge_coefficient = discharge_coefficient
         self.elevation = elevation
         self.opening = opening
@@ -110,13 +121,13 @@ class Valve(Conductor):
 
     # getter/setter for valve diameter ---------------------------------------------------
     @property
-    def diameter_valve(self) -> float | float64:
-        return self._diameter_valve
+    def diameter(self) -> float | float64:
+        return self._diameter
 
-    @diameter_valve.setter
-    def diameter_valve(self, new_diameter_valve) -> None:
-        self._diameter_valve = new_diameter_valve
-        self._area_valve = np.pi*new_diameter_valve**2/4
+    @diameter.setter
+    def diameter(self, new_diameter_valve) -> None:
+        self._diameter = new_diameter_valve
+        self._area = np.pi*new_diameter_valve**2/4
     # ------------------------------------------------------------------------------------
 
     # getter/setter for pipe area  -------------------------------------------------------
@@ -132,13 +143,13 @@ class Valve(Conductor):
 
     # getter/setter for valve area -------------------------------------------------------
     @property
-    def area_valve(self) -> float | float64:
-        return self._area_valve
+    def area(self) -> float | float64:
+        return self._area
 
-    @area_valve.setter
-    def area_valve(self, new_area_vale) -> None:
-        self._area_valve = new_area_vale
-        self._diameter_valve = np.sqrt(4*new_area_vale/np.pi)
+    @area.setter
+    def area(self, new_area_vale) -> None:
+        self._area = new_area_vale
+        self._diameter = np.sqrt(4*new_area_vale/np.pi)
     # ------------------------------------------------------------------------------------
 
     def compute_flow(self):
@@ -147,9 +158,9 @@ class Valve(Conductor):
         upstream_state = self.source.state
         downstream_state = self.sink.state
 
-        if self.controller is not None:
+        if isinstance(self.controller, PropIntDiff):
             # direct assignment corresponds to controller signal interpretation
-            self.opening = self.controller.signal
+            self.opening = self.controller._signal
 
         if self.of_phase > 0:  # conductor deals with liquid phase
 
@@ -159,7 +170,7 @@ class Valve(Conductor):
                 self.elevation, downstream_state.level, downstream_state.pressure)
 
             mass_flow_rate = efflux.incompressible(
-                self.area_valve*self.opening,
+                self.area*self.opening,
                 self.area_pipe,
                 self.discharge_coefficient,
                 upstream_state.density[self.of_phase],
@@ -172,7 +183,7 @@ class Valve(Conductor):
             downstream_pressure = downstream_state.pressure[self.of_phase]
 
             mass_flow_rate = efflux.compressible(
-                self.area_valve*self.opening,
+                self.area*self.opening,
                 self.discharge_coefficient,
 
                 # eos makes storing k and R excessive
@@ -235,7 +246,7 @@ class CentrifugalPump(Conductor):
         self.coefficients: tuple[float, float, float] | NDArray[float64]
         self.resistance_coeff: float
         self.angular_velocity: float
-        self.flow_area: float  # maybe better to do this in base class
+        self.max_angular_velocity: float
 
         super().__init__(of_phase, source, sink)
 
@@ -251,7 +262,7 @@ class CentrifugalPump(Conductor):
         for flow_rate, head in zip(volume_flow_rates, heads):
             coeff_matrix.append([
                 angular_velocity**2,
-                -2*angular_velocity*flow_rate,
+                2*angular_velocity*flow_rate,
                 -flow_rate**2])
             free_vector.append(head)
         self.coefficients = np.linalg.solve(coeff_matrix, free_vector)
@@ -271,19 +282,35 @@ class CentrifugalPump(Conductor):
         energy_specific = self.source.state.energy_specific[self.of_phase]
         pressure_difference = downstream_pressure-upstream_pressure
 
+        output = 1.0
+        if self.controller is not None:
+            output = self.controller._signal
+        self.angular_velocity = self.max_angular_velocity*output
+
         static_head_difference = pressure_difference/density/g
         k1, k2, k3 = self.coefficients
-        A = k3 + self.resistance_coeff/(2*g*self.flow_area**2)
-        B = 2*k2*self.angular_velocity
+        A = k3 + self.resistance_coeff/(2*g*self._area**2)
+        B = -2*k2*self.angular_velocity
         C = static_head_difference - k1*self.angular_velocity**2
-        D = np.sqrt(B**2-4*A*C)
+
+        D = B**2-4*A*C
+        D = D*(D >= 0)
+
+        # NOTE:
+        # Negative discriminant indicates situations without intersections
+        # of network resistance curve and pump curve, meaning that pump cannot
+        # satisfy network's needs, in this case we "turn off" the pump
+
         volumetric_flow_rate = (np.sqrt(D)-B)/(2*A)
 
-        mass_flow_rate = 0
-        if volumetric_flow_rate > 0:
-            mass_flow_rate = volumetric_flow_rate*density
+        # NOTE
+        # For physical reasons we need only bigger root, so we only consider one with
+        # plus sign
 
-        velocity = mass_flow_rate/density/self.flow_area
+        mass_flow_rate = density*volumetric_flow_rate * \
+            (volumetric_flow_rate >= 0)
+
+        velocity = mass_flow_rate/density/self._area
         energy_specific_flow = (
             energy_specific + pressure/density + g*self.elevation + velocity**2/2)
         flow_energy = energy_specific_flow*mass_flow_rate
@@ -336,21 +363,17 @@ class UnderPass(Conductor):
     def equal_level_distribution(self) -> tuple[float | float64, float | float64]:
         """Performs liquid distribution among neighboring section so that final values
         of total level are same on both sides."""
-        liquid_common_volume = (
-            self.source.state.volume[1:]+self.sink.state.volume[1:])
-        liquid_total_volume = np.sum(liquid_common_volume)
 
         # To make this stuff work graduated levels should correspond in neighbouring
         # sections, for more complicated cases there are workarounds, which can be
         # implemented too, but for now we do this
-        common_level_graduated = self.source.level_graduated
-        common_volume_graduated = self.source.volume_graduated+self.sink.volume_graduated
-
-        self._liquid_volume_fractions = liquid_common_volume/liquid_total_volume
+        common_level_graduated = self.source._level_graduated
+        common_volume_graduated = self.source._volume_graduated + \
+            self.sink._volume_graduated
 
         # We get desired level via interpolation then
         liquid_common_level = meter.inverse_graduate(
-            liquid_total_volume, common_level_graduated, common_volume_graduated)
+            self._total_liquid_volume, common_level_graduated, common_volume_graduated)
 
         # return shape is like that for consistency with balance algorithm
         return liquid_common_level, liquid_common_level
@@ -380,28 +403,19 @@ class UnderPass(Conductor):
         sink_volume_with_level = (
             self.sink.compute_volume_with_level(sink_level))
         total_volume_with_level = source_volume_with_level+sink_volume_with_level
-        liquid_common_volume = (
-            self.source.state.volume[1:]+self.sink.state.volume[1:])
-        liquid_total_volume = np.sum(liquid_common_volume)
-        liquid_reference_density = 0.5*(
-            self.source.state.density[1:]+self.sink.state.density[1:])
-
-        # Should be entirely internal stuff
-        self._liquid_volume_fractions = liquid_common_volume/liquid_total_volume
-        self._liquid_pseudo_density = np.sum(
-            liquid_reference_density*self._liquid_volume_fractions)
 
         # Pressure exerted on the bottom of source section (pseudo-pure liquid - based)
         source_vapor_volume = (
             self.source.volume - source_volume_with_level)
         source_vapor_density = self.source.state.mass[0]/source_vapor_volume
 
+        _R = R/self.source.state.equation[0].molar_mass()
+
         # This stuff is a good approximation at best, so no reason to sweat CoolProp's
         # EoS here to get pressure, ideal gas should do, especially considering pressure
         # difference is of interest, errors should cancel out anyways
         source_vapor_pressure = (
-            source_vapor_density*R*self.source.state.temperature[0] /
-            self.source.state.equation[0].molar_mass())
+            source_vapor_density*_R*self.source.state.temperature[0])
         source_liquid_pressure = self._liquid_pseudo_density*g*source_level
         source_total_pressure = source_vapor_pressure+source_liquid_pressure
 
@@ -410,8 +424,7 @@ class UnderPass(Conductor):
             self.sink.volume-sink_volume_with_level)
         sink_vapor_density = self.sink.state.mass[0]/sink_vapor_volume
         sink_vapor_pressure = (
-            sink_vapor_density*R*self.sink.state.temperature[0] /
-            self.sink.state.equation[0].molar_mass())
+            sink_vapor_density*_R*self.sink.state.temperature[0])
         sink_liquid_pressure = self._liquid_pseudo_density*g*sink_level
         sink_total_pressure = sink_vapor_pressure+sink_liquid_pressure
 
@@ -420,7 +433,7 @@ class UnderPass(Conductor):
         residual_balance = pressure_difference + disbalance
 
         # Conservation-based residual
-        residual_conservation = liquid_total_volume-total_volume_with_level
+        residual_conservation = self._total_liquid_volume-total_volume_with_level
 
         return residual_balance, residual_conservation
 
@@ -447,7 +460,7 @@ class UnderPass(Conductor):
             level_guesse = (
                 self.source.state.level[1], self.sink.state.level[1])
 
-        solution = newton(
+        solution = fsolve(
             lambda levels: self._hydrostatic_balance_objective(
                 levels, disbalance),
             level_guesse)
@@ -461,6 +474,22 @@ class UnderPass(Conductor):
         """Checks if hydrostatic lock is formed, does hydrostatic balance distribution
         if yes and equal level distribution otherwise. For multiphase situation recombines
         phase composition from initial volume fractions."""
+
+        self._common_liquid_volumes = (
+            self.source.state.mass[1:]/self.source.state.density[1:] +
+            self.sink.state.mass[1:]/self.sink.state.density[1:])
+        self._total_liquid_volume = np.sum(self._common_liquid_volumes)
+
+        self._liquid_volume_fractions = (
+            self._common_liquid_volumes/self._total_liquid_volume)
+
+        self._liquid_reference_density = 0.5*(
+            self.source.state.density[1:]+self.sink.state.density[1:])
+        self._liquid_pseudo_density = np.sum(
+            self._liquid_reference_density*self._liquid_volume_fractions)
+
+        self.check_if_locked()
+
         if self.is_locked:
             new_levels = self.hydrostatic_balance_distribution()
         else:
@@ -483,9 +512,9 @@ class UnderPass(Conductor):
         liquid_mass_difference_source = (
             liquid_mass_source-self.source.state.mass[1:])
         liquid_mass_difference_sink = (
-            liquid_mass_source-self.sink.state.mass[1:])
+            liquid_mass_sink-self.sink.state.mass[1:])
 
-        if liquid_mass_difference_source < 0:
+        if np.sum(liquid_mass_difference_source) < 0:
             # liquid leaves source
             flow_specific_energy = self.source.state.energy_specific[1:]
         else:
@@ -522,8 +551,8 @@ class UnderPass(Conductor):
             # Actually compute flow
             flow_area = meter.area_cs_circle_trunc(
                 self.source.diameter, self.edge_level)-meter.area_cs_circle_trunc(
-                    self.source.diameter, self.source.state.level[0])
-            flow_elevation = 0.5*(self.edge_level+self.source.state.level[0])
+                    self.source.diameter, self.source.state.level[1])
+            flow_elevation = 0.5*(self.edge_level+self.source.state.level[1])
             vapor_mass_flow_rate = efflux.compressible(
                 flow_area, self.discharge_coefficient,
                 self.source.state.equation[0].cpmass() /
@@ -559,7 +588,6 @@ class UnderPass(Conductor):
             self.flow.energy_flow[self.of_phase] = energy_flow
 
     def advance(self):
-        self.check_if_locked()
         self.distribute()  # NOTE : this disrupted solver in legacy, be careful
         self.compute_vapor_flow()
         self.propagate_flow()
@@ -595,8 +623,8 @@ class OverPass(Conductor):
         """Switches corresponding flag if liquid level reaches crest of weir or falls
         behind it"""
         self.is_reached = False
-        criterial_level = max(max(self.source.state.level),
-                              max(self.sink.state.level))
+        criterial_level = max(max(self.source.state.level[1:]),
+                              max(self.sink.state.level[1:]))
         if criterial_level >= self.edge_level:
             self.is_reached = True
 
@@ -618,8 +646,24 @@ class OverPass(Conductor):
             self.sink.state.pressure[of_phase]
         )
 
+        if vapor_mass_flow_rate > 0:
+            donor = self.source
+        else:
+            donor = self.sink
+
         self.flow.mass_flow_rate[of_phase] = vapor_mass_flow_rate
-        self.flow
+        self.flow.velocity[of_phase] = (
+            self.flow.mass_flow_rate[of_phase] /
+            self._vapor_flow_area/donor.state.density[of_phase])
+        self.flow.energy_specific[of_phase] = donor.state.energy_specific[of_phase]
+        self.flow.temperature[of_phase] = donor.state.temperature[of_phase]
+        self.flow.density[of_phase] = donor.state.density[of_phase]
+        self.flow.energy_specific_flow[of_phase] = (
+            self.flow.energy_specific[of_phase] +
+            self.flow.pressure[of_phase] / self.flow.density[of_phase] +
+            self.flow.velocity[of_phase]**2/2)
+        self.flow.energy_flow[of_phase] = (self.flow.energy_specific_flow[of_phase] *
+                                           vapor_mass_flow_rate)
 
     def compute_liquid_overflow(self):
         """Determines flow rate of lightest liquid if weir's crest is reached, sets 0
@@ -630,25 +674,43 @@ class OverPass(Conductor):
         self.flow.mass_flow_rate[of_phase] = 0
         if self.is_reached:
             # collect net flow rates for source formed by other conductors
-            other_liquid_flow_rates_inlet = 0
-            other_liquid_flow_rates_outlet = 0
+            other_liquid_flow_rates_inlet = np.array([0.0])
+            other_liquid_flow_rates_outlet = np.array([0.0])
             for inlet in self.source.inlets:
                 if inlet is not self:
-                    other_liquid_flow_rates_inlet += inlet.flow.mass_flow_rate[1:]
+                    other_liquid_flow_rates_inlet = other_liquid_flow_rates_inlet + \
+                        inlet.flow.mass_flow_rate[1:]
             for outlet in self.source.outlets:
                 if outlet is not self:
-                    other_liquid_flow_rates_outlet += outlet.flow.mass_flow_rate[1:]
+                    other_liquid_flow_rates_outlet = other_liquid_flow_rates_outlet + \
+                        outlet.flow.mass_flow_rate[1:]
 
-            overflow_rate = self.source.state.density[1]*np.sum(
-                (other_liquid_flow_rates_inlet-other_liquid_flow_rates_outlet) /
-                self.source.state.density)
+            other_liquid_net_flow = (
+                other_liquid_flow_rates_inlet - other_liquid_flow_rates_outlet)
+
+            overflow_rate = other_liquid_net_flow[0] - np.sum(
+                self.source.state.density[0] / self.source.state.density[1:] *
+                other_liquid_net_flow[1:])
 
             if overflow_rate < 0:
                 # NOTE : assigining integer 0 potentially can lead to troubles if numpy
                 # will not resolve array elements' types correctly
                 overflow_rate = 0
 
+            donor = self.source
+
             self.flow.mass_flow_rate[of_phase] = overflow_rate
+            self.flow.density[of_phase] = donor.state.density[of_phase]
+            self.flow.temperature[of_phase] = donor.state.temperature[of_phase]
+            self.flow.pressure[of_phase] = donor.state.pressure[of_phase-1]
+            self.flow.velocity[of_phase] = 0
+            self.flow.energy_specific[of_phase] = donor.state.energy_specific[of_phase]
+            self.flow.energy_specific_flow[of_phase] = (
+                self.flow.energy_specific[of_phase] +
+                self.flow.pressure[of_phase] / self.flow.density[of_phase] +
+                self.flow.velocity[of_phase]**2/2)
+            self.flow.energy_flow[of_phase] = (self.flow.energy_specific[of_phase] *
+                                               overflow_rate)
 
     def advance(self) -> None:
         self.check_if_reached()
@@ -661,22 +723,94 @@ class FurnacePolynomial(Conductor):
 
     def __init__(
             self, of_phase: int, minmax_fuel_flow: tuple[float, float],
-            elevation: float, diameter: float, center_distance: float,
-            in_control_volume: ControlVolume) -> None:
+            elevation: float, length: float, diameter: float,
+            center_distance: float, in_section: Section,
+            coeffs: NDArray[float64] = np.array([21_620.0, 38_124_000.0])) -> None:
 
-        super().__init__(of_phase, None, in_control_volume)
+        super().__init__(of_phase, None, in_section)
 
         self.of_phase = of_phase
+
         self.min_fuel_flow, self.max_fuel_flow = minmax_fuel_flow
         self.range_fuel_flow = self.max_fuel_flow-self.min_fuel_flow
+        self.fuel_flow = self.min_fuel_flow
+
         self.elevation = elevation
+        self.length = length
         self.diameter = diameter
         self.center_distance = center_distance
 
-        self.fuel_flow = self.min_fuel_flow
+        # secondary geometry parameters
+        self.radius = self.diameter/2  # TODO recast to property?
+        self.center_half_distance = center_distance/2
+        self.torus_length = np.pi*self.center_half_distance
+        self.total_cross_area = np.pi*self.diameter**2/4
 
-        self.polynomial_coefficients: NDArray[float64]
+        self.min_level = self.elevation - self.diameter/2
+        self.max_level = self.elevation + self.diameter/2
+
+        self.coeffs = coeffs
         self.controller: PropIntDiff | None
+
+        self.sink: Section
+
+    def compute_volume_with_level(self, level):
+
+        straight_part_volume = np.zeros_like(level)
+        torus_part_volume = np.zeros_like(level)
+        covered_part_volume = np.zeros_like(level)
+
+        in_domain = (level >= self.min_level)*(level <= self.max_level)
+        over_domain = (level > self.max_level)
+
+        cover_radius = self.sink.diameter/2
+        cover_length = self.sink.length_left_semiaxis
+
+        straight_part_volume[in_domain] = 2*meter.area_cs_circle_trunc(
+            self.diameter, level[in_domain]-self.min_level)*self.length
+        straight_part_volume[over_domain] = 2 * \
+            self.total_cross_area*self.length
+
+        torus_part_volume[in_domain] = meter.area_cs_circle_trunc(
+            self.diameter, level[in_domain]-self.min_level)*self.torus_length
+        torus_part_volume[over_domain] = self.total_cross_area * \
+            self.torus_length
+
+        integral_domain = np.linspace(
+            self.min_level, self.max_level, _FURNACE_VOLUME_INTEGRATION_SIZE)
+        first_integral_param = np.sqrt(
+            cover_radius**2 - (integral_domain-cover_radius)**2)
+
+        bottom_boundary = np.zeros_like(integral_domain)
+        top_boundary = np.zeros_like(integral_domain)
+
+        bottom_boundary = self.center_half_distance - np.sqrt(
+            self.radius**2 - (integral_domain-self.elevation)**2)
+
+        top_boundary = self.center_half_distance + np.sqrt(
+            self.radius**2 - (integral_domain-self.elevation)**2)
+
+        bottom_nd_param = bottom_boundary/first_integral_param
+        bottom_func = first_integral_param**2/2*(
+            np.arcsin(bottom_nd_param) +
+            bottom_nd_param * np.sqrt(1-bottom_nd_param**2))
+
+        top_nd_param = top_boundary/first_integral_param
+        top_func = first_integral_param**2/2*(
+            np.arcsin(top_nd_param) + top_nd_param*np.sqrt(1-top_nd_param**2))
+
+        second_integral_func = top_func-bottom_func
+
+        integral_value = 2*cover_length/cover_radius * cumulative_trapezoid(
+            second_integral_func, integral_domain, initial=0.0)
+
+        covered_part_volume[in_domain] = np.interp(
+            level[in_domain], integral_domain, integral_value)
+        covered_part_volume[over_domain] = integral_value[-1]
+
+        volume = straight_part_volume+torus_part_volume+covered_part_volume
+
+        return volume
 
     def compute_heat_flux(self):
         """Compute heat flux produced by furnace with polynomial approximation and fuel
@@ -689,16 +823,16 @@ class FurnacePolynomial(Conductor):
 
         # Furnace activates only when heated layer fully encloses it
         enclosed = (
-            (upper_layer_level >= self.elevation+self.diameter/2) and
-            (bottom_layer_level <= self.elevation-self.diameter/2))
+            (upper_layer_level >= self.max_level) and
+            (bottom_layer_level <= self.min_level))
 
         output = 1
         if self.controller is not None:
-            output = self.controller.signal
+            output = self.controller._signal
 
         fuel_flow = self.min_fuel_flow+output*self.range_fuel_flow
         heat = np.polynomial.polynomial.polyval(
-            fuel_flow, self.polynomial_coefficients)*enclosed
+            fuel_flow, self.coeffs)*enclosed
 
         self.fuel_flow = fuel_flow*enclosed
         self.flow.energy_flow[self.of_phase] = heat
@@ -763,6 +897,26 @@ class PhaseInterface(Conductor):
                 self.sink.state.pressure[of_light_phase])
 
             self.flow.mass_flow_rate[of_light_phase] = evaporation_rate
+
+            # NOTE
+            # This should fix issues with temperature drop, delet note after successfull
+            # troubleshooting
+            self.flow.velocity[of_light_phase] = (
+                evaporation_rate/evaporation_area/saturation_density)
+            self.flow.density[of_light_phase] = saturation_density
+            self.flow.pressure[of_light_phase] = saturation_pressure
+            self.flow.temperature[of_light_phase] = \
+                self.saturation_state.temperature[of_light_phase]
+            self.flow.energy_specific[of_light_phase] = \
+                self.saturation_state.energy_specific[of_light_phase]
+
+            self.flow.energy_specific_flow[of_light_phase] = (
+                self.flow.energy_specific[of_light_phase] +
+                self.flow.pressure[of_light_phase] / self.flow.density[of_light_phase] +
+                self.flow.velocity[of_light_phase]**2/2)
+            self.flow.energy_flow[of_light_phase] = \
+                self.flow.energy_flow[of_light_phase] + \
+                self.flow.energy_specific_flow[of_light_phase]*evaporation_rate
 
     def advance(self):
         self.compute_flow()
