@@ -215,10 +215,13 @@ class FlowSheet:
         PDR = (
             self.pressure[PressureSpec.IN]-self.pressure[PressureSpec.O])/(
             self.pressure[PressureSpec.IN]-self.pressure[PressureSpec.U])
+        RR = (self.flow_rate[FlowSpec.RECIRCULATION] /
+              self.flow_rate[FlowSpec.INLET])
 
         print("SECONDARIES :: ")
         print(f"Split ratio : {F*100: .3f} %")
         print(f"Pressure difference ratio : {PDR: .3f}")
+        print(f"Recirculation rate : {RR*100: .2f} %")
 
         _major_divider()
         print("END OF SUMMARY")
