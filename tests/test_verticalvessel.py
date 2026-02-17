@@ -114,6 +114,7 @@ def h_analytical(t):
 
 def test_error():
     """Test that numerical solution matches analytical within 1%."""
+
     h_analytical_t = h_analytical(t)
     error = np.mean(np.abs((h - h_analytical_t) / h_analytical_t) * 100)
     print(f"Mean relative error: {error:.4f}%")
