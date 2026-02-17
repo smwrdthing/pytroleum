@@ -14,17 +14,17 @@ from enum import IntEnum, auto
 # definition, later on we just rely on chosen indexing rules
 
 
-DIVIDER_LENGTH = 80
-MINOR_DIVIDER = '-'*DIVIDER_LENGTH
-MAJOR_DIVIDER = '='*DIVIDER_LENGTH
+_DIVIDER_LENGTH = 80
+_MINOR_DIVIDER = '-'*_DIVIDER_LENGTH
+_MAJOR_DIVIDER = '='*_DIVIDER_LENGTH
 
 
 def _minor_divider():
-    print(MINOR_DIVIDER)
+    print(_MINOR_DIVIDER)
 
 
 def _major_divider():
-    print(MAJOR_DIVIDER)
+    print(_MAJOR_DIVIDER)
 
 
 class FlowSpec(IntEnum):
