@@ -11,7 +11,7 @@ class Design(Protocol):
     inlet_diametet: float
     inlet_area: float
 
-    _total_length_array: NDArray
+    _model_length_array: NDArray
     _wall_area_array: NDArray
 
     def wall(self, axial_coordinate: NDArray | float) -> NDArray:
