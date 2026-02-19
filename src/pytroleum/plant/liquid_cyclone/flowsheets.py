@@ -3,6 +3,9 @@ from scipy.optimize import fsolve
 
 from enum import IntEnum, auto
 
+from pytroleum.tdyna import eos
+import CoolProp.constants as CoolConst
+
 # TODO :
 # Incorporate EoS interfaces for phase properties from tdyna into flowsheet
 
@@ -14,6 +17,26 @@ from enum import IntEnum, auto
 #
 # Using enums is convenient, because we choose how to store values only ones - during enum
 # definition, later on we just rely on chosen indexing rules
+
+# Temperature in Kelvins, +273.15 transforms Celcius value
+DEFAULT_TEMPERATURE = 20 + 273.14
+DEFAULT_PRESSURE = 101_325
+
+DEFAULT_HEAVY_PHASE_EOS = eos.AbstractState("HEOS", "water")
+DEFAULT_HEAVY_PHASE_EOS.update(
+    CoolConst.PT_INPUTS, DEFAULT_PRESSURE, DEFAULT_TEMPERATURE)
+
+DEFAULT_LIGHT_PHASE_REFERENCE = eos.CrudeOilRefernceData(
+    temperature=(273.15+20, 273.15+40),
+    density=(830.0, 800.0),
+    viscosity=(8e-3, 4.2e-3),
+    thermal_conductivity=(13.2, 12.9))
+DEFAULT_LIGHT_PHASE_EOS = eos.CrudeOilReferenced(DEFAULT_LIGHT_PHASE_REFERENCE)
+DEFAULT_LIGHT_PHASE_EOS.update(
+    CoolConst.PT_INPUTS, DEFAULT_PRESSURE, DEFAULT_TEMPERATURE)
+
+
+type OptionalPhase = eos.AbstractState | eos.AbstractStateImitator | None
 
 
 class FlowSpec(IntEnum):
@@ -59,10 +82,22 @@ class FlowSheet:
     # this would require decorating some methods with @abstractmethod and moving
     # actual implementations in repsective calsses. For now we leave it as is
 
-    def __init__(self) -> None:
+    def __init__(
+            self,
+            light_phase_eos: OptionalPhase = None,
+            heavy_phase_eos: OptionalPhase = None) -> None:
+
         self.resistance: list[float] = np.zeros(ResistanceSpec.SIZE).tolist()
         self.pressure: list[float] = np.zeros(PressureSpec.SIZE).tolist()
         self.flow_rate: list[float] = np.zeros(FlowSpec.SIZE).tolist()
+
+        if light_phase_eos is None:
+            light_phase_eos = DEFAULT_LIGHT_PHASE_EOS
+        if heavy_phase_eos is None:
+            heavy_phase_eos = DEFAULT_HEAVY_PHASE_EOS
+
+        self.light_phase_eos = light_phase_eos
+        self.heavy_phase_eos = heavy_phase_eos
 
     def residuals(self) -> tuple:
 
