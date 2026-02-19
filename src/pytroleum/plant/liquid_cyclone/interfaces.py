@@ -8,6 +8,7 @@ class Design(Protocol):
     characteristic_diameter: float
     inlet_diameter: float
     inlet_area: float
+    model_length: float
 
     _model_length_array: NDArray
     _wall_area_array: NDArray
