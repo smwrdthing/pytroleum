@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
-from pytroleum.plant.liquid_cyclone.interfaces import FlowSheet, VelocityField
+from pytroleum.plant.liquid_cyclone.velocities import VelocityField
+from pytroleum.plant.liquid_cyclone.flowsheets import FlowSheet
 
 from pytroleum.plant.liquid_cyclone.cyclone import Design
 
