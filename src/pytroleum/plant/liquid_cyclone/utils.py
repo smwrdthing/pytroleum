@@ -64,7 +64,8 @@ def _generate_model_region_mesh(design: Design, velocity_field: VelocityField,
     return R, Z
 
 
-def plot_model_region(design: SouthamptonDesign, velocity_field: VelocityField):
+def plot_model_region(design: SouthamptonDesign, velocity_field: VelocityField,
+                      half: bool = False):
 
     # NOTE :
     # Currently works only with Southampton desing because it is one of the most
@@ -112,9 +113,14 @@ def plot_model_region(design: SouthamptonDesign, velocity_field: VelocityField):
     ax.hlines((0, 0), 0, z[-1],
               linewidths=0.8, linestyles='-.', colors='0.8')
 
+    if half:
+        ymin = 0
+    else:
+        ymin = -r_max
+
     # plot restriction
     ax.set_xlim((z[0], z[-1]))
-    ax.set_ylim((-r_max, r_max))
+    ax.set_ylim((ymin, r_max))
 
     # Decoratives
     ax.fill_between(
