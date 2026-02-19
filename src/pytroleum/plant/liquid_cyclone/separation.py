@@ -22,9 +22,6 @@ def droplet_motion_equations(t, Y, drop_diameter: float,
         velocity_field.radial_component(Y, flowsheet, design) +
         velocity_field.drop_slip_velocity(Y, drop_diameter, flowsheet, design))
 
-    if _wall_collision(t, Y, drop_diameter, setup) < 0:
-        breakpoint()
-
     axial_velocity = velocity_field.axial_component(Y, flowsheet, design)
 
     dY_dt = radial_velocity, axial_velocity
