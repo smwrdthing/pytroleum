@@ -51,5 +51,7 @@ class VelocityField(Protocol):
     def axial_component(self, coordinates: tuple, *args, **kwargs) -> NDArray:
         ...
 
-    def drop_slip_velocity(self, coordinates: tuple, drop_diameter: float) -> NDArray:
+    def drop_slip_velocity(
+            self, coordinates: tuple, drop_diameter: float,
+            flowsheet: FlowSheet, design: Design) -> NDArray:
         ...
