@@ -245,6 +245,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from pytroleum.plant.liquid_cyclone.flowsheets import ResistanceSpec
     from pytroleum.plant.liquid_cyclone import utils
+    from pytroleum.plant.liquid_cyclone import separation as sep
 
     def compute_resistance(density, area, discharge_coeff):
         # auxiliary function
@@ -325,7 +326,7 @@ if __name__ == "__main__":
     flowsheet.resistance[ResistanceSpec.UV] = compute_resistance(
         *underflow_valve_inputs)
 
-    Q_in = 1e-3
+    Q_in = 0.3e-3
     backpressures = (1.5e5, 4.5e5)
     flowsheet.solve_from_backpressures(Q_in, backpressures)
     flowsheet.account_for_recirculation(recirculation_rate=0.02)
@@ -336,28 +337,26 @@ if __name__ == "__main__":
     velocity_field._solve_ndim_reversal_radius(flowsheet)
     velocity_field._restore_ndim_coeffs(flowsheet)
 
-    n, m = 100, 100
-    ndim_r = np.linspace(velocity_field.ndim_reversal_radius, 1, n)
-    ndim_z = np.linspace(0, 1, m)
-
-    NDIM_R, NDIM_Z = np.meshgrid(ndim_r, ndim_z)
-
-    Z = NDIM_Z*design.model_length
-    R = NDIM_R*design.wall(Z)
-
-    coordinates = (R, Z)
-    u = velocity_field.radial_component(
-        coordinates, flowsheet, design)  # type: ignore
-    v = velocity_field.tangent_component(
-        coordinates, flowsheet, design)  # type: ignore
-    w = velocity_field.axial_component(
-        coordinates, flowsheet, design)  # type: ignore
-
-    utils.plot_velocity_field(
+    fig, ax = utils.plot_velocity_field(
         flowsheet, design, velocity_field, "radial")  # type: ignore
-    utils.plot_velocity_field(
-        flowsheet, design, velocity_field, "tangent")  # type: ignore
-    utils.plot_velocity_field(
-        flowsheet, design, velocity_field, "axial")  # type: ignore
+    ax.set_title("Radial velocity")
 
+    fig, ax = utils.plot_velocity_field(
+        flowsheet, design, velocity_field, "tangent")  # type: ignore
+    ax.set_title("Tangent velocity")
+
+    fig, ax = utils.plot_velocity_field(
+        flowsheet, design, velocity_field, "axial")  # type: ignore
+    ax.set_title("Axial velocity")
+
+    # region separation
+
+    sep.MAX_INTEGRATION_STEP = 0.01
+    diameters = np.arange(0, 21, 3)/1e6
+    fig, ax = utils.plot_model_region(design, velocity_field, half=True)
+    for d in diameters:
+        sol = sep.drop_trajectroy(
+            d, (flowsheet, design, velocity_field))  # type: ignore
+        r, z = sol.y
+        ax.plot(z*1e3, r*1e3)
     plt.show()
