@@ -251,12 +251,6 @@ if __name__ == "__main__":
         # auxiliary function
         return discharge_coeff*area/np.sqrt(density)
 
-    design = SouthamptonDesign(80e-3)
-    design.summary()
-
-    # region flowsheet
-    flowsheet = FlowSheet()
-
     # Fluid properties
     oil_fraction = 10/100
     water_fraction = 1-oil_fraction
@@ -314,6 +308,11 @@ if __name__ == "__main__":
                               underflow_valve_area*underflow_valve_opening,
                               underflow_valve_discharge_coeff)
 
+    # region design & flowsheet
+    design = SouthamptonDesign(80e-3)
+    design.summary()
+    flowsheet = FlowSheet()
+
     # Set resistances
     flowsheet.resistance[ResistanceSpec.O] = compute_resistance(
         *overflow_inputs)
@@ -351,8 +350,7 @@ if __name__ == "__main__":
 
     # region separation
 
-    sep.MAX_INTEGRATION_STEP = 0.01
-    diameters = np.arange(0, 21, 3)/1e6
+    diameters = np.arange(0, 20, 0.5)/1e6
     fig, ax = utils.plot_model_region(design, velocity_field, half=True)
     for d in diameters:
         sol = sep.drop_trajectroy(
