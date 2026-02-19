@@ -20,7 +20,7 @@ class VelocityField:
     # and stipulating inheritance for specific models
 
     # TODO :
-    # average draining velocity and axial velocity scale recomputations / WIP
+    # droplet slip velocity
 
     def __init__(self) -> None:
 
