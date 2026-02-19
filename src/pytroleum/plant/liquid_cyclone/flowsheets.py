@@ -3,6 +3,8 @@ from scipy.optimize import fsolve
 
 from enum import IntEnum, auto
 
+# TODO :
+# Incorporate EoS interfaces for phase properties from tdyna into flowsheet
 
 # Enums are used for indexing in the flowsheet object iterables to make mapping between
 # elements in iterables and specific points in system clearer
