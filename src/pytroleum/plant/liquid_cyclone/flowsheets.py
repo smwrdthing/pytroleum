@@ -335,12 +335,6 @@ if __name__ == "__main__":
 
     # Summary looks fine, matches sanbox code results
 
-    print()
-    _minor_divider()
-    _minor_divider()
-    _minor_divider()
-    print()
-
     # Case 2 - fxied outflow and inlet pressure
     # just for fun, let's take values from previous case
     print("CASE 2")
