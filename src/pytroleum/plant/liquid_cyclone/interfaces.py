@@ -27,6 +27,8 @@ class Design(Protocol):
 @runtime_checkable
 class VelocityField(Protocol):
 
+    ndim_reversal_radius: float
+
     def radial_component(self, coordinates: tuple, *args, **kwargs) -> NDArray:
         ...
 
