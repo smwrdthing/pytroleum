@@ -215,7 +215,8 @@ class SouthamptonDesign(Design):
         _minor_divider()
 
         print("ANGLES :: ")
-        print(f"Cone : {np.rad2deg(self.angles[SouthamptonAngles.CONE])} deg")
+        print(
+            f"Cone : {np.rad2deg(self.angles[SouthamptonAngles.CONE]):.2f} deg")
         print(
             f"Tapered : {np.rad2deg(self.angles[SouthamptonAngles.TAPERED])} deg")
 
