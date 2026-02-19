@@ -1,0 +1,175 @@
+from typing import Literal, TYPE_CHECKING
+from numpy.typing import NDArray
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
+
+from pytroleum.plant.liquid_cyclone.interfaces import FlowSheet, VelocityField
+
+from pytroleum.plant.liquid_cyclone.cyclone import Design
+
+from pytroleum.plant.liquid_cyclone.cyclone import SouthamptonDiameters
+from pytroleum.plant.liquid_cyclone.cyclone import SouthamptonLengths
+from pytroleum.plant.liquid_cyclone.cyclone import SouthamptonAngles
+from pytroleum.plant.liquid_cyclone.cyclone import SouthamptonDesign
+
+
+# NOTE :
+# maybe later rewright this for instance of LiquidLiquidHydrocyclone
+
+# Because matplotlib's figsize works with inches only
+_INCH_TO_CM = 2.54
+_CM_TO_INCHES = 1/_INCH_TO_CM
+_METER_TO_MM = 1000
+
+FIG_WIDTH_CM = 35
+FIG_HEIGHT_CM = 10
+
+AX_ASPECT = 20
+CBAR_ASPECT = 75
+
+MESH_SIZE = (100, 100)
+CONTOUR_LEVELS = 100
+CBAR_PAD = 0.2
+
+_DIVIDER_LENGTH = 80
+_MINOR_DIVIDER = '-'*_DIVIDER_LENGTH
+_MAJOR_DIVIDER = '='*_DIVIDER_LENGTH
+
+
+def _minor_divider():
+    print(_MINOR_DIVIDER)
+
+
+def _major_divider():
+    print(_MAJOR_DIVIDER)
+
+
+def _generate_model_region_mesh(design: Design, velocity_field: VelocityField,
+                                size: tuple[int, int]) -> tuple[NDArray, NDArray]:
+
+    n, m = size
+
+    ndim_r = np.linspace(velocity_field.ndim_reversal_radius, 1, n)
+    ndim_z = np.linspace(0, 1, m)
+
+    NDIM_R, NDIM_Z = np.meshgrid(ndim_r, ndim_z)
+
+    Z = NDIM_Z*design.model_length
+    R = NDIM_R*design.wall(Z)
+
+    return R, Z
+
+
+def plot_model_region(design: SouthamptonDesign, velocity_field: VelocityField):
+
+    # NOTE :
+    # Currently works only with Southampton desing because it is one of the most
+    # fully-defined design options of liquid-liquid hydrocyclone
+
+    fig, ax = plt.subplots(figsize=(FIG_WIDTH_CM*_CM_TO_INCHES,
+                                    FIG_HEIGHT_CM*_CM_TO_INCHES))
+    ax.set_xlabel("z [mm]")
+    ax.set_ylabel("r [mm]")
+
+    # Main arrays to work with, axial & radial coordinates
+    z = design._model_length_array
+    r_wall = design.wall(z)
+
+    # Reversal region
+    r_reversal = r_wall*velocity_field.ndim_reversal_radius
+
+    # Coordinates that correspond to transition to underflow
+    z_TU = design.lengths[SouthamptonLengths.TAPERED]
+    r_TU = design.diameters[SouthamptonDiameters.UNDERFLOW]/2
+
+    # Max radisu
+    r_max = design.diameters[SouthamptonDiameters.C]/2
+
+    # unit conversion
+    z = z*_METER_TO_MM
+
+    r_wall = r_wall*_METER_TO_MM
+    r_reversal = r_reversal*_METER_TO_MM
+
+    z_TU = z_TU*_METER_TO_MM
+    r_TU = r_TU*_METER_TO_MM
+
+    r_max = r_max*_METER_TO_MM
+
+    # Plotting walls
+    ax.plot(z, r_wall, "k")
+    ax.plot(z, -r_wall, "k")
+    ax.plot(z, r_reversal, "--k")
+    ax.plot(z, -r_reversal, "--k")
+
+    # Segmentation with dashed line & axis
+    ax.vlines(z_TU, -r_TU, r_TU,
+              linestyles='--', colors='k')
+    ax.hlines((0, 0), 0, z[-1],
+              linewidths=0.8, linestyles='-.', colors='0.8')
+
+    # plot restriction
+    ax.set_xlim((z[0], z[-1]))
+    ax.set_ylim((-r_max, r_max))
+
+    # Decoratives
+    ax.fill_between(
+        z, r_max*np.ones_like(z), r_wall,
+        color='none', edgecolor='0.8', hatch='///', hatch_linewidth=0.5)
+    ax.fill_between(
+        z, -r_max*np.ones_like(z), -r_wall,
+        color='none', edgecolor='0.8', hatch='///', hatch_linewidth=0.5)
+
+    ax.fill_between(z, -r_reversal, r_reversal, color='0.95')
+
+    return fig, ax
+
+
+def plot_velocity_field(
+        flowsheet: FlowSheet, design: SouthamptonDesign, velocity_field: VelocityField,
+        component: Literal["radial", "tangent", "axial"], with_slip: bool = False):
+
+    fig, ax = plot_model_region(design, velocity_field)
+    coordinates = _generate_model_region_mesh(
+        design, velocity_field, MESH_SIZE)
+
+    match component:
+        case "radial":
+            # TODO :
+            # figure why type checker is not happy with Southampton desing,
+            # remove all "type: ignore" flags after
+            velocity = velocity_field.radial_component(
+                coordinates, flowsheet, design)  # type: ignore
+            if with_slip:
+                # TODO :
+                # implemet slip velocity
+                # velocity = velocity + velocity_field.drop_slip_velocity()
+                raise
+            cbar_label = "u [mm/s]"
+            unit_scale = 1e3
+        case "tangent":
+            velocity = velocity_field.tangent_component(
+                coordinates, flowsheet, design)  # type: ignore
+            cbar_label = "v [m/s]"
+            unit_scale = 1
+        case "axial":
+            velocity = velocity_field.axial_component(
+                coordinates, flowsheet, design)  # type: ignore
+            cbar_label = "w [m/s]"
+            unit_scale = 1
+
+    R, Z = coordinates
+
+    Z = Z*_METER_TO_MM
+    R = R*_METER_TO_MM
+    velocity = velocity*unit_scale
+
+    cf = ax.contourf(Z, R, velocity, CONTOUR_LEVELS)
+    ax.contourf(Z, -R, velocity, CONTOUR_LEVELS)
+    fig.colorbar(cf, label=cbar_label, location="bottom",
+                 pad=CBAR_PAD, aspect=CBAR_ASPECT)
+
+    return fig, ax
