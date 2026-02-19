@@ -214,6 +214,7 @@ class FlowSheet:
         _major_divider()
         print("END OF SUMMARY")
         _major_divider()
+        print()
 
     def _solve_with_underflow_spec(self, underflow_flow_rate: float) -> float:
 
