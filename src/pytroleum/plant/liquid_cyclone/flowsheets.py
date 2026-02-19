@@ -5,7 +5,7 @@ from enum import IntEnum, auto
 
 
 # Enums are used for indexing in the flowsheet object iterables to make mapping between
-# order of elements in iterables and specific "places" in system clearer
+# elements in iterables and specific points in system clearer
 #
 # Different enums for different values violate DRY slightly, but much easier to comprehend
 # and more robust
