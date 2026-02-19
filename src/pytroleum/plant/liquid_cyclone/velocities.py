@@ -88,8 +88,29 @@ class VelocityField:
 
         return velocity
 
-    def drop_slip_velocity(self, drop_diameter):
-        raise NotImplementedError()
+    def drop_slip_velocity(
+            self, coordinates, drop_diameter: float,
+            flowsheet: FlowSheet, design: Design):
+
+        radial_coordinate, _ = coordinates
+
+        tangent_velocity = self.tangent_component(
+            coordinates, flowsheet, design)
+
+        # Slightly violating law of Demeter heer, ok for now
+        light_phase_density = flowsheet.light_phase_eos.rhomass()
+        heavy_phase_density = flowsheet.heavy_phase_eos.rhomass()
+        heavy_phase_viscosity = flowsheet.heavy_phase_eos.viscosity()
+
+        # Note that we consider heavy phase to be continuous and thus using
+        # it's viscosity in Stokes law
+
+        slip_velocity = -(
+            drop_diameter**2/18 *
+            (heavy_phase_density-light_phase_density)/heavy_phase_viscosity *
+            tangent_velocity**2/radial_coordinate)
+
+        return slip_velocity
 
     def flow_reversal_point(self, coordinates, design: Design):
         _, axial_coordinate = coordinates
