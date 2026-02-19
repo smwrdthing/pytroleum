@@ -148,6 +148,7 @@ class FlowSheet:
 
     def summary(self):
 
+        from pytroleum.plant.liquid_cyclone.utils import _minor_divider, _major_divider
         # Unit conversions and precision are currently hardcoded here, this might be
         # changed later on if needed
         to_bar = 1/1e5
