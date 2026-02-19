@@ -14,19 +14,6 @@ from enum import IntEnum, auto
 # definition, later on we just rely on chosen indexing rules
 
 
-_DIVIDER_LENGTH = 80
-_MINOR_DIVIDER = '-'*_DIVIDER_LENGTH
-_MAJOR_DIVIDER = '='*_DIVIDER_LENGTH
-
-
-def _minor_divider():
-    print(_MINOR_DIVIDER)
-
-
-def _major_divider():
-    print(_MAJOR_DIVIDER)
-
-
 class FlowSpec(IntEnum):
     # No need for type annotations here as we use IntEnum specifically
     O, OVERFLOW = 0, 0
