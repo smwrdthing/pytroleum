@@ -1,8 +1,6 @@
 from typing import Protocol, runtime_checkable, overload
 from numpy.typing import NDArray
 
-from pytroleum.plant.liquid_cyclone.flowsheets import FlowSheet
-
 
 @runtime_checkable
 class Design(Protocol):
