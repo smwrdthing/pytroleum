@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 class Design(Protocol):
 
     characteristic_diameter: float
-    inlet_diametet: float
+    inlet_diameter: float
     inlet_area: float
 
     _model_length_array: NDArray
