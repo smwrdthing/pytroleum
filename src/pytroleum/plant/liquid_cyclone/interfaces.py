@@ -1,5 +1,19 @@
 from typing import Protocol, runtime_checkable, overload
 from numpy.typing import NDArray
+from pytroleum.tdyna import eos
+
+type OptionalPhase = eos.AbstractState | eos.AbstractStateImitator
+
+
+@runtime_checkable
+class FlowSheet(Protocol):
+
+    light_phase_eos: OptionalPhase
+    heavy_phase_eos: OptionalPhase
+
+    resistance: list[float]
+    pressure: list[float]
+    flow_rate: list[float]
 
 
 @runtime_checkable
