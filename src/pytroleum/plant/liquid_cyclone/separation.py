@@ -8,7 +8,10 @@ from pytroleum.plant.liquid_cyclone.interfaces import Design, VelocityField
 
 INTEGRATION_TIME_CAP = 60*60
 MAX_INTEGRATION_STEP = 0.05
-INTEGRATION_METHOD = "RK45"
+INTEGRATION_METHOD = "LSODA"
+
+# Implicit methods work better for this problem, there are multiple in scipy,
+# any of them works fine, LSODA is set as default
 
 
 def droplet_motion_equations(t, Y, drop_diameter: float,
