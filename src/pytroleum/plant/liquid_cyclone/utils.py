@@ -64,8 +64,7 @@ def _generate_model_region_mesh(design: Design, velocity_field: VelocityField,
     return R, Z
 
 
-def plot_model_region(design: SouthamptonDesign, velocity_field: VelocityField,
-                      half: bool = False):
+def plot_model_region(design: Design, velocity_field: VelocityField, half: bool = False):
 
     # NOTE :
     # Currently works only with Southampton desing because it is one of the most
@@ -80,24 +79,17 @@ def plot_model_region(design: SouthamptonDesign, velocity_field: VelocityField,
     z = design._model_length_array
     r_wall = design.wall(z)
 
+    # Max radius
+    r_max = np.max(r_wall)
+
     # Reversal region
     r_reversal = r_wall*velocity_field.ndim_reversal_radius
-
-    # Coordinates that correspond to transition to underflow
-    z_TU = design.lengths[SouthamptonLengths.TAPERED]
-    r_TU = design.diameters[SouthamptonDiameters.UNDERFLOW]/2
-
-    # Max radisu
-    r_max = design.diameters[SouthamptonDiameters.C]/2
 
     # unit conversion
     z = z*_METER_TO_MM
 
     r_wall = r_wall*_METER_TO_MM
     r_reversal = r_reversal*_METER_TO_MM
-
-    z_TU = z_TU*_METER_TO_MM
-    r_TU = r_TU*_METER_TO_MM
 
     r_max = r_max*_METER_TO_MM
 
@@ -107,11 +99,26 @@ def plot_model_region(design: SouthamptonDesign, velocity_field: VelocityField,
     ax.plot(z, r_reversal, "--k")
     ax.plot(z, -r_reversal, "--k")
 
-    # Segmentation with dashed line & axis
-    ax.vlines(z_TU, -r_TU, r_TU,
-              linestyles='--', colors='k')
-    ax.hlines((0, 0), 0, z[-1],
-              linewidths=0.8, linestyles='-.', colors='0.8')
+    if hasattr(design, "diameters") and hasattr(design, "lengths"):
+        # ^^^^^^^^^^ hasattr is a temporary patch, because isinstance fails to
+        # check if design is a SouthamptonDesign
+
+        # NOTE :
+        # For some reasons this check fails even when we pass SothamptonDesgn
+        # object as design
+
+        z_TU = design.lengths[SouthamptonLengths.TAPERED]  # type: ignore
+        r_TU = design.diameters[  # type: ignore
+            SouthamptonDiameters.UNDERFLOW]/2
+
+        z_TU = z_TU*_METER_TO_MM
+        r_TU = r_TU*_METER_TO_MM
+
+        # Segmentation with dashed line & axis
+        ax.vlines(z_TU, -r_TU, r_TU, 'k', '--')
+
+    # Axis
+    ax.hlines((0, 0), 0, z[-1], '0.8', '-.', linewidths=0.8)
 
     if half:
         ymin = 0
