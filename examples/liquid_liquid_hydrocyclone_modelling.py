@@ -5,6 +5,12 @@ from pytroleum.plant.liquid_cyclone import cyclone as llh
 from pytroleum.plant.liquid_cyclone import separation as sep
 from pytroleum.plant.liquid_cyclone import utils
 
+# TODO :
+# Assemble related plots together, namely:
+#   - Velocity field contoirs
+#   - Drop trajectories, grade efficiency and size distribution
+#     (last one is not plotted yet, do this too)
+
 
 def compute_resistance(density, area, discharge_coeff):
     # auxiliary function
