@@ -158,13 +158,11 @@ def plot_velocity_field(
             # TODO :
             # figure why type checker is not happy with Southampton desing,
             # remove all "type: ignore" flags after
-            velocity = velocity_field.radial_component(
-                coordinates, flowsheet, design)  # type: ignore
-            if with_slip:
-                # TODO :
-                # implemet slip velocity
-                # velocity = velocity + velocity_field.drop_slip_velocity()
-                raise
+            velocity = (
+                velocity_field.radial_component(
+                    coordinates, flowsheet, design) +  # type: ignore
+                velocity_field.drop_slip_velocity(
+                    coordinates, drop_diameter, flowsheet, design))  # type: ignore
             cbar_label = "u [mm/s]"
             unit_scale = 1e3
         case "tangent":
