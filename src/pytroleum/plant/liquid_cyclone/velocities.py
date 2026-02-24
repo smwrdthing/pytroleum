@@ -58,8 +58,10 @@ class VelocityField:
         draininig_induced_term = (
             -self._average_draining_velocity *
             self.flow_reversal_point(coordinates, design)/radial_coordinate *
-            2*np.pi/Q_for *
-            self._ndim_profile_dotprod_polynom(1-radial_coordinate/wall_radius))
+            2*np.pi/Q_for * (
+                self._ndim_profile_dotprod_polynom(1) -
+                self._ndim_profile_dotprod_polynom(radial_coordinate/wall_radius))
+        )
 
         velocity = wall_induced_term + draininig_induced_term
 
