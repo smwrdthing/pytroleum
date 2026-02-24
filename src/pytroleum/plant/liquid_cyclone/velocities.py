@@ -190,7 +190,8 @@ class VelocityField:
         theta3 = 30/7*(Q_u/np.pi - theta1)
         theta4 = -2/3*theta3
 
-        self._ndim_profile_polynom.coef = np.array([theta1, 0, theta3, theta4])
+        self._ndim_profile_polynom.coef = np.array(
+            [theta1, theta2, theta3, theta4])
         self._ndim_profile_dotprod_polynom.coef = np.array(
             [0, 0, theta1/2, theta2/3, theta3/4, theta4/5])
 
