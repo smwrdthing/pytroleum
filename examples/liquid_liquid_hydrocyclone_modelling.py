@@ -122,6 +122,5 @@ flowsheet.summary()
 
 plt.show()
 
-print(f'd50 is : {d50*1e6:.2f} micrometers')
-print("For given size distribution and LLH setup " +
-      f"total efficiency is : {efficiency*100:.2f} %")
+print(f'd50 : {d50*1e6:.2f} micrometers')
+print(f"efficiency : {efficiency*100:.2f} %")
