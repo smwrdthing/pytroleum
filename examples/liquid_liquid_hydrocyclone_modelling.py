@@ -103,7 +103,7 @@ for i, d in enumerate(diameters):
 # Grade efficiency plotting is not automated yet, but there are no problems with making it
 # manually
 fig, ax = plt.subplots()
-ax.set_title("LLH grade efficiecny")
+ax.set_title("LLH grade efficiency")
 ax.plot(d_efficiency*1e6, G_efficiency*100)
 ax.plot(d50*1e6, 50, 'go')
 ax.set_xlim((0, d_efficiency[-1]*1e6))  # type: ignore
