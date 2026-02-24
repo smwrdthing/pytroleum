@@ -168,10 +168,10 @@ class VelocityField:
     def _ndim_reversal_radius_objective(self, ndim_reversal_radius, flowsheet: FlowSheet):
 
         Q_u = flowsheet.flow_rate[FlowSpec.UNDERFLOW]
-        Q_r = flowsheet.flow_rate[FlowSpec.RECIRCULATION]
+        Q_rev = flowsheet.flow_rate[FlowSpec.REVERSE]
 
-        theta = (Q_u/np.pi - 7/np.pi*Q_r / (15*ndim_reversal_radius**4 -
-                                            12*ndim_reversal_radius**5))
+        theta = (Q_u/np.pi - Q_rev/np.pi * 7 / (15*ndim_reversal_radius**4 -
+                                                12*ndim_reversal_radius**5))
 
         residual = (theta + 30/7*(Q_u/np.pi - theta)*ndim_reversal_radius**2 -
                     20/7*(Q_u/np.pi-theta)*ndim_reversal_radius**3)
@@ -181,10 +181,10 @@ class VelocityField:
     def _restore_ndim_coeffs(self, flowsheet: FlowSheet):
 
         Q_u = flowsheet.flow_rate[FlowSpec.UNDERFLOW]
-        Q_r = flowsheet.flow_rate[FlowSpec.RECIRCULATION]
+        Q_rev = flowsheet.flow_rate[FlowSpec.REVERSE]
 
-        theta1 = (Q_u/np.pi - 7/np.pi*Q_r / (15*self.ndim_reversal_radius**4 -
-                                             12*self.ndim_reversal_radius**5))
+        theta1 = (Q_u/np.pi - Q_rev/np.pi * 7 / (15*self.ndim_reversal_radius**4 -
+                                                 12*self.ndim_reversal_radius**5))
         theta2 = 0.0
         theta3 = 30/7*(Q_u/np.pi - theta1)
         theta4 = -2/3*theta3
