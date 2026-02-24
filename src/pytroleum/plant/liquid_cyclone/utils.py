@@ -143,8 +143,11 @@ def plot_model_region(design: Design, velocity_field: VelocityField, half: bool 
 
 
 def plot_velocity_field(
-        flowsheet: FlowSheet, design: SouthamptonDesign, velocity_field: VelocityField,
-        component: Literal["radial", "tangent", "axial"], with_slip: bool = False):
+        setup: tuple[FlowSheet, Design, VelocityField],
+        component: Literal["radial", "tangent", "axial"],
+        drop_diameter: float = 0.0):
+
+    flowsheet, design, velocity_field = setup
 
     fig, ax = plot_model_region(design, velocity_field)
     coordinates = _generate_model_region_mesh(
