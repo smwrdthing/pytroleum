@@ -407,3 +407,24 @@ if __name__ == "__main__":
           f"total efficiency is : {efficiency*100:.2f} %")
 
     # Something to do with quad and drop sizes being in micrometers scale
+
+    # NOTE :
+    # Fixed issues with velocity field computations, now residuals are in order
+    #
+    # however grade efficiency plot now looks weird, there is a signifincant mismatch
+    # between split ratio and G(0), though original thesis claims they should be same
+    #
+    # should look into it more // see below
+    #
+    # There is some confusion in Bram's work:
+    # non-dimensional profile dot product with non-dimensional radius should only yield
+    # underfolw flow rate when integration is performe over whole range of non-dimensional
+    # raidus values (0 to 1). It is stated in axial velocity model sections multiple
+    # times. If we start integration from some non-zero non-dimensionsla radius -
+    # we will not get underflow flow rate. Thus G(0) cannot be equal to flow split without
+    # adjustment to axial velocity model
+    #
+    # I revisited velocity functions multiple times at this point, they should be fine.
+    # We capture qualitative picture well, so for now let's assume that G(0) should not
+    # be equalt to split ratio. (radius of droplet with "zero-th" diameter is not zero
+    # itself due to the bare motion of the continuous flow)
