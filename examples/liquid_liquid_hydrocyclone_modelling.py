@@ -24,19 +24,19 @@ velocity_field = llh.VelocityField()
 # Overflow
 flowsheet.resistance[llh.ResistanceSpec.O] = compute_resistance(
     flowsheet.light_phase_eos.rhomass(),
-    np.pi*design.diameters[llh.SouthamptonDiameters.O]**2/4, 0.2)
+    np.pi*design.diameters[llh.SouthamptonDiameters.O]**2/4, 0.11)
 
 # Underflow
 flowsheet.resistance[llh.ResistanceSpec.U] = compute_resistance(
     flowsheet.heavy_phase_eos.rhomass(),
-    np.pi*design.diameters[llh.SouthamptonDiameters.U]**2/4, 0.4)
+    np.pi*design.diameters[llh.SouthamptonDiameters.U]**2/4, 0.12)
 
 # Inlet
 light_phase_fraction = 0.1  # fractin of contaminant in inflow for density
 flowsheet.resistance[llh.ResistanceSpec.IN] = compute_resistance(
     flowsheet.heavy_phase_eos.rhomass()*(1-light_phase_fraction) +
     flowsheet.light_phase_eos.rhomass()*light_phase_fraction,
-    np.pi*design.diameters[llh.SouthamptonDiameters.I]**2/4, 0.61)
+    np.pi*design.diameters[llh.SouthamptonDiameters.I]**2/4, 0.32)
 
 # Underflow valve
 underflow_valve_diameter = 12e-3
