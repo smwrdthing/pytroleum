@@ -96,6 +96,7 @@ class SouthamptonDesign(Design):
 
     inlet_diameter: float = field(init=False)
     inlet_area: float = field(init=False)
+    is_twin_inlet: bool = True
 
     characteristic_diameter: float = field(init=False)
 
@@ -169,6 +170,8 @@ class SouthamptonDesign(Design):
 
         super().__post_init__()
 
+        self.inlet_area = self.inlet_area * (1+self.is_twin_inlet)
+
     def wall(self, axial_coordinate: NDArray) -> NDArray:
         radius = np.interp(
             axial_coordinate,
@@ -226,6 +229,7 @@ class SouthamptonDesign(Design):
         _minor_divider()
 
         print(f"Inlet area : {self.inlet_area*to_squared_cm: .2f} cm^2")
+        print(f"Twing inlet? : {self.is_twin_inlet}")
         print(
             f"Characteristic diameter : {self.characteristic_diameter*to_mm: .2f} mm")
 
