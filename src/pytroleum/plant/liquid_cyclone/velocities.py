@@ -12,6 +12,9 @@ NDIM_REVRADIUS_INITIAL_GUESSE = 0.25
 FITTING_POLYNOM_DEGREE = 3
 DOTPROD_POLYNOM_DEGREE = FITTING_POLYNOM_DEGREE + 2
 
+# TODO :
+# Double-check all velocity-computing functions, investigade residuals etc
+
 
 class VelocityField:
 
