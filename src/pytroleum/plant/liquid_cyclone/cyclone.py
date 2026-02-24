@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
 
-from pytroleum.plant.liquid_cyclone.flowsheets import FlowSheet
+from pytroleum.plant.liquid_cyclone.flowsheets import FlowSheet, FlowSpec
 from pytroleum.plant.liquid_cyclone.velocities import VelocityField
 
 from enum import IntEnum, auto
