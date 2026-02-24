@@ -133,13 +133,12 @@ class VelocityField:
         ndim_RL = self.ndim_reversal_radius
 
         residuals = (
-            theta1+2*theta3+3*theta4,
+            theta2+2*theta3+3*theta4,
             theta2,
 
             self._ndim_profile_dotprod_polynom(1) -
             self._ndim_profile_dotprod_polynom(ndim_RL) - Q_for/2/np.pi,
 
-            self._ndim_profile_dotprod_polynom(ndim_RL) -
             self._ndim_profile_dotprod_polynom(ndim_RL) + Q_rev/2/np.pi,
 
             self._ndim_profile_polynom(ndim_RL))
