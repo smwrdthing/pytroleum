@@ -403,7 +403,7 @@ if __name__ == "__main__":
         setup, percentiles)  # type: ignore
     # Value is seriously off
 
-    print("For given size distribution and LLH setup" +
+    print("For given size distribution and LLH setup " +
           f"total efficiency is : {efficiency*100:.2f} %")
 
     # Something to do with quad and drop sizes being in micrometers scale
