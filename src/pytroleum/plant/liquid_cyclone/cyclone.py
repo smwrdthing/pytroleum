@@ -8,7 +8,8 @@ from numpy.typing import NDArray
 import numpy as np
 from scipy.integrate import cumulative_trapezoid
 
-from pytroleum.plant.liquid_cyclone.flowsheets import FlowSheet, FlowSpec
+from pytroleum.plant.liquid_cyclone.flowsheets import (
+    FlowSheet, FlowSpec, ResistanceSpec, PressureSpec)
 from pytroleum.plant.liquid_cyclone.velocities import VelocityField
 
 from enum import IntEnum, auto
@@ -239,6 +240,7 @@ class SouthamptonDesign(Design):
         print()
 
 # region LLH
+# WIP
 
 
 class LiquidLiquidHydrocyclone:
@@ -248,183 +250,17 @@ class LiquidLiquidHydrocyclone:
         self.flowsheet = flowsheet
 
 
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    from pytroleum.plant.liquid_cyclone.flowsheets import ResistanceSpec
-    from pytroleum.plant.liquid_cyclone import utils
-    from pytroleum.plant.liquid_cyclone import separation as sep
-
-    def compute_resistance(density, area, discharge_coeff):
-        # auxiliary function
-        return discharge_coeff*area/np.sqrt(density)
-
-    # Fluid properties
-    oil_fraction = 10/100
-    water_fraction = 1-oil_fraction
-
-    oil_density = 830
-    water_density = 1000
-    inlet_density = water_density*water_fraction + oil_density*oil_fraction
-
-    # Diameters
-    overflow_diameter = 3e-3
-    underflow_diameter = 12e-3
-    inlet_diameter = 25e-3
-
-    overflow_valve_diameter = 6e-3
-    underflow_valve_diameter = 12e-3
-
-    # Areas
-    overflow_area = np.pi/4*overflow_diameter**2
-    underflow_area = np.pi/4*underflow_diameter**2
-    inlet_area = np.pi/4*inlet_diameter**2
-
-    overflow_valve_area = np.pi/4*overflow_valve_diameter**2
-    underflow_valve_area = np.pi/4*underflow_valve_diameter**2
-
-    # Discharge coefficients
-    overflow_discharge_coeff = 0.2
-    underflow_discharge_coeff = 0.4
-    inlet_discharge_coeff = 0.1
-
-    overflow_valve_discharge_coeff = 0.61
-    underflow_valve_discharge_coeff = 0.61
-
-    # Openings
-    overflow_valve_opening = 1.0
-    underflow_valve_opening = 1.0
-
-    # Collecting inputs
-    overflow_inputs = (oil_density,
-                       overflow_area,
-                       overflow_discharge_coeff)
-
-    underflow_inputs = (water_density,
-                        underflow_area,
-                        underflow_discharge_coeff)
-
-    inlet_inputs = (inlet_density,
-                    inlet_area,
-                    inlet_discharge_coeff)
-
-    overflow_valve_inputs = (oil_density,
-                             overflow_valve_area*overflow_valve_opening,
-                             overflow_valve_discharge_coeff)
-
-    underflow_valve_inputs = (water_density,
-                              underflow_valve_area*underflow_valve_opening,
-                              underflow_valve_discharge_coeff)
-
-    # region design & flowsheet
-    design = SouthamptonDesign(80e-3)
-    design.summary()
-    flowsheet = FlowSheet()
-
-    # Set resistances
-    flowsheet.resistance[ResistanceSpec.O] = compute_resistance(
-        *overflow_inputs)
-    flowsheet.resistance[ResistanceSpec.U] = compute_resistance(
-        *underflow_inputs)
-    flowsheet.resistance[ResistanceSpec.IN] = compute_resistance(
-        *inlet_inputs)
-    flowsheet.resistance[ResistanceSpec.OV] = compute_resistance(
-        *overflow_valve_inputs)
-    flowsheet.resistance[ResistanceSpec.UV] = compute_resistance(
-        *underflow_valve_inputs)
-
-    Q_in = 0.5e-3
-    backpressures = (1.5e5, 4.5e5)
-    flowsheet.solve_from_backpressures(Q_in, backpressures)
-    flowsheet.account_for_recirculation(recirculation_rate=0.02)
-    flowsheet.summary()
-
-    # region velocity field
-    velocity_field = VelocityField()
-    velocity_field._solve_ndim_reversal_radius(flowsheet)
-    velocity_field._restore_ndim_coeffs(flowsheet)
-
-    setup = flowsheet, design, velocity_field
-
-    fig, ax = utils.plot_velocity_field(
-        setup, "radial", drop_diameter=0.0e-6)  # type: ignore
-    ax.set_title("Radial velocity")
-
-    fig, ax = utils.plot_velocity_field(
-        setup, "tangent")  # type: ignore
-    ax.set_title("Tangent velocity")
-
-    fig, ax = utils.plot_velocity_field(
-        setup, "axial")  # type: ignore
-    ax.set_title("Axial velocity")
-
-    # region separation
-    r_final, z_final = sep.drop_final_point(5e-6, setup)  # type: ignore
-    largest_diameter = sep.solve_largest_drop(setup)  # type: ignore
-
-    diameters = np.linspace(0, largest_diameter, 10)  # type: ignore
-    fig, ax = utils.plot_model_region(design, velocity_field, half=True)
-    for i, d in enumerate(diameters):
-        r, z = sep.drop_trajectroy(d, setup)  # type: ignore
-        linewidth = 3
-        if i == 0:
-            color = "b"
-        elif i == len(diameters)-1:
-            color = "r"
-        else:
-            linewidth = 1
-            color = None
-        ax.plot(z*1e3, r*1e3, color=color, linewidth=linewidth)
-
-    d_efficiency, G_efficiencey = sep.build_grade_efficiency_curve(
-        setup, 30)  # type: ignore
-
-    d50 = sep.extract_d50(d_efficiency, G_efficiencey)
-
-    fig, ax = plt.subplots(figsize=(9.2, 4.5))
-    ax.set_title("Grade efficiency")
-    ax.set_xlabel(r"drop diameter [$\mu m$]")
-    ax.set_ylabel(r"G [$\%$]")
-    ax.plot(d_efficiency*1e6, G_efficiencey*100)
-    ax.plot(d50*1e6, 50, 'go')
-    ax.set_xlim((0, largest_diameter*1e6))  # type: ignore
-    ax.set_ylim((0, 100))
-    ax.vlines(d50*1e6, 0, 100, 'g', '--')
-    ax.hlines(50, 0, largest_diameter*1e6, 'g', '--')  # type: ignore
-    ax.grid(True)
-
-    print(f'd50 is {d50*1e6:.2f} micrometers')
-    # Looks believable, I'd believe
-
-    plt.show()
-
-    # Total efficiency computations
-    percentiles = (15e-6, 20e-6, 50e-6)
-    efficiency = sep.evaluate_total_efficiency(
-        setup, percentiles)  # type: ignore
-    # Value is seriously off
-
-    print("For given size distribution and LLH setup " +
-          f"total efficiency is : {efficiency*100:.2f} %")
-
-    # Something to do with quad and drop sizes being in micrometers scale
-
-    # NOTE :
-    # Fixed issues with velocity field computations, now residuals are in order
-    #
-    # however grade efficiency plot now looks weird, there is a signifincant mismatch
-    # between split ratio and G(0), though original thesis claims they should be same
-    #
-    # should look into it more // see below
-    #
-    # There is some confusion in Bram's work:
-    # non-dimensional profile dot product with non-dimensional radius should only yield
-    # underfolw flow rate when integration is performe over whole range of non-dimensional
-    # raidus values (0 to 1). It is stated in axial velocity model sections multiple
-    # times. If we start integration from some non-zero non-dimensionsla radius -
-    # we will not get underflow flow rate. Thus G(0) cannot be equal to flow split without
-    # adjustment to axial velocity model
-    #
-    # I revisited velocity functions multiple times at this point, they should be fine.
-    # We capture qualitative picture well, so for now let's assume that G(0) should not
-    # be equalt to split ratio. (radius of droplet with "zero-th" diameter is not zero
-    # itself due to the bare motion of the continuous flow)
+# NOTE : ON GRADE EFFICIENCY FOR DROPLET WITH "ZERO" DIAMETER
+#
+# There is some confusion in Bram's work:
+# non-dimensional profile dot product with non-dimensional radius should only yield
+# underfolw flow rate when integration is performed over whole range of non-dimensional
+# raidus values (0 to 1). It is stated in axial velocity model sections multiple
+# times. If we start integration from some non-zero non-dimensionsla radius -
+# we will not get underflow flow rate. Thus G(0) cannot be equal to flow split without
+# adjustment to axial velocity model
+#
+# I revisited velocity functions multiple times at this point, they should be fine.
+# We capture qualitative picture well, so for now let's assume that G(0) should not
+# be equalt to split ratio. (radius of droplet with "zero-th" diameter is not zero
+# itself due to the bare motion of the continuous flow)
