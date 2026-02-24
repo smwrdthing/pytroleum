@@ -20,6 +20,9 @@ from pytroleum.plant.liquid_cyclone.cyclone import SouthamptonDesign
 # NOTE :
 # maybe later rewright this for instance of LiquidLiquidHydrocyclone
 
+# TODO :
+# report auto-generation?
+
 # Because matplotlib's figsize works with inches only
 _INCH_TO_CM = 2.54
 _CM_TO_INCHES = 1/_INCH_TO_CM
