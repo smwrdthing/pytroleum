@@ -1,5 +1,6 @@
 from typing import Protocol, runtime_checkable, overload
 from numpy.typing import NDArray
+from numpy.polynomial import Polynomial
 from pytroleum.tdyna import eos
 
 type OptionalPhase = eos.AbstractState | eos.AbstractStateImitator
@@ -41,6 +42,8 @@ class Design(Protocol):
 class VelocityField(Protocol):
 
     ndim_reversal_radius: float
+    _ndim_profile_polynom: Polynomial
+    _ndim_profile_dotprod_polynom: Polynomial
 
     def radial_component(self, coordinates: tuple, *args, **kwargs) -> NDArray:
         ...
