@@ -215,3 +215,99 @@ class VelocityField:
 
         self._axial_velocity_scale = 1-np.abs(
             Q_rev/Q_for*axial_coordinate_integral/total_length_integral)
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from pytroleum.plant.liquid_cyclone.flowsheets import ResistanceSpec
+    from pytroleum.plant.liquid_cyclone import utils
+    from pytroleum.plant.liquid_cyclone import separation as sep
+
+    def compute_resistance(density, area, discharge_coeff):
+        # auxiliary function
+        return discharge_coeff*area/np.sqrt(density)
+
+    # Fluid properties
+    oil_fraction = 10/100
+    water_fraction = 1-oil_fraction
+
+    oil_density = 830
+    water_density = 1000
+    inlet_density = water_density*water_fraction + oil_density*oil_fraction
+
+    # Diameters
+    overflow_diameter = 3e-3
+    underflow_diameter = 12e-3
+    inlet_diameter = 25e-3
+
+    overflow_valve_diameter = 6e-3
+    underflow_valve_diameter = 12e-3
+
+    # Areas
+    overflow_area = np.pi/4*overflow_diameter**2
+    underflow_area = np.pi/4*underflow_diameter**2
+    inlet_area = np.pi/4*inlet_diameter**2
+
+    overflow_valve_area = np.pi/4*overflow_valve_diameter**2
+    underflow_valve_area = np.pi/4*underflow_valve_diameter**2
+
+    # Discharge coefficients
+    overflow_discharge_coeff = 0.2
+    underflow_discharge_coeff = 0.4
+    inlet_discharge_coeff = 0.1
+
+    overflow_valve_discharge_coeff = 0.61
+    underflow_valve_discharge_coeff = 0.61
+
+    # Openings
+    overflow_valve_opening = 1.0
+    underflow_valve_opening = 1.0
+
+    # Collecting inputs
+    overflow_inputs = (oil_density,
+                       overflow_area,
+                       overflow_discharge_coeff)
+
+    underflow_inputs = (water_density,
+                        underflow_area,
+                        underflow_discharge_coeff)
+
+    inlet_inputs = (inlet_density,
+                    inlet_area,
+                    inlet_discharge_coeff)
+
+    overflow_valve_inputs = (oil_density,
+                             overflow_valve_area*overflow_valve_opening,
+                             overflow_valve_discharge_coeff)
+
+    underflow_valve_inputs = (water_density,
+                              underflow_valve_area*underflow_valve_opening,
+                              underflow_valve_discharge_coeff)
+
+    # region design & flowsheet
+    flowsheet = FlowSheet()
+
+    # Set resistances
+    flowsheet.resistance[ResistanceSpec.O] = compute_resistance(
+        *overflow_inputs)
+    flowsheet.resistance[ResistanceSpec.U] = compute_resistance(
+        *underflow_inputs)
+    flowsheet.resistance[ResistanceSpec.IN] = compute_resistance(
+        *inlet_inputs)
+    flowsheet.resistance[ResistanceSpec.OV] = compute_resistance(
+        *overflow_valve_inputs)
+    flowsheet.resistance[ResistanceSpec.UV] = compute_resistance(
+        *underflow_valve_inputs)
+
+    Q_in = 0.5e-3
+    backpressures = (1.5e5, 4.5e5)
+    flowsheet.solve_from_backpressures(Q_in, backpressures)
+    flowsheet.account_for_recirculation(recirculation_rate=0.02)
+    flowsheet.summary()
+
+    # region velocity field
+    velocity_field = VelocityField()
+    velocity_field._solve_ndim_reversal_radius(flowsheet)
+    velocity_field._restore_ndim_coeffs(flowsheet)
+
+    res = velocity_field.ndim_profile_coeffs_residuals(flowsheet)
