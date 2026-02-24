@@ -9,8 +9,8 @@ from pytroleum.plant.liquid_cyclone.interfaces import Design
 SUM_RESIDUALS_TOLERANCE = 1e-5
 NDIM_REVRADIUS_INITIAL_GUESSE = 0.25
 
-FITTING_POLYNOM_DEGREE = 3
-DOTPROD_POLYNOM_DEGREE = FITTING_POLYNOM_DEGREE + 2
+_FITTING_POLYNOM_DEGREE = 3
+_DOTPROD_POLYNOM_DEGREE = _FITTING_POLYNOM_DEGREE + 2
 
 # TODO :
 # Double-check all velocity-computing functions, investigade residuals etc
@@ -28,9 +28,9 @@ class VelocityField:
     def __init__(self) -> None:
 
         self._ndim_profile_polynom = Polynomial(
-            np.zeros(FITTING_POLYNOM_DEGREE+1))
+            np.zeros(_FITTING_POLYNOM_DEGREE+1))
         self._ndim_profile_dotprod_polynom = Polynomial(
-            np.zeros(DOTPROD_POLYNOM_DEGREE+1))
+            np.zeros(_DOTPROD_POLYNOM_DEGREE+1))
 
         self.ndim_reversal_radius: float
 
