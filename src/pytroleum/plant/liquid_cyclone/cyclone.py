@@ -13,6 +13,9 @@ from pytroleum.plant.liquid_cyclone.velocities import VelocityField
 
 from enum import IntEnum, auto
 
+# TODO :
+# fix type annotations, docstrings
+
 
 START_OF_ARRAY = 0
 NUMBER_OF_ARRAY_POINTS = 500
@@ -325,7 +328,7 @@ if __name__ == "__main__":
     flowsheet.resistance[ResistanceSpec.UV] = compute_resistance(
         *underflow_valve_inputs)
 
-    Q_in = 0.3e-3
+    Q_in = 0.5e-3
     backpressures = (1.5e5, 4.5e5)
     flowsheet.solve_from_backpressures(Q_in, backpressures)
     flowsheet.account_for_recirculation(recirculation_rate=0.02)
@@ -336,25 +339,67 @@ if __name__ == "__main__":
     velocity_field._solve_ndim_reversal_radius(flowsheet)
     velocity_field._restore_ndim_coeffs(flowsheet)
 
+    setup = flowsheet, design, velocity_field
+
     fig, ax = utils.plot_velocity_field(
-        flowsheet, design, velocity_field, "radial")  # type: ignore
+        setup, "radial", drop_diameter=0.0e-6)  # type: ignore
     ax.set_title("Radial velocity")
 
     fig, ax = utils.plot_velocity_field(
-        flowsheet, design, velocity_field, "tangent")  # type: ignore
+        setup, "tangent")  # type: ignore
     ax.set_title("Tangent velocity")
 
     fig, ax = utils.plot_velocity_field(
-        flowsheet, design, velocity_field, "axial")  # type: ignore
+        setup, "axial")  # type: ignore
     ax.set_title("Axial velocity")
 
     # region separation
+    r_final, z_final = sep.drop_final_point(5e-6, setup)  # type: ignore
+    largest_diameter = sep.solve_largest_drop(setup)  # type: ignore
 
-    diameters = np.arange(0, 20, 0.5)/1e6
+    diameters = np.linspace(0, largest_diameter, 10)  # type: ignore
     fig, ax = utils.plot_model_region(design, velocity_field, half=True)
-    for d in diameters:
-        sol = sep.drop_trajectroy(
-            d, (flowsheet, design, velocity_field))  # type: ignore
-        r, z = sol.y
-        ax.plot(z*1e3, r*1e3)
+    for i, d in enumerate(diameters):
+        r, z = sep.drop_trajectroy(d, setup)  # type: ignore
+        linewidth = 3
+        if i == 0:
+            color = "b"
+        elif i == len(diameters)-1:
+            color = "r"
+        else:
+            linewidth = 1
+            color = None
+        ax.plot(z*1e3, r*1e3, color=color, linewidth=linewidth)
+
+    d_efficiency, G_efficiencey = sep.build_grade_efficiency_curve(
+        setup, 30)  # type: ignore
+
+    d50 = sep.extract_d50(d_efficiency, G_efficiencey)
+
+    fig, ax = plt.subplots(figsize=(9.2, 4.5))
+    ax.set_title("Grade efficiency")
+    ax.set_xlabel(r"drop diameter [$\mu m$]")
+    ax.set_ylabel(r"G [$\%$]")
+    ax.plot(d_efficiency*1e6, G_efficiencey*100)
+    ax.plot(d50*1e6, 50, 'go')
+    ax.set_xlim((0, largest_diameter*1e6))  # type: ignore
+    ax.set_ylim((0, 100))
+    ax.vlines(d50*1e6, 0, 100, 'g', '--')
+    ax.hlines(50, 0, largest_diameter*1e6, 'g', '--')  # type: ignore
+    ax.grid(True)
+
+    print(f'd50 is {d50*1e6:.2f} micrometers')
+    # Looks believable, I'd believe
+
     plt.show()
+
+    # Total efficiency computations
+    percentiles = (15e-6, 20e-6, 50e-6)
+    efficiency = sep.evaluate_total_efficiency(
+        setup, percentiles)  # type: ignore
+    # Value is seriously off
+
+    print("For given size distribution and LLH setup" +
+          f"total efficiency is : {efficiency*100:.2f} %")
+
+    # Something to do with quad and drop sizes being in micrometers scale
