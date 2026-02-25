@@ -140,7 +140,6 @@ ax[pdf_ax].set_xlabel(r"d [$\mu m$]")
 ax[pdf_ax].set_ylabel("Probability Density")
 ax[pdf_ax].plot(d_distribution*1e6, pdf)
 ax[pdf_ax].set_xlim((0, np.max(d_distribution)*1e6))
-# ax[pdf_ax].set_ylim((-0.1, 1.1))
 ax[pdf_ax].grid(True)
 
 # Printy design and flowsheet summary, d50 and efficiency, show plots
