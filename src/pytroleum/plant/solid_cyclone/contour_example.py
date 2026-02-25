@@ -36,6 +36,9 @@ GRID_SIZE = 50  # разрешение расчётной сетки: 50×50=250
 # NOTE другую для количества столбцов, это может быть полезно, если в каком-то направлении
 # NOTE потребуется сделать сетку гуще (разместить больше значений)
 
+V_IN_MIN = 1.0  # минимальная скорость во входном патрубке, м/с
+V_IN_MAX = 3.0  # максимальная скорость во входном патрубке, м/с
+
 
 def _compute_for_point(
     Dc: float,                         # диаметр корпуса для данной точки сетки, м
@@ -106,10 +109,7 @@ _compute_vectorized = np.vectorize(
 def plot_contour_graphs() -> None:
     # NOTE содержание этой функции можно закинуть в examples репозитория
     """Контурные графики для трёх типов гидроциклонов."""
-    Dc_range = np.linspace(
-        0.01, 0.08, GRID_SIZE)
-    Q_range = np.linspace(0.00005, 0.001, GRID_SIZE)
-    Q_grid, Dc_grid = np.meshgrid(Q_range, Dc_range)
+    Dc_range = np.linspace(0.01, 0.08, GRID_SIZE)
 
     properties = PhysicalProperties(mu=0.001, rho=1000, rhos=2650)
     Cv = 0.05          # объёмная концентрация твёрдых частиц 5%
@@ -134,6 +134,15 @@ def plot_contour_graphs() -> None:
         # добавляет угол θ в словарь; get_geometry_ratios() не включает его
         ratios['theta'] = hydrocyclone.geometry.theta
 
+        # Диапазон расходов из ограничения скорости: Q = v * π·Di²/4, Di = Dc·(Di/Dc)
+        Di_Dc = ratios['Di/Dc']
+        Q_min = V_IN_MIN * np.pi * (Dc_range[0] * Di_Dc)**2 / 4
+        Q_max = V_IN_MAX * np.pi * (Dc_range[-1] * Di_Dc)**2 / 4
+        Q_range = np.linspace(Q_min, Q_max, GRID_SIZE)
+
+        # прямоугольная сетка в пространстве (Q, Dc)
+        Q_grid, Dc_grid = np.meshgrid(Q_range, Dc_range)
+
         cut_sizes, Rw_vals, efficiencies = _compute_vectorized(
             Dc_grid, Q_grid,
             geometry_ratios=ratios,
@@ -145,12 +154,13 @@ def plot_contour_graphs() -> None:
             n=n,
         )
 
-        Q_lpm = Q_grid * 1000 * 60
+        Q_lpm = Q_grid * 1000 * 60  # перевод м³/с → л/мин
         Dc_mm = Dc_grid * 1000
 
         # Отсечной размер
         ax = axes[row, CUT_SIZE_COL]
-        contour = ax.contour(Q_lpm, Dc_mm, cut_sizes, levels=10)
+        contour = ax.contour(Q_lpm, Dc_mm, cut_sizes,
+                             levels=10)
         ax.clabel(contour, inline=True, fontsize=8)
         ax.set_xlabel('$Q$, л/мин')
         ax.set_ylabel('$D_c$, мм')
