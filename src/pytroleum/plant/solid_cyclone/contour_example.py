@@ -109,7 +109,7 @@ _compute_vectorized = np.vectorize(
 def plot_contour_graphs() -> None:
     # NOTE содержание этой функции можно закинуть в examples репозитория
     """Контурные графики для трёх типов гидроциклонов."""
-    Dc_range = np.linspace(0.01, 0.08, GRID_SIZE)
+    Dc_range = np.linspace(30e-3, 80e-3, GRID_SIZE)
 
     properties = PhysicalProperties(mu=0.001, rho=1000, rhos=2650)
     Cv = 0.05          # объёмная концентрация твёрдых частиц 5%
@@ -160,7 +160,7 @@ def plot_contour_graphs() -> None:
         # Отсечной размер
         ax = axes[row, CUT_SIZE_COL]
         contour = ax.contour(Q_lpm, Dc_mm, cut_sizes,
-                             levels=10)
+                             levels=np.arange(10, 40+5, 5))
         ax.clabel(contour, inline=True, fontsize=8)
         ax.set_xlabel('$Q$, л/мин')
         ax.set_ylabel('$D_c$, мм')
@@ -183,7 +183,7 @@ def plot_contour_graphs() -> None:
         # Приведённая эффективность
         ax = axes[row, EFFICIENCY_COL]
         contour = ax.contour(Q_lpm, Dc_mm, efficiencies,
-                             levels=10)
+                             levels=np.arange(50, 100+5, 5))
         ax.clabel(contour, inline=True, fontsize=8)
         ax.set_xlabel('$Q$, л/мин')
         ax.set_ylabel('$D_c$, мм')
