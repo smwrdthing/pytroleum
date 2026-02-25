@@ -5,12 +5,6 @@ from pytroleum.plant.liquid_cyclone import cyclone as llh
 from pytroleum.plant.liquid_cyclone import separation as sep
 from pytroleum.plant.liquid_cyclone import utils
 
-# TODO :
-# Assemble related plots together, namely:
-#   - Velocity field contoirs
-#   - Drop trajectories, grade efficiency and size distribution
-#     (last one is not plotted yet, do this too)
-
 
 def compute_resistance(density, area, discharge_coeff):
     # auxiliary function
@@ -110,6 +104,9 @@ for i, d in enumerate(diameters):
 # manually
 fig, ax = plt.subplots()
 ax.set_title("LLH grade efficiency")
+ax.set_xlabel(r"d [$\mu m$]")
+ax.set_ylabel("G [%]")
+ax.set_title("LLH grade efficiency")
 ax.plot(d_efficiency*1e6, G_efficiency*100, '-o')
 ax.plot(d50*1e6, 50, 'go')
 ax.set_xlim((0, d_efficiency[-1]*1e6))  # type: ignore
@@ -121,6 +118,30 @@ ax.grid(True)
 # Evaluate total efficiency
 percentiles = (15e-6, 20e-6, 50e-6)  # specifying size distribution
 efficiency = sep.evaluate_total_efficiency(setup, percentiles)  # type: ignore
+
+# Plot employed distribution functions
+d_distribution = np.linspace(0, percentiles[-1]*1.1, 500)
+cdf = sep.cumulative_distribution_func(d_distribution, percentiles)
+pdf = sep.probability_density_func(d_distribution, percentiles)
+
+cdf_ax = 0
+pdf_ax = 1
+
+fig, ax = plt.subplots(figsize=(14.5, 5), ncols=2)
+fig.suptitle("Drop size statistics")
+ax[cdf_ax].set_xlabel(r"d [$\mu m$]")
+ax[cdf_ax].set_ylabel("Cumulative Distribution")
+ax[cdf_ax].plot(d_distribution*1e6, cdf)
+ax[cdf_ax].set_xlim((0, np.max(d_distribution)*1e6))
+ax[cdf_ax].set_ylim((-0.1, 1.1))
+ax[cdf_ax].grid(True)
+
+ax[pdf_ax].set_xlabel(r"d [$\mu m$]")
+ax[pdf_ax].set_ylabel("Probability Density")
+ax[pdf_ax].plot(d_distribution*1e6, pdf)
+ax[pdf_ax].set_xlim((0, np.max(d_distribution)*1e6))
+# ax[pdf_ax].set_ylim((-0.1, 1.1))
+ax[pdf_ax].grid(True)
 
 # Printy design and flowsheet summary, d50 and efficiency, show plots
 design.summary()
