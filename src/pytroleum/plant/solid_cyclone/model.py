@@ -19,6 +19,7 @@ from typing import Dict, Tuple, Literal
 from geometry import GeometryParameters
 from physics import PhysicalParameters, OperatingParameters
 
+# NOTE гвооярщие имена параметров функций
 
 # Константы модели для разных типов гидроциклонов
 MODEL_PARAMS = {
@@ -26,6 +27,7 @@ MODEL_PARAMS = {
     'bradley': (5.10, 3.12),
     'demco': (5.40, 3.30)
 }
+# NOTE ^^^^ см. заметку к calculate_grade_efficiency
 
 
 def calculate_hydrocyclone_parameters(
@@ -141,6 +143,10 @@ def calculate_grade_efficiency(
     np.ndarray
         Приведённую вероятность уноса G'(d)
     """
+
+    # NOTE в модуль для сепарации или в класс конкретного гидроциклона
+    # NOTE (уйти от перебора строк-ключей в условных блоках)
+
     ratio = np.asarray(d) / d50_prime
 
     if model == 'plitt':

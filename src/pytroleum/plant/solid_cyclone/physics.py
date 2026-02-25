@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from typing import Literal
 
+# NOTE старые замечания из hydrocyclone.py, интегрировать tdyna для свойств
+# NOTE жидкостей. Из свойств твёрдой фазы нужна только плотность, её можно передавать
+# NOTE на месте там, где она нужна
+
 
 @dataclass
 class PhysicalParameters:

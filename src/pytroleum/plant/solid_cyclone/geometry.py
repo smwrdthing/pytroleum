@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+# NOTE гвоорящие имена полей датакласса
+
 
 @dataclass
 class GeometryParameters:

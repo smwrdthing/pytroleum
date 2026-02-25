@@ -11,6 +11,9 @@ from distributions import feed_cdf_rosin_rammler, feed_cdf_rosin_rammler_derivat
 from efficiency import calculate_reduced_total_efficiency
 from efficiency import calculate_total_efficiency_from_reduced
 
+# NOTE содержание этого модуля полностью перенести в папку examples репозитория в виде
+# NOTE скрипта (обычный код без функции)
+
 
 def plot_hydrocyclone_analysis():
     """Построение графиков анализа гидроциклонов"""

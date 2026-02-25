@@ -24,6 +24,8 @@ from numpy.typing import NDArray
 import numpy as np
 import matplotlib.pyplot as plt
 
+# NOTE Говорящие имена параметров, переменных, полей классов и т.д.
+
 # region Enums
 
 
@@ -34,7 +36,7 @@ class HydrocycloneDiameters(IntEnum):
     O, OVERFLOW = 2, 2  # индекс 2 — диаметр патрубка верхнего слива Do
     U, UNDERFLOW = 3, 3  # индекс 3 — диаметр патрубка нижнего слива Du
 
-    SIZE = auto()
+    SIZE = auto()  # NOTE к SZIE не помешает пояснительный комментацрий
 
 
 class HydrocycloneLengths(IntEnum):  # перечисление индексов в массиве длин
@@ -82,7 +84,7 @@ class GeometryParameters:
         default_factory=lambda: np.zeros(HydrocycloneLengths.SIZE))
     theta: float = 15.0
 
-    @classmethod
+    @classmethod  # NOTE насколько нам нужен classmethod?
     def from_named(
         cls,
         Dc: float,       # диаметр корпуса, м
@@ -93,6 +95,10 @@ class GeometryParameters:
         l_vortex: float,  # длина вихревой трубки, м
         theta: float = 15.0,  # угол конуса, градусы; необязательный параметр с дефолтом
     ) -> 'GeometryParameters':
+        # NOTE вместо использования '' можно в начале файла сделать импорт :
+        # NOTE >>> from __future__ import annotations
+
+        # NOTE имена параметров
         """Создание объекта из именованных размеров."""
         obj = cls(theta=theta)
         # записывает Dc в ячейку с индексом 0 массива diameters
@@ -172,6 +178,7 @@ class GeometryParameters:
 @dataclass
 class PhysicalProperties:
     """Физические свойства среды."""
+    # NOTE имена полей
     mu: float    # динамическая вязкость жидкости, Па·с
     rho: float   # плотность жидкости, кг/м³
     rhos: float  # плотность твёрдой фазы (частиц), кг/м³
@@ -209,6 +216,8 @@ class BaseHydrocyclone(ABC):
         """Возвращает параметры модели (alpha, m)."""
         ...
 
+    # NOTE для чего model_params сделан через property?
+
     def calculate_from_flow_rate(
         self,
         properties: PhysicalProperties,  # физические свойства жидкости и твёрдой фазы
@@ -218,6 +227,7 @@ class BaseHydrocyclone(ABC):
         """Расчёт параметров при заданном объёмном расходе (ΔP = (Q/K)^(1/0.472))"""
         K = self._compute_K(properties, solids_concentration)
         pressure_drop = (flow_rate / K) ** (1 / 0.472)
+        # NOTE 1 и 0.472 у всех гидроциклонов?
         return self._compute_results(
             properties, flow_rate, pressure_drop, solids_concentration)
 
@@ -383,7 +393,11 @@ def calculate_total_efficiency(
 
 def print_proportions(geometry: GeometryParameters, name: str) -> None:
     """Вывод геометрических пропорций и проверка их соответствия диапазонам."""
-    ratios = geometry.get_geometry_ratios()  # получает словарь безразмерных пропорций
+
+    # NOTE в целом эту функциональность можно внести в базовый класс гидроциклона
+
+    # получает словарь безразмерных пропорций
+    ratios = geometry.get_geometry_ratios()
     violations = geometry.check_proportions()  # получает список нарушений
 
     print(f"\n=== {name} proportions ===")
@@ -411,6 +425,13 @@ def build_standard_configs(Dc: float) -> list[BaseHydrocyclone]:
     Возвращает список стандартных конфигураций гидроциклонов
     с пропорциями в допустимых диапазонах.
     """
+
+    # NOTE возможно есть смысл разделить эту функцию на три (по одной на каждый тип)
+    # NOTE для тех случаев, когда мы хотим считать какой-то конкретный гидроциклон
+    # NOTE
+    # NOTE потом эти отдельные функции можно использовать и в функции, которая собирает
+    # NOTE все три типа сразу
+
     rietema_geometry = GeometryParameters.from_named(
         Dc=Dc, Di=Dc*0.20, Do=Dc*0.25, Du=Dc*0.15,
         L=Dc*4.50, l_vortex=Dc*0.40, theta=15.0,
@@ -455,6 +476,11 @@ def _plot_row(
     mode: Literal['Q', 'delta_p'],
 ) -> None:
     """Рисует строку из трёх графиков для одного типа гидроциклона."""
+
+    # NOTE очень частная функция, котрая делает слишком много всего сразу
+    # NOTE если мы захотим рисовать другие граифки - придётся здесь всё переписывать
+    # NOTE или дописывать другие функции
+
     reduced_cut_size = results['reduced_cutoff_diameter']
     Rw = results['Rw']
     m = results['m']
@@ -578,6 +604,10 @@ def _plot_hydrocyclone_analysis(
     """Общая логика построения графиков."""
     hydrocyclones = build_standard_configs(Dc)
 
+    # NOTE Тоже очень частная функция, если что-то меняется - нужно переписывать.
+    # NOTE Такой код следует делать как пример в examples, в модуле должны лежать
+    # NOTE только универсальные для решаемой задачи вещи
+
     properties = PhysicalProperties(
         mu=0.001,   # вязкость воды при 20°C, Па·с
         rho=1000,   # плотность воды при 20°C, кг/м³
@@ -603,6 +633,8 @@ def _plot_hydrocyclone_analysis(
 
     plt.tight_layout()
     plt.show()
+
+# NOTE содержимое надо раскидать по модулям
 
 
 if __name__ == "__main__":

@@ -2,6 +2,9 @@ import numpy as np
 
 from distributions import feed_cdf_rosin_rammler_derivative
 
+# NOTE говорящие имена для параметров функций
+# NOTE в докстрингах есть описания, но сигнатура вызова читается и воспринимается быстрее
+
 
 def calculate_reduced_total_efficiency(
     d: np.ndarray,
