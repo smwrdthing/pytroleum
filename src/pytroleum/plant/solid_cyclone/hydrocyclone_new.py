@@ -437,7 +437,7 @@ def build_standard_configs(Dc: float) -> list[BaseHydrocyclone]:
         L=Dc*4.50, l_vortex=Dc*0.40, theta=15.0,
     )
     bradley_geometry = GeometryParameters.from_named(
-        Dc=Dc, Di=Dc*0.16, Do=Dc*0.22, Du=Dc*0.08,
+        Dc=Dc, Di=Dc*0.16, Do=Dc*0.22, Du=Dc*0.12,
         L=Dc*5.50, l_vortex=Dc*0.45, theta=12.0,
     )
     demco_geometry = GeometryParameters.from_named(
@@ -646,4 +646,4 @@ if __name__ == "__main__":
     # plot_hydrocyclone_analysis_delta_p(delta_p=100000, Cv=0.05, Dc=50e-3)
 
     print("\n[Режим 2] Фиксированный расход")
-    plot_hydrocyclone_analysis_Q(Q=0.001, Cv=0.05, Dc=75e-3)
+    plot_hydrocyclone_analysis_Q(Q=0.0002, Cv=0.05, Dc=45e-3)
