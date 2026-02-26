@@ -100,6 +100,29 @@ for i, d in enumerate(diameters):
         color = None
     ax.plot(z*1e3, r*1e3, color=color, linewidth=linewidth)
 
+# Evaluate total efficiency
+percentiles = (15e-6, 20e-6, 50e-6)  # specifying size distribution
+efficiency = sep.evaluate_total_efficiency(setup, percentiles)  # type: ignore
+
+
+# Now let's do same thing but for range of flow rates
+varibale_inflow_range = np.arange(0.1, 2.0+0.1, 0.05)*1e-3
+variable_efficiency = []
+for Q in varibale_inflow_range:
+    flowsheet.solve_from_backpressures(Q, backpressures)  # type: ignore
+    velocity_field.solve_ndim_profile_coeffs(flowsheet)
+    variable_efficiency.append(
+        sep.evaluate_total_efficiency(setup, percentiles))  # type: ignore
+variable_efficiency = np.array(variable_efficiency)
+
+# Printy design and flowsheet summary, d50 and efficiency,
+design.summary()
+flowsheet.summary()
+print(f'd50 : {d50*1e6:.2f} micrometers')
+print(f"efficiency : {efficiency*100:.2f} %")
+
+# Plotting ahead
+
 # Grade efficiency plotting is not automated yet, but there are no problems with making it
 # manually
 fig, ax = plt.subplots()
@@ -114,10 +137,6 @@ ax.set_ylim((0, 100))
 ax.vlines(d50*1e6, 0, 100, 'g', '--')
 ax.hlines(50, 0, d_efficiency[-1]*1e6, 'g', '--')
 ax.grid(True)
-
-# Evaluate total efficiency
-percentiles = (15e-6, 20e-6, 50e-6)  # specifying size distribution
-efficiency = sep.evaluate_total_efficiency(setup, percentiles)  # type: ignore
 
 # Plot employed distribution functions
 d_distribution = np.linspace(0, percentiles[-1]*1.1, 500)
@@ -142,11 +161,16 @@ ax[pdf_ax].plot(d_distribution*1e6, pdf)
 ax[pdf_ax].set_xlim((0, np.max(d_distribution)*1e6))
 ax[pdf_ax].grid(True)
 
-# Printy design and flowsheet summary, d50 and efficiency, show plots
-design.summary()
-flowsheet.summary()
+# Plot flow rate - efficiency characteritsic
+fig, ax = plt.subplots()
+ax.set_title("Separation efficiency")
+ax.set_xlabel("Inlet flow rate [l/min]")
+ax.set_ylabel("Separation efficiency [%]")
+ax.plot(varibale_inflow_range*1e3*60, variable_efficiency*100, '-')
+ax.grid(True)
+ax.set_xlim((0.0, varibale_inflow_range[-1]*1e3*60))
+ax.set_ylim((0, 110))
+ax.hlines(90, 0, varibale_inflow_range[-1]
+          * 1e3*60, colors='r', linestyles='--')
 
 plt.show()
-
-print(f'd50 : {d50*1e6:.2f} micrometers')
-print(f"efficiency : {efficiency*100:.2f} %")
