@@ -28,8 +28,9 @@ import matplotlib.pyplot as plt
 
 # region Enums
 
-
 # перечисление индексов в массиве диаметров
+
+
 class HydrocycloneDiameters(IntEnum):
     C, CYCLONE = 0, 0  # индекс 0 — диаметр корпуса циклона Dc
     I, INLET = 1, 1  # индекс 1 — диаметр входного патрубка Di
@@ -67,12 +68,8 @@ L_DC_MAX = 6.93  # максимально допустимое отношени�
 THETA_MIN = 9.0   # минимально допустимый угол конуса, градусы
 THETA_MAX = 20.0  # максимально допустимый угол конуса, градусы
 
-# Значения параметров модели по умолчанию (соответствуют модели Rietema)
-DEFAULT_SHARPNESS_INDEX = 2.45  # m — параметр в формуле Plitt
-DEFAULT_ALPHA = 4.23  # alpha — параметр в формуле Lynch-Rao
-
-
 # region Dataclasses
+
 
 @dataclass
 class GeometryParameters:
@@ -335,8 +332,8 @@ def calculate_reduced_grade_efficiency(
     particle_diameters: NDArray,  # массив диаметров частиц d, м (или скаляр)
     reduced_cut_size: float,      # приведённый отсечной диаметр d'₅₀, м
     model: Literal['plitt', 'lynch_rao'],
-    m: float = DEFAULT_SHARPNESS_INDEX,
-    alpha: float = DEFAULT_ALPHA,
+    m: float,
+    alpha: float,
 ) -> NDArray:
     """Расчёт приведённой вероятности уноса G'(d)."""
     ratio = particle_diameters / reduced_cut_size
