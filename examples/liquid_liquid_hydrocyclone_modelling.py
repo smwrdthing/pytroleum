@@ -115,7 +115,7 @@ for Q in varibale_inflow_range:
         sep.evaluate_total_efficiency(setup, percentiles))  # type: ignore
 variable_efficiency = np.array(variable_efficiency)
 
-# Printy design and flowsheet summary, d50 and efficiency,
+# Printy design and flowsheet summary, d50 and efficiency
 design.summary()
 flowsheet.summary()
 print(f'd50 : {d50*1e6:.2f} micrometers')
