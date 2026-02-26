@@ -230,7 +230,7 @@ class SouthamptonDesign(Design):
         _minor_divider()
 
         print(f"Inlet area : {self.inlet_area*to_squared_cm: .2f} cm^2")
-        print(f"Twing inlet? : {self.is_twin_inlet}")
+        print(f"Twin inlet? : {self.is_twin_inlet}")
         print(
             f"Characteristic diameter : {self.characteristic_diameter*to_mm: .2f} mm")
 
