@@ -104,6 +104,11 @@ for i, d in enumerate(diameters):
 percentiles = (15e-6, 20e-6, 50e-6)  # specifying size distribution
 efficiency = sep.evaluate_total_efficiency(setup, percentiles)  # type: ignore
 
+# Printy design and flowsheet summary, d50 and efficiency
+design.summary()
+flowsheet.summary()
+print(f'd50 : {d50*1e6:.2f} micrometers')
+print(f"efficiency : {efficiency*100:.2f} %")
 
 # Now let's do same thing but for range of flow rates
 varibale_inflow_range = np.arange(0.1, 2.0+0.1, 0.05)*1e-3
@@ -114,12 +119,6 @@ for Q in varibale_inflow_range:
     variable_efficiency.append(
         sep.evaluate_total_efficiency(setup, percentiles))  # type: ignore
 variable_efficiency = np.array(variable_efficiency)
-
-# Printy design and flowsheet summary, d50 and efficiency
-design.summary()
-flowsheet.summary()
-print(f'd50 : {d50*1e6:.2f} micrometers')
-print(f"efficiency : {efficiency*100:.2f} %")
 
 # Plotting ahead
 
