@@ -79,6 +79,13 @@ class GeometryParameters:
         angle: float = 15.0,
     ) -> GeometryParameters:
         """Создание объекта из именованных размеров."""
+
+        # NOTE убрать classmethod он здесь избыточен, логика инциализации уже лежит в
+        # NOTE фабричных функциях (cnofigs.py)
+        # NOTE
+        # NOTE Туда же можно занести валидцию входных параметров
+        # NOTE (проверка адекватности процпорций)
+
         obj = cls(angle=angle)
         obj.diameters[HydrocycloneDiameters.C] = hydrocyclone_diameter
         obj.diameters[HydrocycloneDiameters.I] = feed_inlet_diameter
@@ -86,10 +93,12 @@ class GeometryParameters:
         obj.diameters[HydrocycloneDiameters.U] = underflow_diameter
         obj.lengths[HydrocycloneLengths.T] = hydrocyclone_length
         obj.lengths[HydrocycloneLengths.V] = vortex_finder_length
+
         return obj
 
     def check_proportions(self) -> list[str]:
         """Проверка соответствия геометрических пропорций допустимому диапазону."""
+        # NOTE валидатор в фабрику
         violations = []
         hydrocyclone_diameter = self.diameters[HydrocycloneDiameters.C]
 
@@ -123,6 +132,13 @@ class GeometryParameters:
 
     def get_geometry_ratios(self) -> dict[str, float]:
         """Возвращает словарь с геометрическими пропорциями."""
+
+        # NOTE сделать из этой функции summary, пусть summary печатает финальные размеры
+        # NOTE если пропорции очень нужно выводить - можно это сделать в скобках рядом с
+        # NOTE самим размером
+        # NOTE
+        # NOTE Размеры выводить в легко-воспринимаемых единицах (здесь в мм)
+
         hydrocyclone_diameter = self.diameters[HydrocycloneDiameters.C]
         return {
             'Di/Dc': self.diameters[HydrocycloneDiameters.I] / hydrocyclone_diameter,

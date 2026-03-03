@@ -2,6 +2,7 @@
 Контурные графики характеристик гидроциклонов.
 """
 
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -18,6 +19,11 @@ from hydrocyclone.efficiency import (
     calculate_reduced_grade_efficiency,
     calculate_reduced_total_efficiency,
 )
+
+# NOTE 1. В examples
+# NOTE 2. Абсолютный импорт -
+# NOTE иначе интерпертатор может не найти где лежит этот код при изменении файловой
+# NOTE структуры
 
 CUT_SIZE_COL = 0     # столбец 0 — контурный график отсечного размера
 WATER_RATIO_COL = 1  # столбец 1 — контурный график Rw

@@ -9,6 +9,8 @@ import numpy as np
 
 
 def calculate_cumulative_particle_size_distribution(
+    # NOTE здесь сойдёт просто calculate_cumulative_size_distribution
+    # NOTE или даже cumulative_size_distribution
     particle_diameters: NDArray,
     k: float,
     n: float,
@@ -17,7 +19,7 @@ def calculate_cumulative_particle_size_distribution(
     return 1.0 - np.exp(-(particle_diameters / k) ** n)
 
 
-def _probability_density(
+def _probability_density(  # NOTE следует сделать публичной
     particle_diameters: NDArray,
     k: float,
     n: float,

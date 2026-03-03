@@ -23,14 +23,18 @@ class PhysicalProperties:
     solid_density: float                       # плотность твёрдой фазы (частиц), кг/м³
     liquid_eos: OptionalPhase = DEFAULT_LIQUID_EOS
 
-    @property
+    @property  # NOTE property избыточны
     def liquid_viscosity(self) -> float:
         if self.liquid_eos is None:
+            # NOTE мы никогда не попадём в этот условный блок
+            # NOTE (есть значение по умолчанию, оно не None) => он не нужен
             return DEFAULT_LIQUID_EOS.viscosity()
         return self.liquid_eos.viscosity()
 
     @property
     def liquid_density(self) -> float:
         if self.liquid_eos is None:
+            # NOTE мы никогда не попадём в этот условный блок
+            # NOTE (есть значение по умолчанию, оно не None) => он не нужен
             return DEFAULT_LIQUID_EOS.rhomass()
         return self.liquid_eos.rhomass()

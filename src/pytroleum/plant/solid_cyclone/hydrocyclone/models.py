@@ -7,6 +7,9 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
+# NOTE следует отдавать предпочтение абсолютному импорту вместо относительного,
+# NOTE то есть здесь
+# NOTE >>> from pytroleum.plant.solid_cyclone.geometry import ...
 from .properties import PhysicalProperties
 from .geometry import (
     GeometryParameters,
@@ -50,13 +53,25 @@ class BaseHydrocyclone(ABC):
         self.name = name
         self.geometry = geometry
 
+        # NOTE к аннотации в __init__
+        # NOTE >>> alpha : float
+        # NOTE >>> m : float
+        # NOTE ^^^^^^^^^^^^^ значения можно не устанваливать, но статический анализ будет
+        # NOTE знать, что alpha и m должны быть
+
     @abstractmethod
     def model_params(self) -> tuple[float, float]:
         """Возвращает параметры модели Lynch and Rao / Plitt: (alpha, m)."""
         ...
+        # NOTE методы дочерних классов здесь возвращают константы, а не реализуют сложную
+        # NOTE отличающуюся логику. В этом случае проще завести атрибуты под alpha и m
+        # NOTE их можно аннотировать в __init__ как обычно (см. __init__) без указания
+        # NOTE значений, тогда в __init__ дочерних классов просто можно задать эти
+        # NOTE постоянные значения
 
     def print_proportions(self) -> None:
         """Вывод геометрических пропорций и проверка их соответствия диапазонам."""
+        # NOTE то же, что и для функции get_geometry_ratios класса GeometryParameters
         ratios = self.geometry.get_geometry_ratios()
         violations = self.geometry.check_proportions()
 
@@ -170,6 +185,9 @@ class BaseHydrocyclone(ABC):
             'm': m,
         }
 
+
+# NOTE организовать передачу параметров модели иначе
+# NOTE (см. заметки к методу в базовом классе)
 
 class RietemaHydrocyclone(BaseHydrocyclone):
     """Гидроциклон по модели Rietema."""

@@ -25,6 +25,11 @@ CUMULATIVE_DISTRIBUTION_COL = 0  # столбец 0 — кумулятивное
 PROBABILITY_DENSITY_COL = 1      # столбец 1 — плотность распределения
 GRADE_EFFICIENCY_COL = 2         # столбец 2 — вероятность уноса
 
+# NOTE 1. В examples
+# NOTE 2. Абсолютный импорт -
+# NOTE иначе интерпертатор может не найти где лежит этот код при изменении файловой
+# NOTE структуры
+
 
 def _plot_cumulative_distribution(
     ax: Axes,
