@@ -90,64 +90,62 @@ class SouthamptonAngles(IntEnum):
     SIZE = auto()
 
 
+# Unconventioanl constants placement due to how enums are declared
+SOUTHAMPTON_DIAMETERS_PROPRORTIONS = np.zeros(SouthamptonDiameters.SIZE)
+SOUTHAMPTON_LENGTHS_PROPRORTIONS = np.zeros(SouthamptonLengths.SIZE)
+SOUTHAMPTON_ANGLES = np.zeros(SouthamptonAngles.SIZE)
+
+# Default diameters proprotions
+SOUTHAMPTON_DIAMETERS_PROPRORTIONS[SouthamptonDiameters.I] = 0.175
+SOUTHAMPTON_DIAMETERS_PROPRORTIONS[SouthamptonDiameters.O] = 0.05
+SOUTHAMPTON_DIAMETERS_PROPRORTIONS[SouthamptonDiameters.E] = 1.0
+SOUTHAMPTON_DIAMETERS_PROPRORTIONS[SouthamptonDiameters.C] = 0.5
+SOUTHAMPTON_DIAMETERS_PROPRORTIONS[SouthamptonDiameters.U] = 0.25
+
+# Default abgles
+SOUTHAMPTON_ANGLES[SouthamptonAngles.C] = np.deg2rad(20)
+SOUTHAMPTON_ANGLES[SouthamptonAngles.T] = np.deg2rad(1.5)
+
+# Default lengths proprotions
+SOUTHAMPTON_LENGTHS_PROPRORTIONS[SouthamptonLengths.E] = 1
+
+SOUTHAMPTON_LENGTHS_PROPRORTIONS[SouthamptonLengths.C] = (
+    1 - SOUTHAMPTON_DIAMETERS_PROPRORTIONS[SouthamptonDiameters.C])/(
+        2 * np.tan(SOUTHAMPTON_ANGLES[SouthamptonAngles.C]/2))
+
+SOUTHAMPTON_LENGTHS_PROPRORTIONS[SouthamptonLengths.T] = (
+    SOUTHAMPTON_DIAMETERS_PROPRORTIONS[SouthamptonDiameters.C] -
+    SOUTHAMPTON_DIAMETERS_PROPRORTIONS[SouthamptonDiameters.U])/(
+        2 * np.tan(SOUTHAMPTON_ANGLES[SouthamptonAngles.T]/2))
+
+SOUTHAMPTON_LENGTHS_PROPRORTIONS[SouthamptonLengths.U] = 15
+
+
 @dataclass
 class SouthamptonDesign(Design):
 
-    entrance_diameter: float
-
-    inlet_diameter: float = field(init=False)
-    inlet_area: float = field(init=False)
+    # Initialize containers, fill in __post_init__ later for clarity, probably slower,
+    # but much more readable
+    diameters: NDArray
+    lengths: NDArray
+    angles: NDArray
     is_twin_inlet: bool = True
 
+    entrance_diameter: float = field(init=False)
+    inlet_diameter: float = field(init=False)
     characteristic_diameter: float = field(init=False)
+    inlet_area: float = field(init=False)
+
+    _default_length_proportions: NDArray | None = field(init=False)
+    _default_diameter_proportions: NDArray | None = field(init=False)
 
     model_length: float = field(init=False)
 
-    # Initialize containers, fill in __post_init__ later for clarity, probably slower,
-    # but much more readable
-    diameters: NDArray = field(
-        default_factory=lambda: np.zeros(SouthamptonDiameters.SIZE))
-    lengths: NDArray = field(
-        default_factory=lambda: np.zeros(SouthamptonLengths.SIZE))
-    angles: NDArray = field(
-        default_factory=lambda: np.zeros(SouthamptonAngles.SIZE))
-
-    _length_proportions: NDArray = field(
-        default_factory=lambda: np.zeros(SouthamptonLengths.SIZE))
-    _diameter_proportions: NDArray = field(
-        default_factory=lambda: np.zeros(SouthamptonDiameters.SIZE))
-
     def __post_init__(self):
 
-        # Diameters specification
-        self._diameter_proportions[SouthamptonDiameters.INLET] = 0.175
-        self._diameter_proportions[SouthamptonDiameters.OVERFLOW] = 0.05
-        self._diameter_proportions[SouthamptonDiameters.ENTRY] = 1.0
-        self._diameter_proportions[SouthamptonDiameters.CHARARCTER] = 0.5
-        self._diameter_proportions[SouthamptonDiameters.UNDERFLOW] = 0.25
-        self.diameters = self.entrance_diameter*self._diameter_proportions
-
+        self.entrance_diameter = self.diameters[SouthamptonDiameters.E]
         self.inlet_diameter = self.diameters[SouthamptonDiameters.I]
         self.characteristic_diameter = self.diameters[SouthamptonDiameters.C]
-
-        # Angles specification
-        self.angles[SouthamptonAngles.CHARACTER] = np.deg2rad(20.0)
-        self.angles[SouthamptonAngles.TAPERED] = np.deg2rad(1.5)
-
-        # Length specification
-        self._length_proportions[SouthamptonLengths.ENTRY] = 1.0
-
-        self._length_proportions[SouthamptonLengths.CONE] = (
-            1-self._diameter_proportions[SouthamptonDiameters.CONE])/(
-                2*np.tan(self.angles[SouthamptonAngles.CONE]/2))
-
-        self._length_proportions[SouthamptonLengths.TAPERED] = (
-            self._diameter_proportions[SouthamptonDiameters.C] -
-            self._diameter_proportions[SouthamptonDiameters.U])/(
-                2*np.tan(self.angles[SouthamptonAngles.T]/2))
-
-        self._length_proportions[SouthamptonLengths.UNDERFLOW] = 15.0
-        self.lengths = self.entrance_diameter*self._length_proportions
 
         # This is used for interpolation in wall function
         self.model_length = np.sum(self.lengths[SouthamptonLengths.TAPERED:])
@@ -239,15 +237,38 @@ class SouthamptonDesign(Design):
         _major_divider()
         print()
 
-# region LLH
-# WIP
 
+def southampton_design_factory(
+        diameters: NDArray | float,
+        lengths: NDArray | None = None,
+        angles: NDArray | None = None) -> SouthamptonDesign:
 
-class LiquidLiquidHydrocyclone:
+    diameters = np.atleast_1d(diameters)
+    if len(diameters) == 1:
+        if (lengths is not None) or (angles is not None):
+            raise ValueError(
+                "Ambiguous input, for default proportions provide single diameter value, "
+                + "for non-default proportions provide all dimensions explicitly")
 
-    def __init__(self, design: Design, flowsheet: FlowSheet) -> None:
-        self.design = design
-        self.flowsheet = flowsheet
+        entry_diameter = diameters.copy()  # ugly, but silences type checker
+        diameters = entry_diameter*SOUTHAMPTON_DIAMETERS_PROPRORTIONS
+        lengths = entry_diameter*SOUTHAMPTON_LENGTHS_PROPRORTIONS
+        angles = SOUTHAMPTON_ANGLES
+
+    else:
+        if (lengths is None) or (angles is None):
+            raise ValueError(
+                "Provide other dimensions explicitly when " +
+                "diameters are provided explicitly")
+        if (
+            (len(diameters) != SouthamptonDiameters.SIZE) or
+            (len(lengths) != SouthamptonLengths.SIZE) or
+            (len(angles) != SouthamptonAngles.SIZE)
+        ):
+            raise ValueError("Provided dimensions arrays have incompatible shape for " +
+                             "Southampton design")
+
+    return SouthamptonDesign(diameters, lengths, angles)
 
 
 # NOTE : ON GRADE EFFICIENCY FOR DROPLET WITH "ZERO" DIAMETER
