@@ -136,9 +136,6 @@ class SouthamptonDesign(Design):
     characteristic_diameter: float = field(init=False)
     inlet_area: float = field(init=False)
 
-    _default_length_proportions: NDArray | None = field(init=False)
-    _default_diameter_proportions: NDArray | None = field(init=False)
-
     model_length: float = field(init=False)
 
     def __post_init__(self):
