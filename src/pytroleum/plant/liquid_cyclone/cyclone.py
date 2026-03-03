@@ -18,8 +18,8 @@ from enum import IntEnum, auto
 # fix type annotations, docstrings
 
 
-START_OF_ARRAY = 0
 NUMBER_OF_ARRAY_POINTS = 500
+
 
 # region Abstract
 
@@ -43,7 +43,7 @@ class Design(ABC):
         # we use precomputed areas & interpolation instead of array creation to compute
         # integrals each time
         self._model_length_array = np.linspace(
-            START_OF_ARRAY, self.model_length, NUMBER_OF_ARRAY_POINTS)
+            0, self.model_length, NUMBER_OF_ARRAY_POINTS)
         self._wall_area_array = 2*np.pi*cumulative_trapezoid(
             self.wall(self._model_length_array), self._model_length_array, initial=0)
 
