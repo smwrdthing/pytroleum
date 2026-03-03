@@ -12,7 +12,7 @@ def compute_resistance(density, area, discharge_coeff):
 
 
 # Instantiate design, flowsheet and velocity field
-design = llh.SouthamptonDesign(80e-3)  # 80 mm Colman-Thew hydrocyclone
+design = llh.southampton_design_factory(80e-3)
 flowsheet = llh.FlowSheet()
 velocity_field = llh.VelocityField()
 
