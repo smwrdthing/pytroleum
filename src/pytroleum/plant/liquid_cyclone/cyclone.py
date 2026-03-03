@@ -238,7 +238,8 @@ class SouthamptonDesign(Design):
 def southampton_design_factory(
         diameters: NDArray | float,
         lengths: NDArray | None = None,
-        angles: NDArray | None = None) -> SouthamptonDesign:
+        angles: NDArray | None = None,
+        is_twin_inlet: bool = True) -> SouthamptonDesign:
 
     diameters = np.atleast_1d(diameters)
     if len(diameters) == 1:
@@ -265,7 +266,7 @@ def southampton_design_factory(
             raise ValueError("Provided dimensions arrays have incompatible shape for " +
                              "Southampton design")
 
-    return SouthamptonDesign(diameters, lengths, angles)
+    return SouthamptonDesign(diameters, lengths, angles, is_twin_inlet)
 
 
 # NOTE : ON GRADE EFFICIENCY FOR DROPLET WITH "ZERO" DIAMETER
