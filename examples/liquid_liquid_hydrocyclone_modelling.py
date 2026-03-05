@@ -84,6 +84,7 @@ ax.set_title("Axial component")
 d_efficiency, G_efficiency = sep.build_grade_efficiency_curve(
     setup, 30)  # type: ignore
 d50 = sep.extract_d50(d_efficiency, G_efficiency)
+d50_rootfinding = sep.solve_d50(setup)  # type: ignore
 
 diameters = np.linspace(0, d_efficiency[-1], 10)  # type: ignore
 fig, ax = utils.plot_model_region(design, velocity_field, half=True)

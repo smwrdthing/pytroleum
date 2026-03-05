@@ -157,6 +157,19 @@ def extract_d50(drop_diameters, grade_efficiency):
     d50 = np.interp(0.5, grade_efficiency, drop_diameters)
     return d50
 
+
+def solve_d50(setup: tuple[FlowSheet, Design, VelocityField],
+              max_drop_size: float | None = None):
+
+    if max_drop_size is None:
+        max_drop_size = solve_largest_drop(setup)  # type: ignore
+
+    d50 = brentq(
+        lambda diameter: compute_grade_efficiency(
+            diameter, setup)*100 - 50, 0, max_drop_size)
+
+    return d50
+
 # region size distribution
 
 # TODO :
