@@ -2,28 +2,22 @@
 Контурные графики характеристик гидроциклонов.
 """
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hydrocyclone.geometry import GeometryParameters
-from hydrocyclone.properties import PhysicalProperties
-from hydrocyclone.models import (
+from pytroleum.plant.solid_cyclone.geometry import GeometryParameters
+from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
+from pytroleum.plant.solid_cyclone.models import (
     BaseHydrocyclone,
     RietemaHydrocyclone,
     BradleyHydrocyclone,
     DemcoHydrocyclone,
 )
-from hydrocyclone.configs import build_standard_configs
-from hydrocyclone.efficiency import (
+from pytroleum.plant.solid_cyclone.configs import build_standard_configs
+from pytroleum.plant.solid_cyclone.efficiency import (
     calculate_reduced_grade_efficiency,
     calculate_reduced_total_efficiency,
 )
-
-# NOTE 1. В examples
-# NOTE 2. Абсолютный импорт -
-# NOTE иначе интерпертатор может не найти где лежит этот код при изменении файловой
-# NOTE структуры
 
 CUT_SIZE_COL = 0     # столбец 0 — контурный график отсечного размера
 WATER_RATIO_COL = 1  # столбец 1 — контурный график Rw

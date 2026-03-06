@@ -10,10 +10,10 @@ from numpy.typing import NDArray
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hydrocyclone.models import BaseHydrocyclone
-from hydrocyclone.properties import PhysicalProperties
-from hydrocyclone.configs import build_standard_configs
-from hydrocyclone.efficiency import (
+from pytroleum.plant.solid_cyclone.models import BaseHydrocyclone
+from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
+from pytroleum.plant.solid_cyclone.configs import build_standard_configs
+from pytroleum.plant.solid_cyclone.efficiency import (
     cumulative_size_distribution,
     calculate_reduced_grade_efficiency,
     calculate_reduced_total_efficiency,
@@ -24,11 +24,6 @@ from hydrocyclone.efficiency import (
 CUMULATIVE_DISTRIBUTION_COL = 0  # столбец 0 — кумулятивное распределение
 PROBABILITY_DENSITY_COL = 1      # столбец 1 — плотность распределения
 GRADE_EFFICIENCY_COL = 2         # столбец 2 — вероятность уноса
-
-# NOTE 1. В examples
-# NOTE 2. Абсолютный импорт -
-# NOTE иначе интерпертатор может не найти где лежит этот код при изменении файловой
-# NOTE структуры
 
 
 def _plot_cumulative_distribution(

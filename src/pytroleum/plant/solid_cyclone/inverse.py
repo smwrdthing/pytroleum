@@ -8,14 +8,14 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import fsolve
 
-from hydrocyclone.geometry import (
+from pytroleum.plant.solid_cyclone.geometry import (
     GeometryParameters,
     CYCLONE_CONE_ANGLE_MIN,
     CYCLONE_CONE_ANGLE_MAX,
 )
-from hydrocyclone.properties import PhysicalProperties
-from hydrocyclone.models import BaseHydrocyclone
-from hydrocyclone.efficiency import (
+from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
+from pytroleum.plant.solid_cyclone.models import BaseHydrocyclone
+from pytroleum.plant.solid_cyclone.efficiency import (
     calculate_reduced_grade_efficiency,
     calculate_reduced_total_efficiency,
     calculate_total_efficiency,
@@ -205,8 +205,8 @@ def find_Dc(
 
 
 if __name__ == '__main__':
-    from hydrocyclone.properties import PhysicalProperties
-    from hydrocyclone.models import RietemaHydrocyclone
+    from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
+    from pytroleum.plant.solid_cyclone.models import RietemaHydrocyclone
 
     properties = PhysicalProperties(solid_density=2650)
     feed_volumetric_concentration = 0.05

@@ -3,15 +3,12 @@
 """
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 
 import numpy as np
 
-# NOTE следует отдавать предпочтение абсолютному импорту вместо относительного,
-# NOTE то есть здесь
-# NOTE >>> from pytroleum.plant.solid_cyclone.geometry import ...
-from .properties import PhysicalProperties
-from .geometry import (
+from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
+from pytroleum.plant.solid_cyclone.geometry import (
     GeometryParameters,
     HydrocycloneDiameters,
     HydrocycloneLengths,
@@ -52,22 +49,8 @@ class BaseHydrocyclone(ABC):
     def __init__(self, name: str, geometry: GeometryParameters) -> None:
         self.name = name
         self.geometry = geometry
-
-        # NOTE к аннотации в __init__
-        # NOTE >>> alpha : float
-        # NOTE >>> m : float
-        # NOTE ^^^^^^^^^^^^^ значения можно не устанваливать, но статический анализ будет
-        # NOTE знать, что alpha и m должны быть
-
-    @abstractmethod
-    def model_params(self) -> tuple[float, float]:
-        """Возвращает параметры модели Lynch and Rao / Plitt: (alpha, m)."""
-        ...
-        # NOTE методы дочерних классов здесь возвращают константы, а не реализуют сложную
-        # NOTE отличающуюся логику. В этом случае проще завести атрибуты под alpha и m
-        # NOTE их можно аннотировать в __init__ как обычно (см. __init__) без указания
-        # NOTE значений, тогда в __init__ дочерних классов просто можно задать эти
-        # NOTE постоянные значения
+        self.alpha: float
+        self.m: float
 
     def print_proportions(self) -> None:
         """Вывод геометрических пропорций и проверка их соответствия диапазонам."""
@@ -147,7 +130,6 @@ class BaseHydrocyclone(ABC):
         feed_volumetric_concentration: float,
     ) -> dict[str, float]:
         """Расчёт всех выходных параметров гидроциклона."""
-        alpha, m = self.model_params()
         hydrocyclone_diameter = self.geometry.diameters[HydrocycloneDiameters.C]
         overflow_diameter = self.geometry.diameters[HydrocycloneDiameters.O]
         under_flow_diameter = self.geometry.diameters[HydrocycloneDiameters.U]
@@ -181,30 +163,33 @@ class BaseHydrocyclone(ABC):
             'Re': Re,
             'Eu': Eu,
             'reduced_cut_size': reduced_cut_size,
-            'alpha': alpha,
-            'm': m,
+            'alpha': self.alpha,
+            'm': self.m,
         }
 
-
-# NOTE организовать передачу параметров модели иначе
-# NOTE (см. заметки к методу в базовом классе)
 
 class RietemaHydrocyclone(BaseHydrocyclone):
     """Гидроциклон по модели Rietema."""
 
-    def model_params(self) -> tuple[float, float]:
-        return (4.23, 2.45)
+    def __init__(self, name: str, geometry: GeometryParameters) -> None:
+        super().__init__(name, geometry)
+        self.alpha = 4.23
+        self.m = 2.45
 
 
 class BradleyHydrocyclone(BaseHydrocyclone):
     """Гидроциклон по модели Bradley."""
 
-    def model_params(self) -> tuple[float, float]:
-        return (5.10, 3.12)
+    def __init__(self, name: str, geometry: GeometryParameters) -> None:
+        super().__init__(name, geometry)
+        self.alpha = 5.10
+        self.m = 3.12
 
 
 class DemcoHydrocyclone(BaseHydrocyclone):
     """Гидроциклон по модели Demco."""
 
-    def model_params(self) -> tuple[float, float]:
-        return (5.40, 3.30)
+    def __init__(self, name: str, geometry: GeometryParameters) -> None:
+        super().__init__(name, geometry)
+        self.alpha = 5.40
+        self.m = 3.30

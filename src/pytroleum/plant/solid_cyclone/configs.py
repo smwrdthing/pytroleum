@@ -1,8 +1,8 @@
 """
 Функции для конфигураций гидроциклонов.
 """
-from .geometry import GeometryParameters
-from .models import (
+from pytroleum.plant.solid_cyclone.geometry import GeometryParameters
+from pytroleum.plant.solid_cyclone.models import (
     BaseHydrocyclone,
     RietemaHydrocyclone,
     BradleyHydrocyclone,
