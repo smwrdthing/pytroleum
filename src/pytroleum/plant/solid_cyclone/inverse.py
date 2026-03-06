@@ -21,7 +21,7 @@ from hydrocyclone.efficiency import (
     calculate_total_efficiency,
 )
 
-_V_IN_INITIAL = 5.0  # м/с — только для начального приближения x0
+_V_IN_INITIAL = 3.0  # м/с — только для начального приближения x0
 
 
 def _validate_geometry_params(geometry_params: dict[str, float]) -> None:
@@ -215,9 +215,9 @@ if __name__ == '__main__':
         'Di/Dc': 0.20,
         'Do/Dc': 0.25,
         'Du/Dc': 0.15,
-        'L/Dc': 5.0,
+        'L/Dc': 4.5,
         'l/Dc': 0.40,
-        'angle': 10.0,
+        'angle': 11.0,
     }
 
     k = 50e-6
@@ -229,7 +229,7 @@ if __name__ == '__main__':
     print("-" * 60)
     res1 = find_Dc(
         operation_mode='delta_p',
-        feed_volumetric_flow_rate=5.0 / (1000 * 60),
+        feed_volumetric_flow_rate=12.0 / (1000 * 60),
         pressure_drop=100e3,
         ratios=ratios_rietema,
         hydrocyclone_cls=RietemaHydrocyclone,
@@ -260,7 +260,7 @@ if __name__ == '__main__':
     print("-" * 60)
     res2 = find_Dc(
         operation_mode='Q',
-        feed_volumetric_flow_rate=5 / (1000 * 60),
+        feed_volumetric_flow_rate=12 / (1000 * 60),
         pressure_drop=100e3,
         ratios=ratios_rietema,
         hydrocyclone_cls=RietemaHydrocyclone,
