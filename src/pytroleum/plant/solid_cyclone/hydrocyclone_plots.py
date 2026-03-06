@@ -14,11 +14,11 @@ from hydrocyclone.models import BaseHydrocyclone
 from hydrocyclone.properties import PhysicalProperties
 from hydrocyclone.configs import build_standard_configs
 from hydrocyclone.efficiency import (
-    calculate_cumulative_particle_size_distribution,
+    cumulative_size_distribution,
     calculate_reduced_grade_efficiency,
     calculate_reduced_total_efficiency,
     calculate_total_efficiency,
-    _probability_density,
+    probability_density,
 )
 
 CUMULATIVE_DISTRIBUTION_COL = 0  # столбец 0 — кумулятивное распределение
@@ -41,7 +41,7 @@ def _plot_cumulative_distribution(
 ) -> None:
     """График кумулятивного распределения частиц по Розин-Раммлеру."""
     normalized_diameter = particle_diameters / reduced_cut_size
-    y = calculate_cumulative_particle_size_distribution(
+    y = cumulative_size_distribution(
         particle_diameters, k, n)
     ax.plot(normalized_diameter, y, 'b-', linewidth=2)
     ax.set_xlabel("$d/d_{50}'$", fontsize=10)
@@ -69,7 +69,7 @@ def _plot_probability_density(
 ) -> None:
     """График плотности распределения частиц."""
     normalized_diameter = particle_diameters / reduced_cut_size
-    dy_dd = _probability_density(particle_diameters, k, n)
+    dy_dd = probability_density(particle_diameters, k, n)
     dy_dd_scaled = dy_dd * reduced_cut_size
     ax.plot(normalized_diameter, dy_dd_scaled, 'b-', linewidth=2)
     ax.set_xlabel("$d/d_{50}'$", fontsize=10)

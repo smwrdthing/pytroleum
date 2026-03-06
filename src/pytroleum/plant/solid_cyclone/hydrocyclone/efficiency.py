@@ -8,9 +8,7 @@ from numpy.typing import NDArray
 import numpy as np
 
 
-def calculate_cumulative_particle_size_distribution(
-    # NOTE здесь сойдёт просто calculate_cumulative_size_distribution
-    # NOTE или даже cumulative_size_distribution
+def cumulative_size_distribution(
     particle_diameters: NDArray,
     k: float,
     n: float,
@@ -19,7 +17,7 @@ def calculate_cumulative_particle_size_distribution(
     return 1.0 - np.exp(-(particle_diameters / k) ** n)
 
 
-def _probability_density(  # NOTE следует сделать публичной
+def probability_density(
     particle_diameters: NDArray,
     k: float,
     n: float,
@@ -57,7 +55,7 @@ def calculate_reduced_total_efficiency(
     reduced_grade_efficiency: NDArray,
 ) -> float:
     """Расчёт приведённой полной эффективности E_T'."""
-    dy_dd = _probability_density(particle_diameters, k, n)
+    dy_dd = probability_density(particle_diameters, k, n)
     return float(np.trapezoid(reduced_grade_efficiency * dy_dd, particle_diameters))
 
 
