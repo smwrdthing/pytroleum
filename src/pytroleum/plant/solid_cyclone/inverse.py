@@ -21,6 +21,33 @@ from pytroleum.plant.solid_cyclone.efficiency import (
     calculate_total_efficiency,
 )
 
+# NOTE Смысл подбора размеров гидроциклона для заданного режима работы в том, чтобы найти
+# NOTE размеры гидроциклона, когда расход, свойства фаз, и концентрация известны
+# NOTE
+# NOTE Здесь две опции - либо мы хотим обеспечить какой-то размер d_50 на номинальном
+# NOTE режиме работы и тогда мы можем вести расчёты без распределения размеров, либо
+# NOTE распределение размеров нам дано и мы хотим найти размеры гидроциклона, который
+# NOTE обеспечит какую-нибудь целевую эффективность (95%, например)
+# NOTE
+# NOTE То есть нужно решать две задачи
+# NOTE 1. d_50(D, Q, Cv, свойства, пропорции) - d_50_target = 0
+# NOTE 2. E(D, Q, Cv, свойства, пропорции, распределение размеров) - E_targer = 0
+# NOTE
+# NOTE При этом :
+# NOTE 1. Пропорции мы можем считать зафискисрованными
+# NOTE 2. Расход и свойства заданными по ТЗ
+# NOTE 3. Целевой размер d_50 или целевая эффективность E c распределением размеров тоже
+# NOTE    задаются по ТЗ
+# NOTE    "циклон должен обеспечить d50 не более 5 мкм",
+# NOTE    "эффективность циклона должна быть более 90%"
+# NOTE
+# NOTE Теоретически, мы могли бы поставить задачу оптимизации и для выбора пропорций,
+# NOTE если у нас были бы дополнительные ограничения (габариты, например)
+# NOTE
+# NOTE После решения такой нелинейной задач целесообразно провести прямой расчёт и
+# NOTE убедиться, что всё совпало
+
+
 _V_IN_INITIAL = 3.0  # м/с — только для начального приближения x0
 
 
@@ -30,6 +57,8 @@ def _validate_geometry_params(geometry_params: dict[str, float]) -> None:
 
     Проверяется одно условие:
       angle ∈ [CYCLONE_CONE_ANGLE_MIN, CYCLONE_CONE_ANGLE_MAX]
+    # NOTE Если проверяется только угол, то лучше назвать функцию прозрачнее,
+    № NOTE _validate_cone_angle например
     """
     angle = geometry_params['angle']
     if not (CYCLONE_CONE_ANGLE_MIN <= angle <= CYCLONE_CONE_ANGLE_MAX):
@@ -81,6 +110,12 @@ def _residual_pressure_drop(
     """
     Невязка для режима 'Q': f(Dc) = ΔP(Dc, Q) - ΔP_target.
     """
+    # NOTE Возможно здесь и в других местах получится сделать dependency injection
+    # NOTE (то есть передавать готовый, собранный гидроцкилон, а не пересоздавать его)
+    # NOTE тогда в функции надо будет менять размеры у готового гидроциклона
+    # NOTE
+    # NOTE Такие вещи имеют смысл, когда инициализация объектов дорогая и занмимет много
+    # NOTE времени
     hydrocyclone = _build_from_ratios(Dc, ratios, hydrocyclone_cls)
     results = hydrocyclone.calculate_from_flow_rate(
         properties, feed_volumetric_flow_rate, feed_volumetric_concentration)
@@ -123,7 +158,7 @@ def find_Dc(
 
     Режим 'Q': решается f(Dc) = ΔP(Dc, Q) - pressure_drop = 0
     Режим 'delta_p': решается f(Dc) = Q(Dc, ΔP) - feed_volumetric_flow_rate = 0
-
+    # NOTE строки в документации сбивают с толку
     """
     _validate_geometry_params(ratios)
 
