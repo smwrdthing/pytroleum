@@ -89,6 +89,8 @@ class GeometryParameters:
         # NOTE Туда же можно занести валидцию входных параметров
         # NOTE (проверка адекватности процпорций)
 
+        # NOTE про classmethod заметки остаются
+
         obj = cls(angle=angle)
         obj.diameters[HydrocycloneDiameters.C] = hydrocyclone_diameter
         obj.diameters[HydrocycloneDiameters.I] = feed_inlet_diameter
