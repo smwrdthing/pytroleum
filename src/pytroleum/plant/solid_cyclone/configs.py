@@ -19,7 +19,7 @@ def build_rietema_config(hydrocyclone_diameter: float) -> RietemaHydrocyclone:
         underflow_diameter=hydrocyclone_diameter * 0.15,
         hydrocyclone_length=hydrocyclone_diameter * 4.50,
         vortex_finder_length=hydrocyclone_diameter * 0.40,
-        angle=15.0,
+        angle=11.0,
     )
     return RietemaHydrocyclone('Rietema', geometry)
 
@@ -33,7 +33,7 @@ def build_bradley_config(hydrocyclone_diameter: float) -> BradleyHydrocyclone:
         underflow_diameter=hydrocyclone_diameter * 0.12,
         hydrocyclone_length=hydrocyclone_diameter * 5.50,
         vortex_finder_length=hydrocyclone_diameter * 0.45,
-        angle=12.0,
+        angle=11.0,
     )
     return BradleyHydrocyclone('Bradley', geometry)
 
@@ -47,7 +47,7 @@ def build_demco_config(hydrocyclone_diameter: float) -> DemcoHydrocyclone:
         underflow_diameter=hydrocyclone_diameter * 0.20,
         hydrocyclone_length=hydrocyclone_diameter * 5.00,
         vortex_finder_length=hydrocyclone_diameter * 0.50,
-        angle=18.0,
+        angle=11.0,
     )
     return DemcoHydrocyclone('Demco', geometry)
 

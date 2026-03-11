@@ -68,7 +68,7 @@ class GeometryParameters:
         default_factory=lambda: np.zeros(HydrocycloneDiameters.SIZE))
     lengths: NDArray = field(
         default_factory=lambda: np.zeros(HydrocycloneLengths.SIZE))
-    angle: float = 15.0
+    angle: float = 11.0
 
     @classmethod  # NOTE насколько нам нужен classmethod?
     def from_named(
@@ -79,7 +79,7 @@ class GeometryParameters:
         underflow_diameter: float,
         hydrocyclone_length: float,
         vortex_finder_length: float,
-        angle: float = 15.0,
+        angle: float = 11.0,
     ) -> GeometryParameters:
         """Создание объекта из именованных размеров."""
 

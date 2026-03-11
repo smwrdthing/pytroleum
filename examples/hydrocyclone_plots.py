@@ -265,20 +265,20 @@ if __name__ == "__main__":
     n = 1.5     # параметр Розин-Раммлера
     particle_diameters = np.linspace(0, 1e-3, 500)
 
-    print("\n[Режим 1] Фиксированный перепад давления")
-    plot_hydrocyclone_analysis_delta_p(
-        pressure_drop=100000,
-        feed_volumetric_concentration=0.05,
-        hydrocyclone_diameter=45e-3,
-        properties=properties,
-        k=k, n=n, particle_diameters=particle_diameters,
-    )
-
-    # print("\n[Режим 2] Фиксированный расход")
-    # plot_hydrocyclone_analysis_Q(
-    #     feed_volumetric_flow_rate=0.0002,
+    # print("\n[Режим 1] Фиксированный перепад давления")
+    # plot_hydrocyclone_analysis_delta_p(
+    #     pressure_drop=100000,
     #     feed_volumetric_concentration=0.05,
     #     hydrocyclone_diameter=45e-3,
     #     properties=properties,
     #     k=k, n=n, particle_diameters=particle_diameters,
     # )
+
+    print("\n[Режим 2] Фиксированный расход")
+    plot_hydrocyclone_analysis_Q(
+        feed_volumetric_flow_rate=0.0002,
+        feed_volumetric_concentration=0.05,
+        hydrocyclone_diameter=18.02e-3,
+        properties=properties,
+        k=k, n=n, particle_diameters=particle_diameters,
+    )
