@@ -155,8 +155,8 @@ class BaseHydrocyclone(ABC):
         return (0.184 * hydrocyclone_diameter**(-0.217) * feed_inlet_diameter**(1.231) *
                 (overflow_diameter**2 + under_flow_diameter**2)**0.198 *
                 L_minus_l**0.462 *
-                properties.liquid_viscosity**(0.0566) *
-                properties.liquid_density**(-0.528) *
+                properties.liquid_eos.viscosity()**(0.0566) *
+                properties.liquid_eos.rhomass()**(-0.528) *
                 np.exp(0.241 * feed_volumetric_concentration))
 
     def _compute_results(
@@ -173,8 +173,8 @@ class BaseHydrocyclone(ABC):
         L_minus_l = (self.geometry.lengths[HydrocycloneLengths.T] -
                      self.geometry.lengths[HydrocycloneLengths.V])
 
-        Re = (4 * properties.liquid_density * feed_volumetric_flow_rate /
-              (np.pi * properties.liquid_viscosity * hydrocyclone_diameter))
+        Re = (4 * properties.liquid_eos.rhomass() * feed_volumetric_flow_rate /
+              (np.pi * properties.liquid_eos.viscosity() * hydrocyclone_diameter))
         Eu = _euler_number(self.geometry, feed_volumetric_concentration, Re)
 
         water_flow_ratio = (1.18 *
@@ -182,12 +182,12 @@ class BaseHydrocyclone(ABC):
                             (under_flow_diameter / hydrocyclone_diameter)**3.10 *
                             Eu**(-0.54))
 
-        rhos_minus_rho = properties.solid_density - properties.liquid_density
+        rhos_minus_rho = properties.solid_density - properties.liquid_eos.rhomass()
 
         reduced_cut_size = (1.173 * hydrocyclone_diameter**0.64 /
                             (overflow_diameter**0.475 * L_minus_l**0.665) *
-                            np.sqrt((properties.liquid_viscosity *
-                                     properties.liquid_density *
+                            np.sqrt((properties.liquid_eos.viscosity() *
+                                     properties.liquid_eos.rhomass() *
                                      feed_volumetric_flow_rate) /
                                     (rhos_minus_rho * pressure_drop)) *
                             np.log(1 / water_flow_ratio)**0.395 *
