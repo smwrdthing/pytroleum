@@ -26,7 +26,7 @@ from pytroleum.plant.solid_cyclone.efficiency import (
 # ---------------------------------------------------------------------------
 
 TOL_RELATIVE = 1e-4  # допустимое расхождение прямой и обратной задач
-_V_IN_INITIAL = 3.0   # м/с — типовая скорость для начального приближения
+_V_IN_INITIAL = 9.0   # м/с — типовая скорость для начального приближения
 
 # ---------------------------------------------------------------------------
 # Вспомогательные функции
@@ -260,8 +260,8 @@ if __name__ == '__main__':
     from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
     from pytroleum.plant.solid_cyclone.models import RietemaHydrocyclone
 
-    properties = PhysicalProperties(solid_density=2650)
-    feed_volumetric_concentration = 0.05
+    properties = PhysicalProperties(solid_density=1500)
+    feed_volumetric_concentration = 0.00033
 
     ratios_rietema = {
         'Di/Dc': 0.20,
@@ -269,13 +269,13 @@ if __name__ == '__main__':
         'Du/Dc': 0.15,
         'L/Dc': 4.5,
         'l/Dc': 0.40,
-        'angle': 11.0,
+        'angle': 15.0,
     }
 
     Q = 12.0 / (1000 * 60)
-    k = 50e-6
-    n = 1.5
-    particle_diameters = np.linspace(0, 1e-3, 500)
+    k = 10.9918e-6
+    n = 0.9187
+    particle_diameters = np.linspace(1e-6, 200e-6, 500)  # от 1 мкм до 200 мкм
 
     # Задача 1: найти Dc для d₅₀'
     cut_size_target = 5e-6
@@ -311,7 +311,7 @@ if __name__ == '__main__':
     print("\n" + "=" * 60 + "\n")
 
     # Задача 2: найти Dc для E_T
-    efficiency_target = 0.9709
+    efficiency_target = 0.9
     print("ЗАДАЧА 2: ПОИСК Dc ПО ЦЕЛЕВОЙ ПОЛНОЙ ЭФФЕКТИВНОСТИ E_T")
     print("-" * 60)
     res2 = find_Dc_by_efficiency(
