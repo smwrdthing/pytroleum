@@ -1,5 +1,5 @@
 """
-Модель расчёта гидроциклона
+Модель расчёта гидроциклона.
 """
 from __future__ import annotations
 
@@ -20,6 +20,24 @@ from pytroleum.plant.solid_cyclone.geometry import (
     CYCLONE_CONE_ANGLE_MIN, CYCLONE_CONE_ANGLE_MAX,
 )
 
+
+# ---------------------------------------------------------------------------
+# Константы моделей (параметры функции приведённой вероятности уноса)
+# ---------------------------------------------------------------------------
+
+RIETEMA_ALPHA = 4.23
+RIETEMA_M = 2.45
+
+BRADLEY_ALPHA = 5.10
+BRADLEY_M = 3.12
+
+DEMCO_ALPHA = 5.40
+DEMCO_M = 3.30
+
+
+# ---------------------------------------------------------------------------
+# Вспомогательные функции
+# ---------------------------------------------------------------------------
 
 def _euler_number(
     geometry: GeometryParameters,
@@ -43,6 +61,10 @@ def _euler_number(
             np.exp(-0.51 * feed_volumetric_concentration))
 
 
+# ---------------------------------------------------------------------------
+# Базовый класс и конкретные модели
+# ---------------------------------------------------------------------------
+
 class BaseHydrocyclone(ABC):
     """Абстрактный базовый класс для моделей гидроциклонов (твёрдые частицы-жидкость)."""
 
@@ -52,10 +74,25 @@ class BaseHydrocyclone(ABC):
         self.alpha: float
         self.m: float
 
+    def get_geometry_ratios(self) -> dict[str, float]:
+        """Возвращает словарь безразмерных пропорций геометрии гидроциклона."""
+        Dc = self.geometry.diameters[HydrocycloneDiameters.C]
+        return {
+            'Di/Dc': self.geometry.diameters[HydrocycloneDiameters.I] / Dc,
+            'Do/Dc': self.geometry.diameters[HydrocycloneDiameters.O] / Dc,
+            'Du/Dc': self.geometry.diameters[HydrocycloneDiameters.U] / Dc,
+            'l/Dc': self.geometry.lengths[HydrocycloneLengths.V] / Dc,
+            'L/Dc': self.geometry.lengths[HydrocycloneLengths.T] / Dc,
+        }
+        # NOTE сделать из этой функции summary, пусть summary печатает финальные размеры
+        # NOTE если пропорции очень нужно выводить - можно это сделать в скобках рядом с
+        # NOTE самим размером
+        # NOTE
+        # NOTE Размеры выводить в легко-воспринимаемых единицах (здесь в мм)
+
     def print_proportions(self) -> None:
         """Вывод геометрических пропорций и проверка их соответствия диапазонам."""
-        # NOTE то же, что и для функции get_geometry_ratios класса GeometryParameters
-        ratios = self.geometry.get_geometry_ratios()
+        ratios = self.get_geometry_ratios()
         violations = self.geometry.check_proportions()
 
         print(f"\n=== {self.name} proportions ===")
@@ -63,9 +100,9 @@ class BaseHydrocyclone(ABC):
         print(f"Do/Dc = {ratios['Do/Dc']:.3f}  [{DO_DC_MIN}-{DO_DC_MAX}]")
         print(f"Du/Dc = {ratios['Du/Dc']:.3f}  [{DU_DC_MIN}-{DU_DC_MAX}]")
         print(
-            f"l/Dc  = {ratios['l/Dc']:.3f}  [{l_VORTEX_DC_MIN}-{l_VORTEX_DC_MAX}]")
-        print(f"L/Dc  = {ratios['L/Dc']:.3f}  [{L_DC_MIN}-{L_DC_MAX}]")
-        print(f"θ= {self.geometry.angle:.1f}°  "
+            f"l/Dc = {ratios['l/Dc']:.3f}  [{l_VORTEX_DC_MIN}-{l_VORTEX_DC_MAX}]")
+        print(f"L/Dc = {ratios['L/Dc']:.3f}  [{L_DC_MIN}-{L_DC_MAX}]")
+        print(f"θ     = {self.geometry.angle:.1f}°  "
               f"[{CYCLONE_CONE_ANGLE_MIN}°-{CYCLONE_CONE_ANGLE_MAX}°]")
 
         if violations:
@@ -173,8 +210,8 @@ class RietemaHydrocyclone(BaseHydrocyclone):
 
     def __init__(self, name: str, geometry: GeometryParameters) -> None:
         super().__init__(name, geometry)
-        self.alpha = 4.23
-        self.m = 2.45
+        self.alpha = RIETEMA_ALPHA
+        self.m = RIETEMA_M
 
 
 class BradleyHydrocyclone(BaseHydrocyclone):
@@ -182,8 +219,8 @@ class BradleyHydrocyclone(BaseHydrocyclone):
 
     def __init__(self, name: str, geometry: GeometryParameters) -> None:
         super().__init__(name, geometry)
-        self.alpha = 5.10
-        self.m = 3.12
+        self.alpha = BRADLEY_ALPHA
+        self.m = BRADLEY_M
 
 
 class DemcoHydrocyclone(BaseHydrocyclone):
@@ -191,5 +228,5 @@ class DemcoHydrocyclone(BaseHydrocyclone):
 
     def __init__(self, name: str, geometry: GeometryParameters) -> None:
         super().__init__(name, geometry)
-        self.alpha = 5.40
-        self.m = 3.30
+        self.alpha = DEMCO_ALPHA
+        self.m = DEMCO_M

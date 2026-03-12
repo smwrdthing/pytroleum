@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 from pytroleum.plant.solid_cyclone.models import BaseHydrocyclone
 from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
-from pytroleum.plant.solid_cyclone.configs import build_standard_configs
+from pytroleum.plant.solid_cyclone.geometry import build_standard_configs
 from pytroleum.plant.solid_cyclone.efficiency import (
     cumulative_size_distribution,
     calculate_reduced_grade_efficiency,
@@ -36,8 +36,7 @@ def _plot_cumulative_distribution(
 ) -> None:
     """График кумулятивного распределения частиц по Розин-Раммлеру."""
     normalized_diameter = particle_diameters / reduced_cut_size
-    y = cumulative_size_distribution(
-        particle_diameters, k, n)
+    y = cumulative_size_distribution(particle_diameters, k, n)
     ax.plot(normalized_diameter, y, 'b-', linewidth=2)
     ax.set_xlabel("$d/d_{50}'$", fontsize=10)
     ax.set_ylabel('y(d)', fontsize=10)
@@ -175,15 +174,10 @@ def _plot_row(
 
     _plot_cumulative_distribution(axes_row[CUMULATIVE_DISTRIBUTION_COL],
                                   hydrocyclone, particle_diameters,
-                                  reduced_cut_size,
-                                  k,
-                                  n)
+                                  reduced_cut_size, k, n)
     _plot_probability_density(axes_row[PROBABILITY_DENSITY_COL],
-                              hydrocyclone,
-                              particle_diameters,
-                              reduced_cut_size,
-                              k,
-                              n)
+                              hydrocyclone, particle_diameters,
+                              reduced_cut_size, k, n)
     reduced_grade_efficiency = _plot_grade_efficiency(axes_row[GRADE_EFFICIENCY_COL],
                                                       hydrocyclone,
                                                       particle_diameters,
@@ -278,7 +272,7 @@ if __name__ == "__main__":
     plot_hydrocyclone_analysis_Q(
         feed_volumetric_flow_rate=0.0002,
         feed_volumetric_concentration=0.05,
-        hydrocyclone_diameter=18.02e-3,
+        hydrocyclone_diameter=45e-3,
         properties=properties,
         k=k, n=n, particle_diameters=particle_diameters,
     )

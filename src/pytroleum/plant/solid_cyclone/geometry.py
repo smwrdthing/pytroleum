@@ -1,5 +1,5 @@
 """
-Геометрия гидроциклона.
+Геометрия гидроциклона и фабричные функции для стандартных конфигураций.
 """
 from __future__ import annotations
 
@@ -32,9 +32,17 @@ L_DC_MAX = 6.93  # максимально допустимое отношени�
 CYCLONE_CONE_ANGLE_MIN = 9.0   # минимально допустимый угол конуса, градусы
 CYCLONE_CONE_ANGLE_MAX = 20.0  # максимально допустимый угол конуса, градусы
 
+# Стандартные пропорции конфигураций [Di/Dc, Do/Dc, Du/Dc, L/Dc, l/Dc, angle]
+RIETEMA_DEFAULT_PROPORTIONS = [0.20, 0.25, 0.15, 4.50, 0.40, 15.0]
+BRADLEY_DEFAULT_PROPORTIONS = [0.16, 0.22, 0.12, 5.50, 0.45, 12.0]
+DEMCO_DEFAULT_PROPORTIONS = [0.25, 0.30, 0.20, 5.00, 0.50, 18.0]
+
+# именованные индексы пропорций
+IDX_DI_DC, IDX_DO_DC, IDX_DU_DC, IDX_L_DC, IDX_l_DC, IDX_ANGLE = 0, 1, 2, 3, 4, 5
+
 
 # ---------------------------------------------------------------------------
-# Перечисления индексов
+# Индексы массивов геометрических параметров
 # ---------------------------------------------------------------------------
 
 class HydrocycloneDiameters(IntEnum):
@@ -47,71 +55,37 @@ class HydrocycloneDiameters(IntEnum):
 
 
 class HydrocycloneLengths(IntEnum):
-    T, TOTAL = 0, 0          # индекс 0 — полная длина циклона L
-    V, VORTEX_FINDER = 1, 1  # индекс 1 — длина вихревой трубки
+    T, TOTAL = 0, 0                  # индекс 0 — полная длина циклона L
+    V, VORTEX_FINDER = 1, 1          # индекс 1 — длина вихревой трубки l
+    C, CYLINDRICAL = 2, 2            # индекс 2 — длина цилиндрической части Lc
 
-    # NOTE длину цилиндрической части тоже следует хранить, чтобы была возможность её
-    # NOTE запросить из списка, а не считать каждый раз, когда нам нужно значение
-
-    SIZE = auto()            # количество длин = 2
+    SIZE = auto()                    # количество длин = 3
 
 
 # ---------------------------------------------------------------------------
-# Датаклассы
+# Датакласс геометрии
 # ---------------------------------------------------------------------------
 
 @dataclass
 class GeometryParameters:
     """Геометрические параметры гидроциклона."""
 
+    angle: float
     diameters: NDArray = field(
         default_factory=lambda: np.zeros(HydrocycloneDiameters.SIZE))
     lengths: NDArray = field(
         default_factory=lambda: np.zeros(HydrocycloneLengths.SIZE))
-    angle: float = 11.0
-
-    @classmethod  # NOTE насколько нам нужен classmethod?
-    def from_named(
-        cls,
-        hydrocyclone_diameter: float,
-        feed_inlet_diameter: float,
-        overflow_diameter: float,
-        underflow_diameter: float,
-        hydrocyclone_length: float,
-        vortex_finder_length: float,
-        angle: float = 11.0,
-    ) -> GeometryParameters:
-        """Создание объекта из именованных размеров."""
-
-        # NOTE убрать classmethod он здесь избыточен, логика инциализации уже лежит в
-        # NOTE фабричных функциях (cnofigs.py)
-        # NOTE
-        # NOTE Туда же можно занести валидцию входных параметров
-        # NOTE (проверка адекватности процпорций)
-
-        # NOTE про classmethod заметки остаются
-
-        obj = cls(angle=angle)
-        obj.diameters[HydrocycloneDiameters.C] = hydrocyclone_diameter
-        obj.diameters[HydrocycloneDiameters.I] = feed_inlet_diameter
-        obj.diameters[HydrocycloneDiameters.O] = overflow_diameter
-        obj.diameters[HydrocycloneDiameters.U] = underflow_diameter
-        obj.lengths[HydrocycloneLengths.T] = hydrocyclone_length
-        obj.lengths[HydrocycloneLengths.V] = vortex_finder_length
-
-        return obj
 
     def check_proportions(self) -> list[str]:
         """Проверка соответствия геометрических пропорций допустимому диапазону."""
-        # NOTE валидатор в фабрику
         violations = []
-        hydrocyclone_diameter = self.diameters[HydrocycloneDiameters.C]
+        Dc = self.diameters[HydrocycloneDiameters.C]
 
-        Di_Dc = self.diameters[HydrocycloneDiameters.I] / hydrocyclone_diameter
-        Do_Dc = self.diameters[HydrocycloneDiameters.O] / hydrocyclone_diameter
-        Du_Dc = self.diameters[HydrocycloneDiameters.U] / hydrocyclone_diameter
-        l_Dc = self.lengths[HydrocycloneLengths.V] / hydrocyclone_diameter
-        L_Dc = self.lengths[HydrocycloneLengths.T] / hydrocyclone_diameter
+        Di_Dc = self.diameters[HydrocycloneDiameters.I] / Dc
+        Do_Dc = self.diameters[HydrocycloneDiameters.O] / Dc
+        Du_Dc = self.diameters[HydrocycloneDiameters.U] / Dc
+        l_Dc = self.lengths[HydrocycloneLengths.V] / Dc
+        L_Dc = self.lengths[HydrocycloneLengths.T] / Dc
 
         if not (DI_DC_MIN <= Di_Dc <= DI_DC_MAX):
             violations.append(
@@ -135,20 +109,117 @@ class GeometryParameters:
 
         return violations
 
-    def get_geometry_ratios(self) -> dict[str, float]:
-        """Возвращает словарь с геометрическими пропорциями."""
 
-        # NOTE сделать из этой функции summary, пусть summary печатает финальные размеры
-        # NOTE если пропорции очень нужно выводить - можно это сделать в скобках рядом с
-        # NOTE самим размером
-        # NOTE
-        # NOTE Размеры выводить в легко-воспринимаемых единицах (здесь в мм)
+# ---------------------------------------------------------------------------
+# Фабричная функция создания GeometryParameters
+# ---------------------------------------------------------------------------
 
-        hydrocyclone_diameter = self.diameters[HydrocycloneDiameters.C]
-        return {
-            'Di/Dc': self.diameters[HydrocycloneDiameters.I] / hydrocyclone_diameter,
-            'Do/Dc': self.diameters[HydrocycloneDiameters.O] / hydrocyclone_diameter,
-            'Du/Dc': self.diameters[HydrocycloneDiameters.U] / hydrocyclone_diameter,
-            'l/Dc': self.lengths[HydrocycloneLengths.V] / hydrocyclone_diameter,
-            'L/Dc': self.lengths[HydrocycloneLengths.T] / hydrocyclone_diameter,
-        }
+def build_geometry(
+    hydrocyclone_diameter: float,
+    feed_inlet_diameter: float,
+    overflow_diameter: float,
+    underflow_diameter: float,
+    hydrocyclone_length: float,
+    vortex_finder_length: float,
+    angle: float,
+) -> GeometryParameters:
+    """
+    Создание GeometryParameters из именованных абсолютных размеров.
+    """
+    angle_rad = np.radians(angle)
+    cylindrical_length = hydrocyclone_length - (
+        (hydrocyclone_diameter - underflow_diameter) / (2 * np.tan(angle_rad / 2))
+    )
+
+    geometry = GeometryParameters(angle=angle)
+    geometry.diameters[HydrocycloneDiameters.C] = hydrocyclone_diameter
+    geometry.diameters[HydrocycloneDiameters.I] = feed_inlet_diameter
+    geometry.diameters[HydrocycloneDiameters.O] = overflow_diameter
+    geometry.diameters[HydrocycloneDiameters.U] = underflow_diameter
+    geometry.lengths[HydrocycloneLengths.T] = hydrocyclone_length
+    geometry.lengths[HydrocycloneLengths.V] = vortex_finder_length
+    geometry.lengths[HydrocycloneLengths.C] = cylindrical_length
+    return geometry
+
+
+# ---------------------------------------------------------------------------
+# Фабричные функции конфигураций гидроциклонов
+# ---------------------------------------------------------------------------
+
+def build_rietema_config(
+    hydrocyclone_diameter: float,
+    proportions: list[float] = RIETEMA_DEFAULT_PROPORTIONS,
+):
+    """Возвращает стандартную конфигурацию гидроциклона Rietema."""
+    from pytroleum.plant.solid_cyclone.models import RietemaHydrocyclone
+
+    geometry = build_geometry(
+        hydrocyclone_diameter=hydrocyclone_diameter,
+        feed_inlet_diameter=hydrocyclone_diameter * proportions[IDX_DI_DC],
+        overflow_diameter=hydrocyclone_diameter * proportions[IDX_DO_DC],
+        underflow_diameter=hydrocyclone_diameter * proportions[IDX_DU_DC],
+        hydrocyclone_length=hydrocyclone_diameter * proportions[IDX_L_DC],
+        vortex_finder_length=hydrocyclone_diameter * proportions[IDX_l_DC],
+        angle=proportions[IDX_ANGLE],
+    )
+    return RietemaHydrocyclone('Rietema', geometry)
+
+
+def build_bradley_config(
+    hydrocyclone_diameter: float,
+    proportions: list[float] = BRADLEY_DEFAULT_PROPORTIONS,
+):
+    """Возвращает стандартную конфигурацию гидроциклона Bradley."""
+    from pytroleum.plant.solid_cyclone.models import BradleyHydrocyclone
+
+    geometry = build_geometry(
+        hydrocyclone_diameter=hydrocyclone_diameter,
+        feed_inlet_diameter=hydrocyclone_diameter * proportions[IDX_DI_DC],
+        overflow_diameter=hydrocyclone_diameter * proportions[IDX_DO_DC],
+        underflow_diameter=hydrocyclone_diameter * proportions[IDX_DU_DC],
+        hydrocyclone_length=hydrocyclone_diameter * proportions[IDX_L_DC],
+        vortex_finder_length=hydrocyclone_diameter * proportions[IDX_l_DC],
+        angle=proportions[IDX_ANGLE],
+    )
+    return BradleyHydrocyclone('Bradley', geometry)
+
+
+def build_demco_config(
+    hydrocyclone_diameter: float,
+    proportions: list[float] = DEMCO_DEFAULT_PROPORTIONS,
+):
+    """Возвращает стандартную конфигурацию гидроциклона Demco."""
+    from pytroleum.plant.solid_cyclone.models import DemcoHydrocyclone
+
+    geometry = build_geometry(
+        hydrocyclone_diameter=hydrocyclone_diameter,
+        feed_inlet_diameter=hydrocyclone_diameter * proportions[IDX_DI_DC],
+        overflow_diameter=hydrocyclone_diameter * proportions[IDX_DO_DC],
+        underflow_diameter=hydrocyclone_diameter * proportions[IDX_DU_DC],
+        hydrocyclone_length=hydrocyclone_diameter * proportions[IDX_L_DC],
+        vortex_finder_length=hydrocyclone_diameter * proportions[IDX_l_DC],
+        angle=proportions[IDX_ANGLE],
+    )
+    return DemcoHydrocyclone('Demco', geometry)
+
+
+def build_standard_configs(hydrocyclone_diameter: float) -> list:
+    """
+    Возвращает список стандартных конфигураций [Rietema, Bradley, Demco]
+    с пропорциями в допустимых диапазонах.
+    """
+    from pytroleum.plant.solid_cyclone.models import BaseHydrocyclone
+
+    hydrocyclones: list[BaseHydrocyclone] = [
+        build_rietema_config(hydrocyclone_diameter),
+        build_bradley_config(hydrocyclone_diameter),
+        build_demco_config(hydrocyclone_diameter),
+    ]
+
+    print("\n" + "=" * 60)
+    print(f"ПРОВЕРКА ГЕОМЕТРИЧЕСКИХ ПРОПОРЦИЙ "
+          f"(Dc = {hydrocyclone_diameter * 1000:.1f} мм)")
+    print("=" * 60)
+    for h in hydrocyclones:
+        h.print_proportions()
+    return hydrocyclones

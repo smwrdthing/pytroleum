@@ -5,7 +5,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pytroleum.plant.solid_cyclone.geometry import GeometryParameters
+from pytroleum.plant.solid_cyclone.geometry import (
+    build_geometry,
+    build_standard_configs,
+)
 from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
 from pytroleum.plant.solid_cyclone.models import (
     BaseHydrocyclone,
@@ -13,7 +16,6 @@ from pytroleum.plant.solid_cyclone.models import (
     BradleyHydrocyclone,
     DemcoHydrocyclone,
 )
-from pytroleum.plant.solid_cyclone.configs import build_standard_configs
 from pytroleum.plant.solid_cyclone.efficiency import (
     calculate_reduced_grade_efficiency,
     calculate_reduced_total_efficiency,
@@ -51,7 +53,7 @@ def _compute_for_point(
     # NOTE передавать функции целый класс конкретного гидроциклона для расчёта громоздко
     # NOTE и избыточно
 
-    geometry = GeometryParameters.from_named(
+    geometry = build_geometry(
         hydrocyclone_diameter=hydrocyclone_diameter,
         feed_inlet_diameter=hydrocyclone_diameter * geometry_ratios['Di/Dc'],
         overflow_diameter=hydrocyclone_diameter * geometry_ratios['Do/Dc'],
@@ -60,8 +62,10 @@ def _compute_for_point(
         vortex_finder_length=hydrocyclone_diameter * geometry_ratios['l/Dc'],
         angle=geometry_ratios['angle'],
     )
+
     # создаёт экземпляр нужного подкласса; имя '' — не нужно для расчёта
     hydrocyclone: BaseHydrocyclone = hydrocyclone_cls('', geometry)
+
     # рассчитывает все параметры при заданном расходе Q
     results = hydrocyclone.calculate_from_flow_rate(properties,
                                                     feed_volumetric_flow_rate,
@@ -111,6 +115,7 @@ def plot_contour_graphs() -> None:
 
     # создаёт три конфигурации при Dc=0.01 м; нас интересуют только их пропорции
     reference_configs = build_standard_configs(hydrocyclone_diameter_range[0])
+
     # список классов в том же порядке, что reference_configs
     hydrocyclone_classes = [RietemaHydrocyclone,
                             BradleyHydrocyclone, DemcoHydrocyclone]
@@ -121,7 +126,8 @@ def plot_contour_graphs() -> None:
             zip(reference_configs, hydrocyclone_classes)):
 
         # словарь безразмерных пропорций {'Di/Dc': ..., ...}
-        ratios = hydrocyclone.geometry.get_geometry_ratios()
+        ratios = hydrocyclone.get_geometry_ratios()
+
         # добавляет угол θ в словарь; get_geometry_ratios() не включает его
         ratios['angle'] = hydrocyclone.geometry.angle
 
