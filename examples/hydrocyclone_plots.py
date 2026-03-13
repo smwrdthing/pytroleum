@@ -69,7 +69,7 @@ def _plot_probability_density(
     ax.set_xlabel("$d/d_{50}'$", fontsize=10)
     ax.set_ylabel("$dy/d(d/d_{50}')$", fontsize=10)
     ax.set_xlim((0, 10))
-    ax.set_ylim((0, 0.3))
+    ax.set_ylim((0, 0.6))
     ax.grid(True, alpha=0.3)
     ax.axvline(x=1, color='gray', linestyle='--', alpha=0.5, linewidth=2)
     ax.text(
@@ -254,10 +254,10 @@ if __name__ == "__main__":
     print("МОДЕЛЬ РАСЧЁТА ГИДРОЦИКЛОНА")
     print("="*60)
 
-    properties = PhysicalProperties(solid_density=2650)
-    k = 50e-6   # характерный размер частиц Розин-Раммлера
-    n = 1.5     # параметр Розин-Раммлера
-    particle_diameters = np.linspace(0, 1e-3, 500)
+    properties = PhysicalProperties(solid_density=1500)
+    k = 10.9918e-6   # характерный размер частиц Розин-Раммлера
+    n = 0.9187     # параметр Розин-Раммлера
+    particle_diameters = np.linspace(1e-6, 200e-6, 500)  # от 1 мкм до 200 мкм
 
     # print("\n[Режим 1] Фиксированный перепад давления")
     # plot_hydrocyclone_analysis_delta_p(
@@ -271,8 +271,8 @@ if __name__ == "__main__":
     print("\n[Режим 2] Фиксированный расход")
     plot_hydrocyclone_analysis_Q(
         feed_volumetric_flow_rate=0.0002,
-        feed_volumetric_concentration=0.05,
-        hydrocyclone_diameter=45e-3,
+        feed_volumetric_concentration=0.00033,
+        hydrocyclone_diameter=21.85e-3,
         properties=properties,
         k=k, n=n, particle_diameters=particle_diameters,
     )
