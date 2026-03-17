@@ -278,7 +278,7 @@ if __name__ == '__main__':
     particle_diameters = np.linspace(1e-6, 200e-6, 500)  # от 1 мкм до 200 мкм
 
     # Задача 1: найти Dc для d₅₀'
-    cut_size_target = 6.888e-6
+    cut_size_target = 5e-6
     print("ЗАДАЧА 1: ПОИСК Dc ПО ЦЕЛЕВОМУ ОТСЕЧНОМУ РАЗМЕРУ d₅₀'")
     print("-" * 60)
     res1 = find_Dc_by_cut_size(

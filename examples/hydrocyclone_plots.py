@@ -106,7 +106,7 @@ def _plot_grade_efficiency(
     ax.axvline(x=1, color='gray', linestyle='--', alpha=0.5, linewidth=2)
     ax.set_xlabel("$d/d_{50}'$", fontsize=10)
     ax.set_ylabel("$G(d)$, $G'(d)$", fontsize=10)
-    ax.set_xlim((0, 10))
+    ax.set_xlim((0, 3))
     ax.set_ylim((0, 1.2))
     ax.grid(True, alpha=0.3)
     ax.legend(loc='best')
@@ -272,7 +272,7 @@ if __name__ == "__main__":
     plot_hydrocyclone_analysis_Q(
         feed_volumetric_flow_rate=0.0002,
         feed_volumetric_concentration=0.00033,
-        hydrocyclone_diameter=21.85e-3,
+        hydrocyclone_diameter=17.61e-3,
         properties=properties,
         k=k, n=n, particle_diameters=particle_diameters,
     )
