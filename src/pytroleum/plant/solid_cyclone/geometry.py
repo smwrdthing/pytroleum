@@ -162,10 +162,10 @@ class CycloneDesign:
         _major_divider()
 
         print("DIAMETERS:")
-        print(f"  Cyclone:   {d[HydrocycloneDiameters.C]*to_mm:.2f} mm")
-        print(f"  Inlet:     {d[HydrocycloneDiameters.I]*to_mm:.2f} mm"
+        print(f"  Cyclone: {d[HydrocycloneDiameters.C]*to_mm:.2f} mm")
+        print(f"  Inlet: {d[HydrocycloneDiameters.I]*to_mm:.2f} mm"
               f"  (Di/Dc = {p[IDX_DI_DC]:.3f}, range [{DI_DC_MIN}–{DI_DC_MAX}])")
-        print(f"  Overflow:  {d[HydrocycloneDiameters.O]*to_mm:.2f} mm"
+        print(f"  Overflow: {d[HydrocycloneDiameters.O]*to_mm:.2f} mm"
               f"  (Do/Dc = {p[IDX_DO_DC]:.3f}, range [{DO_DC_MIN}–{DO_DC_MAX}])")
         print(f"  Underflow: {d[HydrocycloneDiameters.U]*to_mm:.2f} mm"
               f"  (Du/Dc = {p[IDX_DU_DC]:.3f}, range [{DU_DC_MIN}–{DU_DC_MAX}])")
@@ -173,9 +173,9 @@ class CycloneDesign:
         _minor_divider()
 
         print("LENGTHS:")
-        print(f"  Total:    {le[HydrocycloneLengths.T]*to_mm:.2f} mm"
+        print(f"  Total: {le[HydrocycloneLengths.T]*to_mm:.2f} mm"
               f"  (L/Dc = {p[IDX_L_DC]:.3f}, range [{L_DC_MIN}–{L_DC_MAX}])")
-        print(f"  Vortex:   {le[HydrocycloneLengths.V]*to_mm:.2f} mm"
+        print(f"  Vortex: {le[HydrocycloneLengths.V]*to_mm:.2f} mm"
               f"  (l/Dc = {p[IDX_l_DC]:.3f}, "
               f"range [{l_VORTEX_DC_MIN}–{l_VORTEX_DC_MAX}])")
         print(f"  Cylinder: {le[HydrocycloneLengths.C]*to_mm:.2f} mm")
