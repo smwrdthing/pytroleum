@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python -c \":*)",
-      "Bash(python -c \"import ast; ast.parse\\(open\\(''examples/hydrocyclone_contour_plots.py'', encoding=''utf-8''\\).read\\(\\)\\); print\\(''OK''\\)\")"
-    ]
-  }
-}
