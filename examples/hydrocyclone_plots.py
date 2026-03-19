@@ -3,15 +3,17 @@
 распределение частиц, плотность распределения, приведённую эффективность разделения.
 """
 
-from typing import Literal
-
 from matplotlib.axes import Axes
 from numpy.typing import NDArray
 import numpy as np
 import matplotlib.pyplot as plt
 
 from pytroleum.plant.solid_cyclone.models import BaseHydrocyclone
-from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
+from pytroleum.plant.solid_cyclone.inputs import (
+    PhysicalProperties,
+    OperatingConditions,
+    SizeDistribution,
+)
 from pytroleum.plant.solid_cyclone.geometry import build_standard_configs
 from pytroleum.plant.solid_cyclone.efficiency import (
     cumulative_size_distribution,
@@ -29,14 +31,13 @@ GRADE_EFFICIENCY_COL = 2         # столбец 2 — вероятность �
 def _plot_cumulative_distribution(
     ax: Axes,
     hydrocyclone: BaseHydrocyclone,
-    particle_diameters: NDArray,
+    size_dist: SizeDistribution,
     reduced_cut_size: float,
-    k: float,
-    n: float,
 ) -> None:
     """График кумулятивного распределения частиц по Розин-Раммлеру."""
-    normalized_diameter = particle_diameters / reduced_cut_size
-    y = cumulative_size_distribution(particle_diameters, k, n)
+    normalized_diameter = size_dist.particle_diameters / reduced_cut_size
+    y = cumulative_size_distribution(
+        size_dist.particle_diameters, size_dist.k, size_dist.n)
     ax.plot(normalized_diameter, y, 'b-', linewidth=2)
     ax.set_xlabel("$d/d_{50}'$", fontsize=10)
     ax.set_ylabel('y(d)', fontsize=10)
@@ -46,7 +47,9 @@ def _plot_cumulative_distribution(
     ax.axvline(x=1, color='gray', linestyle='--', alpha=0.5, linewidth=2)
     ax.text(
         0.95, 0.05,
-        f'{hydrocyclone.name}\nk={k*1e6:.0f} мкм\nn={n:.1f}',
+        f'{hydrocyclone.name}\n'
+        f'k={size_dist.k*1e6:.0f} мкм\n'
+        f'n={size_dist.n:.1f}',
         transform=ax.transAxes, fontsize=9,
         verticalalignment='bottom', horizontalalignment='right',
         bbox=dict(boxstyle='round', facecolor='white', alpha=0.5),
@@ -56,14 +59,13 @@ def _plot_cumulative_distribution(
 def _plot_probability_density(
     ax: Axes,
     hydrocyclone: BaseHydrocyclone,
-    particle_diameters: NDArray,
+    size_dist: SizeDistribution,
     reduced_cut_size: float,
-    k: float,
-    n: float,
 ) -> None:
     """График плотности распределения частиц."""
-    normalized_diameter = particle_diameters / reduced_cut_size
-    dy_dd = probability_density(particle_diameters, k, n)
+    normalized_diameter = size_dist.particle_diameters / reduced_cut_size
+    dy_dd = probability_density(
+        size_dist.particle_diameters, size_dist.k, size_dist.n)
     dy_dd_scaled = dy_dd * reduced_cut_size
     ax.plot(normalized_diameter, dy_dd_scaled, 'b-', linewidth=2)
     ax.set_xlabel("$d/d_{50}'$", fontsize=10)
@@ -74,7 +76,9 @@ def _plot_probability_density(
     ax.axvline(x=1, color='gray', linestyle='--', alpha=0.5, linewidth=2)
     ax.text(
         0.95, 0.95,
-        f'{hydrocyclone.name}\nk={k*1e6:.0f} мкм\nn={n:.1f}',
+        f'{hydrocyclone.name}\n'
+        f'k={size_dist.k*1e6:.0f} мкм\n'
+        f'n={size_dist.n:.1f}',
         transform=ax.transAxes, fontsize=9,
         verticalalignment='top', horizontalalignment='right',
         bbox=dict(boxstyle='round', facecolor='white', alpha=0.5),
@@ -84,19 +88,18 @@ def _plot_probability_density(
 def _plot_grade_efficiency(
     ax: Axes,
     hydrocyclone: BaseHydrocyclone,
-    particle_diameters: NDArray,
+    size_dist: SizeDistribution,
     results: dict[str, float],
-    operation_mode: Literal['Q', 'delta_p'],
+    conditions: OperatingConditions,
 ) -> NDArray:
-    """График приведённой и полной вероятности уноса. Возвращает G'(d)."""
+    """График приведённой и полной вероятности уноса."""
     reduced_cut_size = results['reduced_cut_size']
     water_flow_ratio = results['water_flow_ratio']
-    m = results['m']
-    alpha = results['alpha']
 
-    normalized_diameter = particle_diameters / reduced_cut_size
+    normalized_diameter = size_dist.particle_diameters / reduced_cut_size
     reduced_grade_efficiency = calculate_reduced_grade_efficiency(
-        particle_diameters, reduced_cut_size, 'plitt', m, alpha)
+        size_dist.particle_diameters, reduced_cut_size,
+        'plitt', results['m'], results['alpha'])
     G = reduced_grade_efficiency * (1 - water_flow_ratio) + water_flow_ratio
 
     ax.plot(normalized_diameter, reduced_grade_efficiency, 'r-',
@@ -110,26 +113,9 @@ def _plot_grade_efficiency(
     ax.set_ylim((0, 1.2))
     ax.grid(True, alpha=0.3)
     ax.legend(loc='best')
-
-    if operation_mode == 'Q':
-        info_text = (
-            f'{hydrocyclone.name}\n'
-            f"$d_{{50}}'$={reduced_cut_size*1e6:.1f} мкм\n"
-            f'm={m:.2f}\n'
-            f'$R_w$={water_flow_ratio:.3f}\n'
-            f'Q={results["feed_volumetric_flow_rate"]*1000*60:.1f} л/мин'
-        )
-    else:
-        info_text = (
-            f'{hydrocyclone.name}\n'
-            f"$d_{{50}}'$={reduced_cut_size*1e6:.1f} мкм\n"
-            f'm={m:.2f}\n'
-            f'$R_w$={water_flow_ratio:.3f}\n'
-            f'ΔP={results["pressure_drop"]/1000:.2f} кПа'
-        )
-
     ax.text(
-        0.95, 0.05, info_text,
+        0.95, 0.05,
+        _grade_efficiency_info_text(hydrocyclone, results, conditions),
         transform=ax.transAxes, fontsize=9,
         verticalalignment='bottom', horizontalalignment='right',
         bbox=dict(boxstyle='round', facecolor='white', alpha=0.5),
@@ -138,20 +124,52 @@ def _plot_grade_efficiency(
     return reduced_grade_efficiency
 
 
+def _grade_efficiency_info_text(
+    hydrocyclone: BaseHydrocyclone,
+    results: dict[str, float],
+    conditions: OperatingConditions,
+) -> str:
+    """Формирует текст аннотации для графика G(d)."""
+    reduced_cut_size = results['reduced_cut_size']
+    water_flow_ratio = results['water_flow_ratio']
+    m = results['m']
+
+    if conditions.mode == 'Q':
+        operating_line = f'Q={results["feed_volumetric_flow_rate"]*1000*60:.1f} л/мин'
+    else:
+        operating_line = f'ΔP={results["pressure_drop"]/1000:.2f} кПа'
+
+    return (
+        f'{hydrocyclone.name}\n'
+        f"$d_{{50}}'$={reduced_cut_size*1e6:.1f} мкм\n"
+        f'm={m:.2f}\n'
+        f'$R_w$={water_flow_ratio:.3f}\n'
+        f'{operating_line}'
+    )
+
+
+def _compute_total_efficiencies(
+    size_dist: SizeDistribution,
+    results: dict[str, float],
+    reduced_grade_efficiency: NDArray,
+) -> tuple[NDArray | np.floating, NDArray | np.floating]:
+    """Расчёт E_T' и E_T."""
+    reduced_total_efficiency = calculate_reduced_total_efficiency(
+        size_dist.particle_diameters, size_dist.k, size_dist.n,
+        reduced_grade_efficiency)
+    total_efficiency = calculate_total_efficiency(
+        reduced_total_efficiency, results['water_flow_ratio'])
+    return reduced_total_efficiency, total_efficiency
+
+
 def _print_efficiency(
     hydrocyclone: BaseHydrocyclone,
     results: dict[str, float],
-    particle_diameters: NDArray,
-    k: float,
-    n: float,
-    reduced_grade_efficiency: NDArray,
+    reduced_total_efficiency: float,
+    total_efficiency: float,
 ) -> None:
     """Вывод эффективности разделения в консоль."""
-    reduced_total_efficiency = calculate_reduced_total_efficiency(
-        particle_diameters, k, n, reduced_grade_efficiency)
-    total_efficiency = calculate_total_efficiency(
-        reduced_total_efficiency, results['water_flow_ratio'])
-
+    hydrocyclone.design.summary()
     print(f"=== {hydrocyclone.name} ===")
     print(f"Q = {results['feed_volumetric_flow_rate']*1000*60:.2f} л/мин, "
           f"ΔP = {results['pressure_drop']/1000:.2f} кПа")
@@ -164,86 +182,65 @@ def _plot_row(
     axes_row,
     hydrocyclone: BaseHydrocyclone,
     results: dict[str, float],
-    particle_diameters: NDArray,
-    k: float,
-    n: float,
-    operation_mode: Literal['Q', 'delta_p'],
+    size_dist: SizeDistribution,
+    conditions: OperatingConditions,
 ) -> None:
     """Рисует строку из трёх графиков для одного типа гидроциклона."""
     reduced_cut_size = results['reduced_cut_size']
 
     _plot_cumulative_distribution(axes_row[CUMULATIVE_DISTRIBUTION_COL],
-                                  hydrocyclone, particle_diameters,
-                                  reduced_cut_size, k, n)
+                                  hydrocyclone,
+                                  size_dist,
+                                  reduced_cut_size)
     _plot_probability_density(axes_row[PROBABILITY_DENSITY_COL],
-                              hydrocyclone, particle_diameters,
-                              reduced_cut_size, k, n)
+                              hydrocyclone,
+                              size_dist,
+                              reduced_cut_size)
     reduced_grade_efficiency = _plot_grade_efficiency(axes_row[GRADE_EFFICIENCY_COL],
                                                       hydrocyclone,
-                                                      particle_diameters,
+                                                      size_dist,
                                                       results,
-                                                      operation_mode)
+                                                      conditions)
+
+    reduced_total_efficiency, total_efficiency = _compute_total_efficiencies(
+        size_dist, results, reduced_grade_efficiency)
     _print_efficiency(
-        hydrocyclone, results, particle_diameters, k, n, reduced_grade_efficiency)
+        hydrocyclone, results, float(reduced_total_efficiency), float(total_efficiency))
 
 
-def plot_hydrocyclone_analysis_Q(
-    feed_volumetric_flow_rate: float,
-    feed_volumetric_concentration: float,
+def _calculate_results(
+    hydrocyclone: BaseHydrocyclone,
+    properties: PhysicalProperties,
+    conditions: OperatingConditions,
+) -> dict[str, float]:
+    """Расчёт выходных параметров гидроциклона по условиям работы."""
+    if conditions.mode == 'Q':
+        return hydrocyclone.calculate_from_flow_rate(
+            properties,
+            conditions.feed_volumetric_flow_rate,
+            conditions.feed_volumetric_concentration,
+        )
+    return hydrocyclone.calculate_from_pressure_drop(
+        properties,
+        conditions.pressure_drop,
+        conditions.feed_volumetric_concentration,
+    )
+
+
+def plot_hydrocyclone_analysis(
+    conditions: OperatingConditions,
     hydrocyclone_diameter: float,
     properties: PhysicalProperties,
-    k: float,
-    n: float,
-    particle_diameters: NDArray,
+    size_dist: SizeDistribution,
 ) -> None:
-    """Построение графиков анализа гидроциклонов при заданном расходе."""
-    _plot_hydrocyclone_analysis(
-        'Q', hydrocyclone_diameter, feed_volumetric_concentration,
-        properties, k, n, particle_diameters,
-        feed_volumetric_flow_rate=feed_volumetric_flow_rate)
-
-
-def plot_hydrocyclone_analysis_delta_p(
-    pressure_drop: float,
-    feed_volumetric_concentration: float,
-    hydrocyclone_diameter: float,
-    properties: PhysicalProperties,
-    k: float,
-    n: float,
-    particle_diameters: NDArray,
-) -> None:
-    """Построение графиков анализа гидроциклонов при заданном перепаде давления."""
-    _plot_hydrocyclone_analysis(
-        'delta_p', hydrocyclone_diameter, feed_volumetric_concentration,
-        properties, k, n, particle_diameters,
-        pressure_drop=pressure_drop)
-
-
-def _plot_hydrocyclone_analysis(
-    operation_mode: Literal['Q', 'delta_p'],
-    hydrocyclone_diameter: float,
-    feed_volumetric_concentration: float,
-    properties: PhysicalProperties,
-    k: float,
-    n: float,
-    particle_diameters: NDArray,
-    feed_volumetric_flow_rate: float = 0.0,
-    pressure_drop: float = 0.0,
-) -> None:
-    """Общая логика построения графиков."""
+    """Построение графиков анализа гидроциклонов."""
     hydrocyclones = build_standard_configs(hydrocyclone_diameter)
 
     fig, axes = plt.subplots(3, 3, figsize=(16, 12))
 
     for row, hydrocyclone in enumerate(hydrocyclones):
-        if operation_mode == 'Q':
-            results = hydrocyclone.calculate_from_flow_rate(
-                properties, feed_volumetric_flow_rate, feed_volumetric_concentration)
-        else:
-            results = hydrocyclone.calculate_from_pressure_drop(
-                properties, pressure_drop, feed_volumetric_concentration)
-        _plot_row(axes[row], hydrocyclone, results,
-                  particle_diameters, k, n, operation_mode)
+        results = _calculate_results(hydrocyclone, properties, conditions)
+        _plot_row(axes[row], hydrocyclone, results, size_dist, conditions)
 
     plt.tight_layout()
     plt.show()
@@ -255,24 +252,33 @@ if __name__ == "__main__":
     print("="*60)
 
     properties = PhysicalProperties(solid_density=1500)
-    k = 10.9918e-6   # характерный размер частиц Розин-Раммлера
-    n = 0.9187     # параметр Розин-Раммлера
-    particle_diameters = np.linspace(1e-6, 200e-6, 500)  # от 1 мкм до 200 мкм
+
+    size_dist = SizeDistribution(
+        particle_diameters=np.linspace(1e-6, 200e-6, 500),
+        k=10.9918e-6,
+        n=0.9187,
+    )
 
     # print("\n[Режим 1] Фиксированный перепад давления")
-    # plot_hydrocyclone_analysis_delta_p(
-    #     pressure_drop=100000,
-    #     feed_volumetric_concentration=0.05,
+    # plot_hydrocyclone_analysis(
+    #     conditions=OperatingConditions(
+    #         feed_volumetric_concentration=0.05,
+    #         mode='delta_p',
+    #         pressure_drop=100000,
+    #     ),
     #     hydrocyclone_diameter=45e-3,
     #     properties=properties,
-    #     k=k, n=n, particle_diameters=particle_diameters,
+    #     size_dist=size_dist,
     # )
 
     print("\n[Режим 2] Фиксированный расход")
-    plot_hydrocyclone_analysis_Q(
-        feed_volumetric_flow_rate=0.0002,
-        feed_volumetric_concentration=0.00033,
+    plot_hydrocyclone_analysis(
+        conditions=OperatingConditions(
+            feed_volumetric_concentration=0.00033,
+            mode='Q',
+            feed_volumetric_flow_rate=0.0002,
+        ),
         hydrocyclone_diameter=17.61e-3,
         properties=properties,
-        k=k, n=n, particle_diameters=particle_diameters,
+        size_dist=size_dist,
     )

@@ -53,15 +53,15 @@ def calculate_reduced_total_efficiency(
     k: float,
     n: float,
     reduced_grade_efficiency: NDArray,
-) -> float:
+) -> NDArray | np.floating:
     """Расчёт приведённой полной эффективности E_T'."""
     dy_dd = probability_density(particle_diameters, k, n)
-    return float(np.trapezoid(reduced_grade_efficiency * dy_dd, particle_diameters))
+    return np.trapezoid(reduced_grade_efficiency * dy_dd, particle_diameters, axis=0)
 
 
 def calculate_total_efficiency(
-    reduced_total_efficiency: float,
-    water_flow_ratio: float,
-) -> float:
+    reduced_total_efficiency: NDArray | np.floating,
+    water_flow_ratio: NDArray | np.floating | float,
+) -> NDArray | np.floating:
     """Расчёт полной эффективности E_T по приведённой E_T'."""
     return reduced_total_efficiency * (1 - water_flow_ratio) + water_flow_ratio

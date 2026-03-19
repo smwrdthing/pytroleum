@@ -4,12 +4,18 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
 
 from pytroleum.plant.solid_cyclone.geometry import (
-    build_geometry,
-    build_standard_configs,
+    CycloneDesign,
+    RIETEMA_DEFAULT_PROPORTIONS,
+    BRADLEY_DEFAULT_PROPORTIONS,
+    DEMCO_DEFAULT_PROPORTIONS,
 )
-from pytroleum.plant.solid_cyclone.properties import PhysicalProperties
+from pytroleum.plant.solid_cyclone.inputs import (
+    PhysicalProperties,
+    SizeDistribution,
+)
 from pytroleum.plant.solid_cyclone.models import (
     BaseHydrocyclone,
     RietemaHydrocyclone,
@@ -32,202 +38,146 @@ TITLE_ROW = 0  # заголовки столбцов ставятся тольк
 GRID_ROWS = 50  # количество строк сетки
 GRID_COLS = 50  # количество столбцов сетки
 
-# V_IN_MIN = 1.0  # минимальная скорость во входном патрубке, м/с
-# V_IN_MAX = 3.0  # максимальная скорость во входном патрубке, м/с
-
 Q_MIN = 5.0   # минимальный расход, л/мин
 Q_MAX = 25.0  # максимальный расход, л/мин
 
 
-def _compute_for_point(
-    hydrocyclone_diameter: float,      # диаметр корпуса для данной точки сетки, м
-    feed_volumetric_flow_rate: float,  # объёмный расход для данной точки сетки, м³/с
-    geometry_ratios: dict,             # словарь пропорций {'Di/Dc':...}
-    properties: PhysicalProperties,    # физические свойства жидкости и твёрдой фазы
-    feed_volumetric_concentration: float,  # объёмная концентрация твёрдых частиц
-    hydrocyclone_cls: type,            # NOTE см. вторую заметку в функции
-    particle_diameters: np.ndarray,    # сетка диаметров частиц
-    k: float,                          # параметр Розин-Раммлера k
-    n: float,                          # параметр Розин-Раммлера n
-) -> tuple[float, float, float, float]:
-    """Расчёт характеристик гидроциклона для одной точки (Dc, Q)."""
+def _compute_grid(
+    Dc_grid: np.ndarray,
+    Q_grid: np.ndarray,
+    proportions: list[float],
+    hydrocyclone_cls: type[BaseHydrocyclone],
+    properties: PhysicalProperties,
+    feed_volumetric_concentration: float,
+    size_dist: SizeDistribution,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Расчёт характеристик на всей сетке (Dc × Q)."""
+    n_Dc, n_Q = Dc_grid.shape
+    cut_size = np.empty((n_Dc, n_Q))
+    water_ratio = np.empty((n_Dc, n_Q))
+    reduced_eff = np.empty((n_Dc, n_Q))
+    total_eff = np.empty((n_Dc, n_Q))
 
-    # NOTE у функции слишком много параметров
+    for i in range(n_Dc):
+        hydrocyclone = hydrocyclone_cls(
+            '', CycloneDesign(Dc_grid[i, 0], proportions))
+        for j in range(n_Q):
+            results = hydrocyclone.calculate_from_flow_rate(
+                properties, Q_grid[i, j], feed_volumetric_concentration)
 
-    # NOTE расчётная функциональность точно должна находиться внутри класса гидроциклона,
-    # NOTE передавать функции целый класс конкретного гидроциклона для расчёта громоздко
-    # NOTE и избыточно
+            grade_eff = calculate_reduced_grade_efficiency(
+                size_dist.particle_diameters, results['reduced_cut_size'],
+                'plitt', results['m'], results['alpha'])
+            reduced_total = calculate_reduced_total_efficiency(
+                size_dist.particle_diameters, size_dist.k, size_dist.n,
+                grade_eff)
+            total = calculate_total_efficiency(
+                reduced_total, results['water_flow_ratio'])
 
-    geometry = build_geometry(
-        hydrocyclone_diameter=hydrocyclone_diameter,
-        feed_inlet_diameter=hydrocyclone_diameter * geometry_ratios['Di/Dc'],
-        overflow_diameter=hydrocyclone_diameter * geometry_ratios['Do/Dc'],
-        underflow_diameter=hydrocyclone_diameter * geometry_ratios['Du/Dc'],
-        hydrocyclone_length=hydrocyclone_diameter * geometry_ratios['L/Dc'],
-        vortex_finder_length=hydrocyclone_diameter * geometry_ratios['l/Dc'],
-        angle=geometry_ratios['angle'],
-    )
+            cut_size[i, j] = results['reduced_cut_size'] * 1e6
+            water_ratio[i, j] = results['water_flow_ratio']
+            reduced_eff[i, j] = reduced_total * 100
+            total_eff[i, j] = total * 100
 
-    # создаёт экземпляр нужного подкласса; имя '' — не нужно для расчёта
-    hydrocyclone: BaseHydrocyclone = hydrocyclone_cls('', geometry)
-
-    # рассчитывает все параметры при заданном расходе Q
-    results = hydrocyclone.calculate_from_flow_rate(properties,
-                                                    feed_volumetric_flow_rate,
-                                                    feed_volumetric_concentration)
-
-    reduced_grade_efficiency = calculate_reduced_grade_efficiency(
-        particle_diameters,
-        results['reduced_cut_size'],
-        'plitt',
-        results['m'],
-        results['alpha'],
-    )
-    reduced_total_efficiency = calculate_reduced_total_efficiency(
-        particle_diameters, k, n, reduced_grade_efficiency) * 100
-    total_efficiency = calculate_total_efficiency(
-        reduced_total_efficiency / 100, results['water_flow_ratio']) * 100
-
-    return (results['reduced_cut_size'] * 1e6, results['water_flow_ratio'],
-            reduced_total_efficiency, total_efficiency)
+    return cut_size, water_ratio, reduced_eff, total_eff
 
 
-compute_vectorized = np.vectorize(
-    _compute_for_point,
-    excluded=[
-        'geometry_ratios',   # словарь пропорций одинаков для всей строки сетки
-        'properties',        # физические свойства одинаковы для всей сетки
-        'feed_volumetric_concentration',  # концентрация одинакова для всей сетки
-        'hydrocyclone_cls',  # класс модели одинаков для всей строки сетки
-        'particle_diameters',  # сетка частиц одинакова для всей сетки
-        'k',                 # параметр Розин-Раммлера одинаков для всей сетки
-        'n',                 # параметр Розин-Раммлера одинаков для всей сетки
-    ],
-)
+def _plot_one_contour_ax(
+    ax: Axes,
+    x_grid: np.ndarray,
+    y_grid: np.ndarray,
+    z: np.ndarray,
+    title: str | None,
+    row: int,
+    row_label: str | None = None,
+    levels=None,
+) -> None:
+    """Рисует один контурный подграфик."""
+    contour_kwargs = {} if levels is None else {'levels': levels}
+    contour = ax.contour(x_grid, y_grid, z, **contour_kwargs)
+    ax.clabel(contour, inline=True, fontsize=8)
+    ax.set_xlabel('$Q$, л/мин')
+    ax.set_ylabel('$D_c$, мм')
+    if row == TITLE_ROW and title is not None:
+        ax.set_title(title)
+    if row_label is not None:
+        ax.text(-0.3, 0.5, row_label, transform=ax.transAxes,
+                fontsize=12, fontweight='bold', rotation=90, va='center')
+    ax.grid(True, alpha=0.3)
 
-# NOTE np.vectorize под капотом делает те же циклы на чистом Python и не избавляет от
-# NOTE потенциальных проблем с производительностью, расчётные функции сами по себе должны
-# NOTE быть нацелены на работу с массивами сопоставимых размеров, чтобы сказывалось
-# NOTE преимущество от использования numpy
+
+def _plot_contour_row(
+    axes_row,
+    row: int,
+    name: str,
+    x_grid: np.ndarray,
+    y_grid: np.ndarray,
+    reduced_cut_size: np.ndarray,
+    water_flow_ratio: np.ndarray,
+    reduced_total_efficiency: np.ndarray,
+    total_efficiency: np.ndarray,
+) -> None:
+    """Рисует строку из 4 контурных подграфиков для одного типа гидроциклонов."""
+    _plot_one_contour_ax(
+        axes_row[CUT_SIZE_COL], x_grid, y_grid, reduced_cut_size,
+        title="Отсечной размер $d_{50}'$, мкм",
+        row=row, row_label=name)
+    _plot_one_contour_ax(
+        axes_row[WATER_RATIO_COL], x_grid, y_grid, water_flow_ratio,
+        title='Соотношение потоков воды $R_w$',
+        row=row, levels=10)
+    _plot_one_contour_ax(
+        axes_row[EFFICIENCY_COL], x_grid, y_grid, reduced_total_efficiency,
+        title="Приведённая эффективность $E_T'$, %",
+        row=row, levels=np.arange(50, 100 + 5, 5))
+    _plot_one_contour_ax(
+        axes_row[TOTAL_EFFICIENCY_COL], x_grid, y_grid, total_efficiency,
+        title='Полная эффективность $E_T$, %',
+        row=row, levels=np.arange(50, 100 + 5, 5))
 
 
-def plot_contour_graphs() -> None:
-    """Контурные графики для трёх типов гидроциклонов."""
-    hydrocyclone_diameter_range = np.linspace(10e-3, 30e-3, GRID_ROWS)
+ALL_CONFIGS = [
+    ('Rietema', RIETEMA_DEFAULT_PROPORTIONS, RietemaHydrocyclone),
+    ('Bradley', BRADLEY_DEFAULT_PROPORTIONS, BradleyHydrocyclone),
+    ('Demco', DEMCO_DEFAULT_PROPORTIONS, DemcoHydrocyclone),
+]
+
+
+def plot_contour_graphs(
+    configs: list = ALL_CONFIGS,
+) -> None:
+    """Контурные графики для заданных типов гидроциклонов."""
+    Dc_range = np.linspace(10e-3, 30e-3, GRID_ROWS)
+    Q_range = np.linspace(Q_MIN / (1000 * 60), Q_MAX / (1000 * 60), GRID_COLS)
+    Q_grid, Dc_grid = np.meshgrid(Q_range, Dc_range)
 
     properties = PhysicalProperties(solid_density=1500)
-    feed_volumetric_concentration = 0.00033  # объёмная концентрация твёрдых частиц
-    k = 10.9918e-6                             # параметр Розин-Раммлера
-    n = 0.9187                              # параметр Розин-Раммлера
-    particle_diameters = np.linspace(1e-6, 200e-6, 500)  # от 1 мкм до 200 мкм
+    feed_volumetric_concentration = 0.00033
 
-    # создаёт три конфигурации при Dc=0.01 м; нас интересуют только их пропорции
-    reference_configs = build_standard_configs(hydrocyclone_diameter_range[0])
-
-    # список классов в том же порядке, что reference_configs
-    hydrocyclone_classes = [RietemaHydrocyclone,
-                            BradleyHydrocyclone, DemcoHydrocyclone]
-
-    fig, axes = plt.subplots(3, 4, figsize=(20, 12))
-
-    # диапазон расходов задаётся напрямую в л/мин и переводится в м³/с
-    feed_volumetric_flow_rate_range = np.linspace(
-        Q_MIN / (1000 * 60),  # л/мин → м³/с
-        Q_MAX / (1000 * 60),
-        GRID_COLS,
+    size_dist = SizeDistribution(
+        particle_diameters=np.linspace(1e-6, 200e-6, 500),
+        k=10.9918e-6,
+        n=0.9187,
     )
-    for row, (hydrocyclone, hydrocyclone_cls) in enumerate(
-            zip(reference_configs, hydrocyclone_classes)):
 
-        # словарь безразмерных пропорций {'Di/Dc': ..., ...}
-        ratios = hydrocyclone.get_geometry_ratios()
+    _, axes = plt.subplots(len(configs), 4, figsize=(20, 4 * len(configs)),
+                           squeeze=False)
 
-        # добавляет угол θ в словарь; get_geometry_ratios() не включает его
-        ratios['angle'] = hydrocyclone.geometry.angle
-
-        # # Диапазон расходов из ограничения скорости: Q = v * π·Di²/4, Di = Dc·(Di/Dc)
-        # Di_Dc = ratios['Di/Dc']
-        # feed_volumetric_flow_rate_min = V_IN_MIN * np.pi * \
-        #     (hydrocyclone_diameter_range[0] * Di_Dc)**2 / 4
-        # feed_volumetric_flow_rate_max = V_IN_MAX * np.pi * \
-        #     (hydrocyclone_diameter_range[-1] * Di_Dc)**2 / 4
-        # feed_volumetric_flow_rate_range = np.linspace(feed_volumetric_flow_rate_min,
-        #                                               feed_volumetric_flow_rate_max,
-        #                                               GRID_COLS)
-
-        # прямоугольная сетка в пространстве (Q, Dc)
-        feed_volumetric_flow_rate_grid, hydrocyclone_diameter_grid = np.meshgrid(
-            feed_volumetric_flow_rate_range, hydrocyclone_diameter_range)
-
-        (reduced_cut_size,
-         water_flow_ratio,
-         reduced_total_efficiency,
-         total_efficiency
-         ) = compute_vectorized(
-            hydrocyclone_diameter_grid, feed_volumetric_flow_rate_grid,
-            geometry_ratios=ratios,
-            properties=properties,
-            feed_volumetric_concentration=feed_volumetric_concentration,
-            hydrocyclone_cls=hydrocyclone_cls,
-            particle_diameters=particle_diameters,
-            k=k,
-            n=n,
+    for row, (name, proportions, hydrocyclone_cls) in enumerate(configs):
+        cut_size, water_ratio, reduced_eff, total_eff = _compute_grid(
+            Dc_grid, Q_grid, proportions, hydrocyclone_cls,
+            properties, feed_volumetric_concentration, size_dist,
         )
 
-        feed_volumetric_flow_rate_lpm = feed_volumetric_flow_rate_grid * 1000 * 60
-        hydrocyclone_diameter_mm = hydrocyclone_diameter_grid * 1000
-
-        # Отсечной размер
-        ax = axes[row, CUT_SIZE_COL]
-        contour = ax.contour(feed_volumetric_flow_rate_lpm,
-                             hydrocyclone_diameter_mm,
-                             reduced_cut_size)
-        ax.clabel(contour, inline=True, fontsize=8)
-        ax.set_xlabel('$Q$, л/мин')
-        ax.set_ylabel('$D_c$, мм')
-        if row == TITLE_ROW:
-            ax.set_title("Отсечной размер $d_{50}'$, мкм")
-        ax.text(-0.3, 0.5, hydrocyclone.name, transform=ax.transAxes,
-                fontsize=12, fontweight='bold', rotation=90, va='center')
-        ax.grid(True, alpha=0.3)
-
-        # Соотношение потоков воды
-        ax = axes[row, WATER_RATIO_COL]
-        contour = ax.contour(feed_volumetric_flow_rate_lpm,
-                             hydrocyclone_diameter_mm, water_flow_ratio,
-                             levels=10)
-        ax.clabel(contour, inline=True, fontsize=8)
-        ax.set_xlabel('$Q$, л/мин')
-        ax.set_ylabel('$D_c$, мм')
-        if row == TITLE_ROW:
-            ax.set_title('Соотношение потоков воды $R_w$')
-        ax.grid(True, alpha=0.3)
-
-        # Приведённая эффективность
-        ax = axes[row, EFFICIENCY_COL]
-        contour = ax.contour(feed_volumetric_flow_rate_lpm,
-                             hydrocyclone_diameter_mm,
-                             reduced_total_efficiency,
-                             levels=np.arange(50, 100+5, 5))
-        ax.clabel(contour, inline=True, fontsize=8)
-        ax.set_xlabel('$Q$, л/мин')
-        ax.set_ylabel('$D_c$, мм')
-        if row == TITLE_ROW:
-            ax.set_title("Приведённая эффективность $E_T'$, %")
-        ax.grid(True, alpha=0.3)
-
-        # Полная эффективность
-        ax = axes[row, TOTAL_EFFICIENCY_COL]
-        contour = ax.contour(feed_volumetric_flow_rate_lpm,
-                             hydrocyclone_diameter_mm,
-                             total_efficiency,
-                             levels=np.arange(50, 100+5, 5))
-        ax.clabel(contour, inline=True, fontsize=8)
-        ax.set_xlabel('$Q$, л/мин')
-        ax.set_ylabel('$D_c$, мм')
-        if row == TITLE_ROW:
-            ax.set_title('Полная эффективность $E_T$, %')
-        ax.grid(True, alpha=0.3)
+        _plot_contour_row(
+            axes[row], row, name,
+            x_grid=Q_grid * 1000 * 60,
+            y_grid=Dc_grid * 1000,
+            reduced_cut_size=cut_size,
+            water_flow_ratio=water_ratio,
+            reduced_total_efficiency=reduced_eff,
+            total_efficiency=total_eff,
+        )
 
     plt.suptitle(
         f'Характеристики гидроциклонов '
@@ -238,4 +188,8 @@ def plot_contour_graphs() -> None:
 
 
 if __name__ == "__main__":
+    # Все три типа:
     plot_contour_graphs()
+
+    # Только один тип:
+    # plot_contour_graphs([ALL_CONFIGS[0]])  # Rietema
