@@ -1,5 +1,5 @@
 """
-Particle size distribution and hydrocyclone separation efficiency.
+Particle size distribution and hydrocyclone efficiency.
 
 """
 from typing import Literal
@@ -13,7 +13,7 @@ def cumulative_size_distribution(
     k: float,
     n: float,
 ) -> NDArray:
-    """Rosin-Rammler cumulative particle size distribution."""
+    """Cumulative particle size distribution (Rosin-Rammler)."""
     return 1.0 - np.exp(-(particle_diameters / k) ** n)
 
 
@@ -22,7 +22,7 @@ def probability_density(
     k: float,
     n: float,
 ) -> NDArray:
-    """Rosin-Rammler probability density function."""
+    """Derivative of the Rosin-Rammler cumulative distribution (density)."""
     ratio = particle_diameters / k
     return (n / k) * ratio ** (n - 1) * np.exp(-ratio ** n)
 
@@ -34,7 +34,7 @@ def calculate_reduced_grade_efficiency(
     m: float,
     alpha: float,
 ) -> NDArray:
-    """Calculate the reduced grade efficiency G'(d)."""
+    """Calculate reduced grade efficiency G'(d)."""
     ratio = particle_diameters / reduced_cut_size
 
     match model_reduced_grade_efficiency:
@@ -58,7 +58,7 @@ def calculate_reduced_total_efficiency(
     # NOTE совместно, либо считать reduced_grade_efficiency внутри функции для переданных
     # NOTE диаметров (сомнительное решение)
     # NOTE
-    # NOTE сейчас ничего не мешает передать в качестве reduced_grade_efficiecny, например
+    # NOTE сейчас ничего не мешает передать в качестве reduced_grade_efficiency, например
     # NOTE единицу - функция отработает, всё посчитается, сообщения об ошибке не будет,
     # NOTE даже получится какое-то число
     # NOTE
@@ -68,7 +68,7 @@ def calculate_reduced_total_efficiency(
     # NOTE
     # NOTE И следует передавать reduced_grade_efficiency после размеров частиц, не в
     # NOTE самом конце
-    """Calculate the reduced total efficiency E_T'."""
+    """Calculate reduced total efficiency E_T'."""
     dy_dd = probability_density(particle_diameters, k, n)
     return np.trapezoid(reduced_grade_efficiency * dy_dd, particle_diameters, axis=0)
 
@@ -77,5 +77,5 @@ def calculate_total_efficiency(
     reduced_total_efficiency: NDArray | np.floating,
     water_flow_ratio: NDArray | np.floating | float,
 ) -> NDArray | np.floating:
-    """Calculate the total efficiency E_T from the reduced total efficiency E_T'."""
+    """Calculate total efficiency E_T from reduced E_T'."""
     return reduced_total_efficiency * (1 - water_flow_ratio) + water_flow_ratio

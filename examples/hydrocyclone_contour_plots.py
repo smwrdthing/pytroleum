@@ -1,5 +1,5 @@
 """
-Контурные графики характеристик гидроциклонов.
+Contour plots of hydrocyclone characteristics.
 """
 
 import numpy as np
@@ -28,7 +28,7 @@ from pytroleum.plant.solid_cyclone.efficiency import (
 )
 
 # ---------------------------------------------------------------------------
-# Константы
+# Constants
 # ---------------------------------------------------------------------------
 
 CUT_SIZE_IDX = 0
@@ -39,11 +39,11 @@ TOTAL_EFF_IDX = 3
 GRID_ROWS = 50
 GRID_COLS = 50
 
-Q_MIN = 5.0    # л/мин
-Q_MAX = 25.0   # л/мин
+Q_MIN = 5.0    # L/min
+Q_MAX = 25.0   # L/min
 
-DC_MIN = 10e-3  # м
-DC_MAX = 30e-3  # м
+DC_MIN = 10e-3  # m
+DC_MAX = 30e-3  # m
 
 MODELS: list[tuple[str, list, type[BaseHydrocyclone]]] = [
     ('Rietema', RIETEMA_DEFAULT_PROPORTIONS, RietemaHydrocyclone),
@@ -52,7 +52,7 @@ MODELS: list[tuple[str, list, type[BaseHydrocyclone]]] = [
 ]
 
 # ---------------------------------------------------------------------------
-# Вычисление сетки
+# Grid computation
 # ---------------------------------------------------------------------------
 
 
@@ -94,7 +94,7 @@ def _compute_grid(
     return cut_size, water_ratio, reduced_eff, total_eff
 
 # ---------------------------------------------------------------------------
-# Построение графиков
+# Plot generation
 # ---------------------------------------------------------------------------
 
 
@@ -112,10 +112,10 @@ if __name__ == '__main__':
     Q_range = np.linspace(Q_MIN / (1000 * 60), Q_MAX / (1000 * 60), GRID_COLS)
     Q_grid, Dc_grid = np.meshgrid(Q_range, Dc_range)
 
-    Q_plot = Q_grid * 1000 * 60   # м³/с → л/мин
-    Dc_plot = Dc_grid * 1000        # м → мм
+    Q_plot = Q_grid * 1000 * 60   # m³/s → L/min
+    Dc_plot = Dc_grid * 1000        # m → mm
 
-    # Вычисляем сетки для каждой модели
+    # Compute grids for each model
     grids = {}
     for name, proportions, cls in MODELS:
         grids[name] = _compute_grid(
@@ -130,9 +130,9 @@ if __name__ == '__main__':
     _, ax = plt.subplots(figsize=(6, 5))
     contour = ax.contour(Q_plot, Dc_plot, grids['Rietema'][CUT_SIZE_IDX])
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title("Rietema — отсечной размер $d_{50}'$, мкм")
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title("Rietema — reduced cut size $d_{50}'$, µm")
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -141,9 +141,9 @@ if __name__ == '__main__':
     contour = ax.contour(
         Q_plot, Dc_plot, grids['Rietema'][WATER_RATIO_IDX], levels=10)
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title('Rietema — доля жидкости в нижнем сливе $R_w$')
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title('Rietema — liquid fraction in underflow $R_w$')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -152,9 +152,9 @@ if __name__ == '__main__':
     contour = ax.contour(
         Q_plot, Dc_plot, grids['Rietema'][REDUCED_EFF_IDX], levels=np.arange(50, 105, 5))
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title("Rietema — приведённая эффективность $E_T'$, %")
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title("Rietema — reduced efficiency $E_T'$, %")
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -163,9 +163,9 @@ if __name__ == '__main__':
     contour = ax.contour(
         Q_plot, Dc_plot, grids['Rietema'][TOTAL_EFF_IDX], levels=np.arange(50, 105, 5))
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title('Rietema — полная эффективность $E_T$, %')
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title('Rietema — total efficiency $E_T$, %')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -177,9 +177,9 @@ if __name__ == '__main__':
     _, ax = plt.subplots(figsize=(6, 5))
     contour = ax.contour(Q_plot, Dc_plot, grids['Bradley'][CUT_SIZE_IDX])
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title("Bradley — отсечной размер $d_{50}'$, мкм")
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title("Bradley — reduced cut size $d_{50}'$, µm")
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -188,9 +188,9 @@ if __name__ == '__main__':
     contour = ax.contour(
         Q_plot, Dc_plot, grids['Bradley'][WATER_RATIO_IDX], levels=10)
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title('Bradley — доля жидкости в нижнем сливе $R_w$')
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title('Bradley — liquid fraction in underflow $R_w$')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -199,9 +199,9 @@ if __name__ == '__main__':
     contour = ax.contour(
         Q_plot, Dc_plot, grids['Bradley'][REDUCED_EFF_IDX], levels=np.arange(50, 105, 5))
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title("Bradley — приведённая эффективность $E_T'$, %")
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title("Bradley — reduced efficiency $E_T'$, %")
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -210,9 +210,9 @@ if __name__ == '__main__':
     contour = ax.contour(
         Q_plot, Dc_plot, grids['Bradley'][TOTAL_EFF_IDX], levels=np.arange(50, 105, 5))
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title('Bradley — полная эффективность $E_T$, %')
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title('Bradley — total efficiency $E_T$, %')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -224,9 +224,9 @@ if __name__ == '__main__':
     _, ax = plt.subplots(figsize=(6, 5))
     contour = ax.contour(Q_plot, Dc_plot, grids['Demco'][CUT_SIZE_IDX])
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title("Demco — отсечной размер $d_{50}'$, мкм")
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title("Demco — reduced cut size $d_{50}'$, µm")
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -235,9 +235,9 @@ if __name__ == '__main__':
     contour = ax.contour(
         Q_plot, Dc_plot, grids['Demco'][WATER_RATIO_IDX], levels=10)
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title('Demco — доля жидкости в нижнем сливе $R_w$')
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title('Demco — liquid fraction in underflow $R_w$')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -246,9 +246,9 @@ if __name__ == '__main__':
     contour = ax.contour(
         Q_plot, Dc_plot, grids['Demco'][REDUCED_EFF_IDX], levels=np.arange(50, 105, 5))
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title("Demco — приведённая эффективность $E_T'$, %")
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title("Demco — reduced efficiency $E_T'$, %")
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
@@ -257,9 +257,9 @@ if __name__ == '__main__':
     contour = ax.contour(
         Q_plot, Dc_plot, grids['Demco'][TOTAL_EFF_IDX], levels=np.arange(50, 105, 5))
     ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, л/мин')
-    ax.set_ylabel('$D_c$, мм')
-    ax.set_title('Demco — полная эффективность $E_T$, %')
+    ax.set_xlabel('$Q$, L/min')
+    ax.set_ylabel('$D_c$, mm')
+    ax.set_title('Demco — total efficiency $E_T$, %')
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()

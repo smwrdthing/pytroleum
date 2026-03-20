@@ -1,5 +1,5 @@
 """
-Модель расчёта гидроциклона.
+Hydrocyclone calculation model.
 """
 from __future__ import annotations
 from abc import ABC
@@ -13,7 +13,7 @@ from pytroleum.plant.solid_cyclone.geometry import (
 )
 
 # ---------------------------------------------------------------------------
-# Константы моделей (параметры функции приведённой вероятности уноса)
+# Model constants (parameters for the reduced grade efficiency function)
 # ---------------------------------------------------------------------------
 
 RIETEMA_ALPHA = 4.23
@@ -26,12 +26,12 @@ DEMCO_ALPHA = 5.40
 DEMCO_M = 3.30
 
 # ---------------------------------------------------------------------------
-# Базовый класс и конкретные модели
+# Base class and concrete models
 # ---------------------------------------------------------------------------
 
 
 class BaseHydrocyclone(ABC):
-    """Абстрактный базовый класс для моделей гидроциклонов (твёрдые частицы-жидкость)."""
+    """Abstract base class for hydrocyclone models (solid-liquid separation)."""
 
     def __init__(self, name: str, design: CycloneDesign) -> None:
         self.name = name
@@ -45,7 +45,8 @@ class BaseHydrocyclone(ABC):
         feed_volumetric_flow_rate: float,
         feed_volumetric_concentration: float,
     ) -> dict[str, float]:
-        """Расчёт параметров при заданном объёмном расходе (ΔP = (Q/K)^(1/0.472))."""
+        """Calculate parameters for a given volumetric flow rate (ΔP = (Q/K)^(1/0.472)).
+        """
         K = self.compute_K(properties, feed_volumetric_concentration)
         pressure_drop = (feed_volumetric_flow_rate / K) ** (1 / 0.472)
         return self.compute_results(
@@ -58,7 +59,7 @@ class BaseHydrocyclone(ABC):
         pressure_drop: float,
         feed_volumetric_concentration: float,
     ) -> dict[str, float]:
-        """Расчёт параметров при заданном перепаде давления (Q = K·ΔP^0.472)."""
+        """Calculate parameters for a given pressure drop (Q = K·ΔP^0.472)."""
         K = self.compute_K(properties, feed_volumetric_concentration)
         feed_volumetric_flow_rate = K * pressure_drop**0.472
         return self.compute_results(
@@ -70,7 +71,7 @@ class BaseHydrocyclone(ABC):
         properties: PhysicalProperties,
         feed_volumetric_concentration: float,
     ) -> float:
-        """Коэффициент K в уравнении Q = K · ΔP^0.472."""
+        """Coefficient K in the equation Q = K · ΔP^0.472."""
         hydrocyclone_diameter = self.design.diameters[HydrocycloneDiameters.C]
         feed_inlet_diameter = self.design.diameters[HydrocycloneDiameters.I]
         overflow_diameter = self.design.diameters[HydrocycloneDiameters.O]
@@ -90,7 +91,7 @@ class BaseHydrocyclone(ABC):
         properties: PhysicalProperties,
         feed_volumetric_flow_rate: float,
     ) -> float:
-        """Расчёт числа Рейнольдса Re."""
+        """Calculate Reynolds number Re."""
         hydrocyclone_diameter = self.design.diameters[HydrocycloneDiameters.C]
         return (4 * properties.liquid_eos.rhomass() * feed_volumetric_flow_rate /
                 (np.pi * properties.liquid_eos.viscosity() * hydrocyclone_diameter))
@@ -100,7 +101,7 @@ class BaseHydrocyclone(ABC):
         feed_volumetric_concentration: float,
         Re: float,
     ) -> float:
-        """Расчёт числа Эйлера Eu."""
+        """Calculate Euler number Eu."""
         hydrocyclone_diameter = self.design.diameters[HydrocycloneDiameters.C]
         feed_inlet_diameter = self.design.diameters[HydrocycloneDiameters.I]
         overflow_diameter = self.design.diameters[HydrocycloneDiameters.O]
@@ -117,7 +118,7 @@ class BaseHydrocyclone(ABC):
                 np.exp(-0.51 * feed_volumetric_concentration))
 
     def compute_water_flow_ratio(self, Eu: float) -> float:
-        """Расчёт соотношения потоков жидкости Rw."""
+        """Calculate liquid flow ratio Rw."""
         hydrocyclone_diameter = self.design.diameters[HydrocycloneDiameters.C]
         overflow_diameter = self.design.diameters[HydrocycloneDiameters.O]
         under_flow_diameter = self.design.diameters[HydrocycloneDiameters.U]
@@ -135,7 +136,7 @@ class BaseHydrocyclone(ABC):
         feed_volumetric_concentration: float,
         water_flow_ratio: float,
     ) -> float:
-        """Расчёт приведённого отсечного размера d₅₀'."""
+        """Calculate reduced cut size d₅₀'."""
         hydrocyclone_diameter = self.design.diameters[HydrocycloneDiameters.C]
         overflow_diameter = self.design.diameters[HydrocycloneDiameters.O]
         L_minus_l = (self.design.lengths[HydrocycloneLengths.T] -
@@ -164,9 +165,9 @@ class BaseHydrocyclone(ABC):
         # NOTE feed_volumetric_flow_rate (либо pressure_drop)
         # NOTE
         # NOTE Почему не передавать объект этого класса этому методу как один параметр
-        # NOTE вместо трёх независимых? Это справделиво для всех методов, где нам нужна
+        # NOTE вместо трёх независимых? Это справедливо для всех методов, где нам нужна
         # NOTE эта информация/часть этой информации
-        """Сборка всех выходных параметров гидроциклона."""
+        """Assemble all hydrocyclone output parameters."""
         Re = self.compute_reynolds_number(properties,
                                           feed_volumetric_flow_rate)
         Eu = self.compute_euler_number(feed_volumetric_concentration,
@@ -197,7 +198,7 @@ class BaseHydrocyclone(ABC):
 
 
 class RietemaHydrocyclone(BaseHydrocyclone):
-    """Гидроциклон по модели Rietema."""
+    """Hydrocyclone using the Rietema model."""
 
     def __init__(self, name: str, design: CycloneDesign) -> None:
         super().__init__(name, design)
@@ -206,7 +207,7 @@ class RietemaHydrocyclone(BaseHydrocyclone):
 
 
 class BradleyHydrocyclone(BaseHydrocyclone):
-    """Гидроциклон по модели Bradley."""
+    """Hydrocyclone using the Bradley model."""
 
     def __init__(self, name: str, design: CycloneDesign) -> None:
         super().__init__(name, design)
@@ -215,7 +216,7 @@ class BradleyHydrocyclone(BaseHydrocyclone):
 
 
 class DemcoHydrocyclone(BaseHydrocyclone):
-    """Гидроциклон по модели Demco."""
+    """Hydrocyclone using the Demco model."""
 
     def __init__(self, name: str, design: CycloneDesign) -> None:
         super().__init__(name, design)

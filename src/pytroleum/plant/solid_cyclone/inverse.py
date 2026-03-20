@@ -1,6 +1,6 @@
 """
-Обратная задача гидроциклона: поиск диаметра корпуса Dc
-при заданном расходе Q, свойствах фаз и концентрации.
+Hydrocyclone inverse problem: find body diameter Dc
+for a given flow rate Q, phase properties, and concentration.
 """
 
 import numpy as np
@@ -26,26 +26,26 @@ from pytroleum.plant.solid_cyclone.efficiency import (
 
 
 # ---------------------------------------------------------------------------
-# Константы
+# Constants
 # ---------------------------------------------------------------------------
 
-TOL_RELATIVE = 1e-4  # допустимое расхождение прямой и обратной задач
-_V_IN_INITIAL = 9.0   # м/с — типовая скорость для начального приближения
+TOL_RELATIVE = 1e-4  # allowable discrepancy between forward and inverse problems
+_V_IN_INITIAL = 9.0   # m/s — typical velocity for initial approximation
 
 # ---------------------------------------------------------------------------
-# Вспомогательные функции
+# Helper functions
 # ---------------------------------------------------------------------------
 
 
 def _validate_cone_angle(ratios: dict[str, float]) -> None:
-    # NOTE у нас есть dataclass для хранения инфрмации о геометрии гидроциклона,
+    # NOTE у нас есть dataclass для хранения информации о геометрии гидроциклона,
     # NOTE зачем тогда работать со словарями, которые делают то же самое?
     # NOTE можно просто передавать объект класса, который хранит геометрические параметры
-    """Проверка угла конуса перед решением обратной задачи."""
+    """Validate cone angle before solving the inverse problem."""
     angle = ratios['angle']
     if not (CYCLONE_CONE_ANGLE_MIN <= angle <= CYCLONE_CONE_ANGLE_MAX):
         raise ValueError(
-            f"angle = {angle:.1f}° вне допустимого диапазона "
+            f"angle = {angle:.1f}° out of valid range "
             f"[{CYCLONE_CONE_ANGLE_MIN}°, {CYCLONE_CONE_ANGLE_MAX}°]."
         )
 
@@ -54,10 +54,10 @@ def _initial_Dc(Q: float, Di_Dc_ratio: float) -> float:
     # NOTE здесь тоже можно просто передавать объект класса, который хранит
     # NOTE геометрические параметры, в нём уже есть информация о Di_Dc_ratio
     """
-    Начальное приближение Dc для fsolve.
+    Initial Dc approximation for fsolve.
 
-    Выводится из условия v_in = Q / (π·Di²/4) при типовой скорости _V_IN_INITIAL:
-      Di0 = sqrt(4·Q / (v_in·π)),  Dc0 = Di0 / (Di/Dc)
+    Derived from v_in = Q / (pi*Di^2/4) at the typical velocity _V_IN_INITIAL:
+      Di0 = sqrt(4*Q / (v_in*pi)),  Dc0 = Di0 / (Di/Dc)
     """
     Di0 = np.sqrt(4.0 * Q / (_V_IN_INITIAL * np.pi))
     return Di0 / Di_Dc_ratio
@@ -67,7 +67,7 @@ def _compute_efficiencies(
         results: dict[str, float],  # NOTE см. заметку по словарю в models
         size_dist: SizeDistribution,
 ) -> tuple[NDArray | np.floating, NDArray | np.floating]:
-    """Расчёт приведённой E_T' и полной E_T эффективностей."""
+    """Calculate reduced E_T' and total E_T efficiencies."""
     reduced_grade_efficiency = calculate_reduced_grade_efficiency(
         size_dist.particle_diameters,
         results['reduced_cut_size'],
@@ -96,7 +96,7 @@ def _residual_cut_size(
         hydrocyclone_cls: type[BaseHydrocyclone],
         properties: PhysicalProperties,
 ) -> float:
-    """Невязка задачи 1: f(Dc) = d₅₀'(Dc, Q) - d₅₀'_target."""
+    """Residual for problem 1: f(Dc) = d50'(Dc, Q) - d50'_target."""
     hydrocyclone = build_from_ratios(Dc, ratios, hydrocyclone_cls)
     results = hydrocyclone.calculate_from_flow_rate(
         properties,
@@ -122,8 +122,8 @@ def _residual_efficiency(
 ) -> NDArray | np.floating:
     # NOTE половина передаваемой информации в сигнатуре вызова этой функции уже содержится
     # NOTE в описанных датаклассах (для геометрии, рабочих параметров) - почему не
-    # NOTE передавть объекты этих датаклассов и не работать с ними?
-    """Невязка задачи 2: f(Dc) = E_T(Dc, Q) - E_T_target."""
+    # NOTE передавать объекты этих датаклассов и не работать с ними?
+    """Residual for problem 2: f(Dc) = E_T(Dc, Q) - E_T_target."""
 
     hydrocyclone = build_from_ratios(Dc, ratios, hydrocyclone_cls)
     # NOTE такая функция может работать с уже собранным гидроциклоном, нужно только
@@ -143,7 +143,7 @@ def _assemble_output(
         results: dict[str, float],  # NOTE см. заметку по словарю в models
         size_dist: SizeDistribution,
 ) -> dict:
-    """Сборка выходного словаря: геометрия + гидравлика + эффективность."""
+    """Assemble output dict: geometry + hydraulics + efficiency."""
     from pytroleum.plant.solid_cyclone.geometry import (
         HydrocycloneDiameters, HydrocycloneLengths, IDX_ANGLE,
     )
@@ -174,7 +174,7 @@ def _assemble_output(
 
 
 # ---------------------------------------------------------------------------
-# Публичные функции обратной задачи
+# Public inverse problem functions
 # ---------------------------------------------------------------------------
 
 def find_Dc_by_cut_size(
@@ -192,9 +192,9 @@ def find_Dc_by_cut_size(
         Dc0: float | None = None,
 ) -> dict:
     """
-    Задача 1. Найти Dc, при котором d₅₀'(Dc, Q) = cut_size_target.
+    Problem 1. Find Dc such that d50'(Dc, Q) = cut_size_target.
 
-    Решается: f(Dc) = d₅₀'(Dc, Q) - cut_size_target = 0
+    Solves: f(Dc) = d50'(Dc, Q) - cut_size_target = 0
     """
     _validate_cone_angle(ratios)
 
@@ -233,9 +233,9 @@ def find_Dc_by_efficiency(
         Dc0: float | None = None,
 ) -> dict:
     """
-    Задача 2. Найти Dc, при котором E_T(Dc, Q) = efficiency_target.
+    Problem 2. Find Dc such that E_T(Dc, Q) = efficiency_target.
 
-    Решается: f(Dc) = E_T(Dc, Q) - efficiency_target = 0
+    Solves: f(Dc) = E_T(Dc, Q) - efficiency_target = 0
     """
     _validate_cone_angle(ratios)
 
@@ -260,7 +260,7 @@ def find_Dc_by_efficiency(
 
 
 # ---------------------------------------------------------------------------
-# Точка входа
+# Entry point
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
