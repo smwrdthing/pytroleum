@@ -11,7 +11,12 @@ import numpy as np
 from numpy.typing import NDArray
 
 if TYPE_CHECKING:
-    from pytroleum.plant.solid_cyclone.models import BaseHydrocyclone
+    from pytroleum.plant.solid_cyclone.models import (
+        BaseHydrocyclone,
+        RietemaHydrocyclone,
+        BradleyHydrocyclone,
+        DemcoHydrocyclone,
+    )
 
 from pytroleum.plant.solid_cyclone.utils import _minor_divider, _major_divider
 
@@ -36,6 +41,8 @@ L_DC_MAX = 6.93  # maximum allowable L/Dc ratio
 
 CYCLONE_CONE_ANGLE_MIN = 9.0    # minimum allowable cone angle, degrees
 CYCLONE_CONE_ANGLE_MAX = 20.0   # maximum allowable cone angle, degrees
+
+_TO_MM = 1000
 
 # Standard configuration proportions [Di/Dc, Do/Dc, Du/Dc, L/Dc, l/Dc, angle]
 RIETEMA_DEFAULT_PROPORTIONS = [0.20, 0.25, 0.15, 4.50, 0.40, 15.0]
@@ -153,9 +160,6 @@ class CycloneDesign:
 
     def summary(self) -> None:
         """Print geometric dimensions (in mm) with proportions and range checks."""
-        # NOTE это можно сделать приватной константой _TO_MM и перенести в
-        # NOTE начало файла
-        to_mm = 1000
         p = self.proportions
         d = self.diameters
         le = self.lengths
@@ -165,23 +169,23 @@ class CycloneDesign:
         _major_divider()
 
         print("DIAMETERS:")
-        print(f"  Cyclone: {d[HydrocycloneDiameters.C]*to_mm:.2f} mm")
-        print(f"  Inlet: {d[HydrocycloneDiameters.I]*to_mm:.2f} mm"
+        print(f"  Cyclone: {d[HydrocycloneDiameters.C]*_TO_MM:.2f} mm")
+        print(f"  Inlet: {d[HydrocycloneDiameters.I]*_TO_MM:.2f} mm"
               f"  (Di/Dc = {p[IDX_DI_DC]:.3f}, range [{DI_DC_MIN}–{DI_DC_MAX}])")
-        print(f"  Overflow: {d[HydrocycloneDiameters.O]*to_mm:.2f} mm"
+        print(f"  Overflow: {d[HydrocycloneDiameters.O]*_TO_MM:.2f} mm"
               f"  (Do/Dc = {p[IDX_DO_DC]:.3f}, range [{DO_DC_MIN}–{DO_DC_MAX}])")
-        print(f"  Underflow: {d[HydrocycloneDiameters.U]*to_mm:.2f} mm"
+        print(f"  Underflow: {d[HydrocycloneDiameters.U]*_TO_MM:.2f} mm"
               f"  (Du/Dc = {p[IDX_DU_DC]:.3f}, range [{DU_DC_MIN}–{DU_DC_MAX}])")
 
         _minor_divider()
 
         print("LENGTHS:")
-        print(f"  Total: {le[HydrocycloneLengths.T]*to_mm:.2f} mm"
+        print(f"  Total: {le[HydrocycloneLengths.T]*_TO_MM:.2f} mm"
               f"  (L/Dc = {p[IDX_L_DC]:.3f}, range [{L_DC_MIN}–{L_DC_MAX}])")
-        print(f"  Vortex: {le[HydrocycloneLengths.V]*to_mm:.2f} mm"
+        print(f"  Vortex: {le[HydrocycloneLengths.V]*_TO_MM:.2f} mm"
               f"  (l/Dc = {p[IDX_l_DC]:.3f}, "
               f"range [{l_VORTEX_DC_MIN}–{l_VORTEX_DC_MAX}])")
-        print(f"  Cylinder: {le[HydrocycloneLengths.C]*to_mm:.2f} mm")
+        print(f"  Cylinder: {le[HydrocycloneLengths.C]*_TO_MM:.2f} mm")
 
         _minor_divider()
 
@@ -207,9 +211,7 @@ class CycloneDesign:
 def build_rietema_config(
     hydrocyclone_diameter: float,
     proportions: list[float] = RIETEMA_DEFAULT_PROPORTIONS,
-) -> BaseHydrocyclone:
-    # NOTE здесь для аннотации следует быть строже, уместнее указать RietemaHydrocyclone,
-    # NOTE то же для функции ниже
+) -> RietemaHydrocyclone:
     """Return standard Rietema hydrocyclone configuration."""
     from pytroleum.plant.solid_cyclone.models import RietemaHydrocyclone
     return RietemaHydrocyclone('Rietema',
@@ -219,7 +221,7 @@ def build_rietema_config(
 def build_bradley_config(
     hydrocyclone_diameter: float,
     proportions: list[float] = BRADLEY_DEFAULT_PROPORTIONS,
-) -> BaseHydrocyclone:
+) -> BradleyHydrocyclone:
     """Return standard Bradley hydrocyclone configuration."""
     from pytroleum.plant.solid_cyclone.models import BradleyHydrocyclone
     return BradleyHydrocyclone('Bradley',
@@ -229,7 +231,7 @@ def build_bradley_config(
 def build_demco_config(
     hydrocyclone_diameter: float,
     proportions: list[float] = DEMCO_DEFAULT_PROPORTIONS,
-) -> BaseHydrocyclone:
+) -> DemcoHydrocyclone:
     """Return standard Demco hydrocyclone configuration."""
     from pytroleum.plant.solid_cyclone.models import DemcoHydrocyclone
     return DemcoHydrocyclone('Demco', CycloneDesign(hydrocyclone_diameter, proportions))
