@@ -14,6 +14,12 @@ if TYPE_CHECKING:
     from pytroleum.plant.solid_cyclone.models import BaseHydrocyclone
 
 
+# NOTE : по языку комментариев, докстрингов и выводимого текста
+# NOTE Лучше быть последовательным - либо всё на русском, либо всё на английском
+# NOTE (хотя бы в пределах модуля). Постоянное переключение с одного языка на
+# NOTE другой - лишняя нагрузка для головы и время, потраченное на переключение
+# NOTE раскладки
+
 # ---------------------------------------------------------------------------
 # Допустимые диапазоны пропорций (Coelho & Medronho, 2001)
 # ---------------------------------------------------------------------------
@@ -43,11 +49,31 @@ DEMCO_DEFAULT_PROPORTIONS = [0.25, 0.30, 0.20, 5.00, 0.50, 18.0]
 
 # Именованные индексы пропорций
 IDX_DI_DC, IDX_DO_DC, IDX_DU_DC, IDX_L_DC, IDX_l_DC, IDX_ANGLE = 0, 1, 2, 3, 4, 5
-
+# NOTE эти константы дублируют то, что уже сделано через Enum для диаметров
+# NOTE
+# NOTE можно завести массив с пропорциями диаметров в формате
+# NOTE diameter_proportion = [1, DI_DC, ...]
+# NOTE и пользоваться индексами из HydrocycloneDiameters
+# NOTE
+# NOTE Такая же идея с процпорциями длин
+# NOTE
+# NOTE Тогда инициализация размеров будет максимально простой:
+# NOTE self.diameter = Dc*diameter_proportions <- умножение float на массив
+# NOTE
+# NOTE Во всех геометриях коническая секция одна, так что угол можно хранить
+# NOTE просто в атрибуте
 
 # ---------------------------------------------------------------------------
 # Вспомогательные функции форматирования
 # ---------------------------------------------------------------------------
+# NOTE Эта функциональность лучше будет смотреться в отдельном модуле :
+# NOTE 1. Оформление текста с геометрией гидроциклона не связано
+# NOTE 2. Это может пригодиться не только для отображения информации о геометрии
+# NOTE
+# NOTE Подробнее : представь, что нам нужно форматирование для отображения исходных
+# NOTE             данных, например. В такой ситуации либо придётся копипастить код в
+# NOTE             модуль, где это делается (нарушает DRY), либо импортировать эти
+# NOTE             функции из модуля с геометрией (неинтуитивно, неясно почему они здесь)
 
 _DIVIDER_LENGTH = 60
 _MINOR_DIVIDER = '-' * _DIVIDER_LENGTH
@@ -93,6 +119,8 @@ class CycloneDesign:
 
     hydrocyclone_diameter: float
     proportions: list[float]
+    # NOTE массив с пропорциями уже есть, но в таком виде им не полуится пользоваться как
+    # NOTE описано в заметке выше (перемешаны пропорции диаметров и длин)
 
     diameters: NDArray = field(init=False)
     lengths: NDArray = field(init=False)
@@ -104,6 +132,8 @@ class CycloneDesign:
         Dc = self.hydrocyclone_diameter
         angle_rad = np.radians(self.proportions[IDX_ANGLE])
 
+        # NOTE см. заметку выше про массив с пропорциями,
+        # NOTE вместо 8 строк кода можно уложиться в 1
         self.diameters = np.zeros(HydrocycloneDiameters.SIZE)
         self.diameters[HydrocycloneDiameters.C] = Dc
         self.diameters[HydrocycloneDiameters.I] = Dc * \
@@ -113,6 +143,7 @@ class CycloneDesign:
         self.diameters[HydrocycloneDiameters.U] = Dc * \
             self.proportions[IDX_DU_DC]
 
+        # NOTE и здесь тоже
         self.lengths = np.zeros(HydrocycloneLengths.SIZE)
         self.lengths[HydrocycloneLengths.T] = Dc * self.proportions[IDX_L_DC]
         self.lengths[HydrocycloneLengths.V] = Dc * self.proportions[IDX_l_DC]
@@ -152,6 +183,8 @@ class CycloneDesign:
 
     def summary(self) -> None:
         """Вывод геометрических размеров (в мм) с пропорциями и проверкой диапазонов."""
+        # NOTE это можно сделать приватной константой _TO_MM и перенести в
+        # NOTE начало файла
         to_mm = 1000
         p = self.proportions
         d = self.diameters
@@ -205,6 +238,8 @@ def build_rietema_config(
     hydrocyclone_diameter: float,
     proportions: list[float] = RIETEMA_DEFAULT_PROPORTIONS,
 ) -> BaseHydrocyclone:
+    # NOTE здесь для аннотации следует быть строже, уместнее указать RietemaHydrocyclone,
+    # NOTE то же для функции ниже
     """Возвращает стандартную конфигурацию гидроциклона Rietema."""
     from pytroleum.plant.solid_cyclone.models import RietemaHydrocyclone
     return RietemaHydrocyclone('Rietema',
@@ -251,6 +286,8 @@ def build_from_ratios(
     hydrocyclone_cls: type[BaseHydrocyclone],
     name: str = '',
 ) -> BaseHydrocyclone:
+    # NOTE Эта функция неуместна, если у нас уже есть три функции выше + она работает
+    # NOTE с классом, как передаваемым параметром, зачем?
     """Создание экземпляра гидроциклона из диаметра корпуса и словаря пропорций."""
     proportions = [
         ratios['Di/Dc'],

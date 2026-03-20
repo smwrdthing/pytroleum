@@ -38,6 +38,9 @@ _V_IN_INITIAL = 9.0   # м/с — типовая скорость для нач�
 
 
 def _validate_cone_angle(ratios: dict[str, float]) -> None:
+    # NOTE у нас есть dataclass для хранения инфрмации о геометрии гидроциклона,
+    # NOTE зачем тогда работать со словарями, которые делают то же самое?
+    # NOTE можно просто передавать объект класса, который хранит геометрические параметры
     """Проверка угла конуса перед решением обратной задачи."""
     angle = ratios['angle']
     if not (CYCLONE_CONE_ANGLE_MIN <= angle <= CYCLONE_CONE_ANGLE_MAX):
@@ -48,6 +51,8 @@ def _validate_cone_angle(ratios: dict[str, float]) -> None:
 
 
 def _initial_Dc(Q: float, Di_Dc_ratio: float) -> float:
+    # NOTE здесь тоже можно просто передавать объект класса, который хранит
+    # NOTE геометрические параметры, в нём уже есть информация о Di_Dc_ratio
     """
     Начальное приближение Dc для fsolve.
 
@@ -59,7 +64,7 @@ def _initial_Dc(Q: float, Di_Dc_ratio: float) -> float:
 
 
 def _compute_efficiencies(
-        results: dict[str, float],
+        results: dict[str, float],  # NOTE см. заметку по словарю в models
         size_dist: SizeDistribution,
 ) -> tuple[NDArray | np.floating, NDArray | np.floating]:
     """Расчёт приведённой E_T' и полной E_T эффективностей."""
@@ -75,6 +80,11 @@ def _compute_efficiencies(
         reduced_grade_efficiency)
     total_efficiency = calculate_total_efficiency(
         reduced_total_efficiency, results['water_flow_ratio'])
+
+    # NOTE насколько часто нам нужно считать сразу обе эффективности?
+    # NOTE функции для их расчёта по отдельности уже есть в отдельном модуле,
+    # NOTE смысл в таком оборачивании есть только если нам нужно очень часто
+    # NOTE считать сразу обе эффективности
     return reduced_total_efficiency, total_efficiency
 
 
@@ -100,13 +110,25 @@ def _residual_efficiency(
         Dc: float,
         efficiency_target: float,
         conditions: OperatingConditions,
+
+        # NOTE это уже лежит в датаклассе с геометрией
         ratios: dict[str, float],
+
+        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
+
         properties: PhysicalProperties,
         size_dist: SizeDistribution,
 ) -> NDArray | np.floating:
+    # NOTE половина передаваемой информации в сигнатуре вызова этой функции уже содержится
+    # NOTE в описанных датаклассах (для геометрии, рабочих параметров) - почему не
+    # NOTE передавть объекты этих датаклассов и не работать с ними?
     """Невязка задачи 2: f(Dc) = E_T(Dc, Q) - E_T_target."""
+
     hydrocyclone = build_from_ratios(Dc, ratios, hydrocyclone_cls)
+    # NOTE такая функция может работать с уже собранным гидроциклоном, нужно только
+    # NOTE предусмотреть возможность переназначить размеры
+
     results = hydrocyclone.calculate_from_flow_rate(
         properties,
         conditions.feed_volumetric_flow_rate,
@@ -118,7 +140,7 @@ def _residual_efficiency(
 
 def _assemble_output(
         hydrocyclone: BaseHydrocyclone,
-        results: dict[str, float],
+        results: dict[str, float],  # NOTE см. заметку по словарю в models
         size_dist: SizeDistribution,
 ) -> dict:
     """Сборка выходного словаря: геометрия + гидравлика + эффективность."""
@@ -148,7 +170,7 @@ def _assemble_output(
         **results,
         'reduced_total_efficiency': reduced_total_efficiency,
         'total_efficiency': total_efficiency,
-    }
+    }  # NOTE зачем нам словарь, в котором лежит всё сразу?
 
 
 # ---------------------------------------------------------------------------
@@ -158,8 +180,13 @@ def _assemble_output(
 def find_Dc_by_cut_size(
         cut_size_target: float,
         conditions: OperatingConditions,
+
+        # NOTE это уже лежит в датаклассе с геометрией
         ratios: dict[str, float],
+
+        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
+
         properties: PhysicalProperties,
         size_dist: SizeDistribution,
         Dc0: float | None = None,
@@ -194,8 +221,13 @@ def find_Dc_by_cut_size(
 def find_Dc_by_efficiency(
         efficiency_target: float,
         conditions: OperatingConditions,
+
+        # NOTE это уже лежит в датаклассе с геометрией
         ratios: dict[str, float],
+
+        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
+
         properties: PhysicalProperties,
         size_dist: SizeDistribution,
         Dc0: float | None = None,
@@ -237,6 +269,7 @@ if __name__ == '__main__':
 
     properties = PhysicalProperties(solid_density=1500)
 
+    # NOTE этот словарь дублирует информацию из массива в geometry
     ratios_rietema = {
         'Di/Dc': 0.20,
         'Do/Dc': 0.25,

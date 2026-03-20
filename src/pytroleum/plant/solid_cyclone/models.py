@@ -159,6 +159,13 @@ class BaseHydrocyclone(ABC):
         pressure_drop: float,
         feed_volumetric_concentration: float,
     ) -> dict[str, float]:
+        # NOTE в модуле inputs есть dataclass OperatingConditions, который
+        # NOTE сделан для хранения feed_volumetric_concentration и
+        # NOTE feed_volumetric_flow_rate (либо pressure_drop)
+        # NOTE
+        # NOTE Почему не передавать объект этого класса этому методу как один параметр
+        # NOTE вместо трёх независимых? Это справделиво для всех методов, где нам нужна
+        # NOTE эта информация/часть этой информации
         """Сборка всех выходных параметров гидроциклона."""
         Re = self.compute_reynolds_number(properties,
                                           feed_volumetric_flow_rate)
@@ -171,6 +178,12 @@ class BaseHydrocyclone(ABC):
                                                          feed_volumetric_concentration,
                                                          water_flow_ratio)
 
+        # NOTE всё, что возвращается в этом словаре - может быть безболезненно и логично
+        # NOTE сделано атрибутами базового класса гидроциклона, тогда :
+        # NOTE
+        # NOTE 1. Нам не нужно работать со словарями (значит не нужно помнить ключи)
+        # NOTE 2. Везде, где передаётся словарь такой формы, можно просто передать объект
+        # NOTE    этого класса (сигнатуры вызова функций становятся последовательными)
         return {
             'feed_volumetric_flow_rate': feed_volumetric_flow_rate,
             'pressure_drop': pressure_drop,

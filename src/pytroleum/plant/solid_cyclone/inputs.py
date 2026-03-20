@@ -27,7 +27,7 @@ class PhysicalProperties:
 
 # region OperatingConditions
 @dataclass
-class OperatingConditions:
+class OperatingConditions:  # NOTE OperationConditions*
     feed_volumetric_concentration: float
     mode: Literal['Q', 'delta_p']
     feed_volumetric_flow_rate: float = 0.0

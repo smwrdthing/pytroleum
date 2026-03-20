@@ -54,6 +54,20 @@ def calculate_reduced_total_efficiency(
     n: float,
     reduced_grade_efficiency: NDArray,
 ) -> NDArray | np.floating:
+    # NOTE здесь нужно либо передавать информацию о размерах и классификационной кривой
+    # NOTE совместно, либо считать reduced_grade_efficiency внутри функции для переданных
+    # NOTE диаметров (сомнительное решение)
+    # NOTE
+    # NOTE сейчас ничего не мешает передать в качестве reduced_grade_efficiecny, например
+    # NOTE единицу - функция отработает, всё посчитается, сообщения об ошибке не будет,
+    # NOTE даже получится какое-то число
+    # NOTE
+    # NOTE Ещё одно решение - задокументировать функцию подробнее и написать, что
+    # NOTE reduced_grade_efficiency и particle_diameters должны быть согласованы между
+    # NOTE собой
+    # NOTE
+    # NOTE И следует передавать reduced_grade_efficiency после размеров частиц, не в
+    # NOTE самом конце
     """Расчёт приведённой полной эффективности E_T'."""
     dy_dd = probability_density(particle_diameters, k, n)
     return np.trapezoid(reduced_grade_efficiency * dy_dd, particle_diameters, axis=0)
