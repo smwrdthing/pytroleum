@@ -20,6 +20,8 @@ if TYPE_CHECKING:
 
 from pytroleum.plant.solid_cyclone.utils import _minor_divider, _major_divider
 
+_TO_MM = 1000
+
 # ---------------------------------------------------------------------------
 # Valid proportion ranges (Coelho & Medronho, 2001)
 # ---------------------------------------------------------------------------
@@ -41,8 +43,6 @@ L_DC_MAX = 6.93  # maximum allowable L/Dc ratio
 
 CYCLONE_CONE_ANGLE_MIN = 9.0    # minimum allowable cone angle, degrees
 CYCLONE_CONE_ANGLE_MAX = 20.0   # maximum allowable cone angle, degrees
-
-_TO_MM = 1000
 
 # ---------------------------------------------------------------------------
 # Geometry parameter array indices
@@ -69,11 +69,8 @@ class HydrocycloneLengths(IntEnum):
 # Standard configuration proportions.
 # ---------------------------------------------------------------------------
 
-# diameter_proportions[i] corresponds to
-# HydrocycloneDiameters(i): [Dc/Dc, Di/Dc, Do/Dc, Du/Dc]
-
-# length_proportions[i] corresponds to
-# HydrocycloneLengths(i): [L/Dc, l/Dc]
+# diameter_proportions — indexed by HydrocycloneDiameters: [Dc/Dc, Di/Dc, Do/Dc, Du/Dc]
+# length_proportions   — indexed by HydrocycloneLengths:   [L/Dc, l/Dc]  (Lc is computed)
 
 
 RIETEMA_DIAMETER_PROPORTIONS = np.array([1.0, 0.20, 0.25, 0.15])
@@ -267,22 +264,3 @@ def print_standard_configs_summary(hydrocyclone_diameter: float) -> None:
     """Print geometry summary for the three standard configurations."""
     for hydrocyclone in build_standard_configs(hydrocyclone_diameter):
         hydrocyclone.design.summary()
-
-
-def build_from_ratios(
-    Dc: float,
-    ratios: dict[str, float],
-    hydrocyclone_cls: type[BaseHydrocyclone],
-    name: str = '',
-) -> BaseHydrocyclone:
-    # NOTE Эта функция неуместна, если у нас уже есть три функции выше + она работает
-    # NOTE с классом, как передаваемым параметром, зачем?
-    """Create a hydrocyclone instance from body diameter and a proportions dict."""
-    diameter_proportions = np.array(
-        [1.0, ratios['Di/Dc'], ratios['Do/Dc'], ratios['Du/Dc']])
-    length_proportions = np.array([ratios['L/Dc'], ratios['l/Dc']])
-    return hydrocyclone_cls(
-        name,
-        CycloneDesign(Dc, diameter_proportions,
-                      length_proportions, ratios['angle']),
-    )

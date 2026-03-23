@@ -18,6 +18,11 @@ from pytroleum.plant.solid_cyclone.models import (
     RietemaHydrocyclone,
     BaseHydrocyclone,
 )
+from pytroleum.plant.solid_cyclone.geometry import (
+    RIETEMA_DIAMETER_PROPORTIONS,
+    RIETEMA_LENGTH_PROPORTIONS,
+    RIETEMA_CONE_ANGLE,
+)
 from pytroleum.plant.solid_cyclone.inverse import find_Dc_by_cut_size
 
 # ---------------------------------------------------------------------------
@@ -29,15 +34,6 @@ CUT_SIZE_TARGETS = np.array([1, 2, 3, 5, 7, 8, 10])   # µm
 HYDROCYCLONE_CLS: type[BaseHydrocyclone] = RietemaHydrocyclone
 
 MODEL_NAME = 'Rietema'
-
-RATIOS = {
-    'Di/Dc': 0.20,
-    'Do/Dc': 0.25,
-    'Du/Dc': 0.15,
-    'L/Dc': 4.5,
-    'l/Dc': 0.40,
-    'angle': 15.0,
-}
 
 properties = PhysicalProperties(solid_density=1500)
 
@@ -65,7 +61,9 @@ for d50_target in cut_size_targets_m:
     res = find_Dc_by_cut_size(
         cut_size_target=d50_target,
         conditions=conditions,
-        ratios=RATIOS,
+        diameter_proportions=RIETEMA_DIAMETER_PROPORTIONS,
+        length_proportions=RIETEMA_LENGTH_PROPORTIONS,
+        cone_angle=RIETEMA_CONE_ANGLE,
         hydrocyclone_cls=HYDROCYCLONE_CLS,
         properties=properties,
         size_dist=size_dist,

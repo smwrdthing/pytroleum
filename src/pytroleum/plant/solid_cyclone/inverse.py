@@ -8,7 +8,8 @@ from numpy.typing import NDArray
 from scipy.optimize import fsolve
 
 from pytroleum.plant.solid_cyclone.geometry import (
-    build_from_ratios,
+    CycloneDesign,
+    HydrocycloneDiameters,
     CYCLONE_CONE_ANGLE_MIN,
     CYCLONE_CONE_ANGLE_MAX,
 )
@@ -37,20 +38,19 @@ _V_IN_INITIAL = 9.0   # m/s — typical velocity for initial approximation
 # ---------------------------------------------------------------------------
 
 
-def _validate_cone_angle(ratios: dict[str, float]) -> None:
+def _validate_cone_angle(cone_angle: float) -> None:
     # NOTE у нас есть dataclass для хранения информации о геометрии гидроциклона,
     # NOTE зачем тогда работать со словарями, которые делают то же самое?
     # NOTE можно просто передавать объект класса, который хранит геометрические параметры
     """Validate cone angle before solving the inverse problem."""
-    angle = ratios['angle']
-    if not (CYCLONE_CONE_ANGLE_MIN <= angle <= CYCLONE_CONE_ANGLE_MAX):
+    if not (CYCLONE_CONE_ANGLE_MIN <= cone_angle <= CYCLONE_CONE_ANGLE_MAX):
         raise ValueError(
-            f"angle = {angle:.1f}° out of valid range "
+            f"angle = {cone_angle:.1f}° out of valid range "
             f"[{CYCLONE_CONE_ANGLE_MIN}°, {CYCLONE_CONE_ANGLE_MAX}°]."
         )
 
 
-def _initial_Dc(Q: float, Di_Dc_ratio: float) -> float:
+def _initial_Dc(Q: float, diameter_proportions: NDArray) -> float:
     # NOTE здесь тоже можно просто передавать объект класса, который хранит
     # NOTE геометрические параметры, в нём уже есть информация о Di_Dc_ratio
     """
@@ -59,6 +59,7 @@ def _initial_Dc(Q: float, Di_Dc_ratio: float) -> float:
     Derived from v_in = Q / (pi*Di^2/4) at the typical velocity _V_IN_INITIAL:
       Di0 = sqrt(4*Q / (v_in*pi)),  Dc0 = Di0 / (Di/Dc)
     """
+    Di_Dc_ratio = diameter_proportions[HydrocycloneDiameters.I]
     Di0 = np.sqrt(4.0 * Q / (_V_IN_INITIAL * np.pi))
     return Di0 / Di_Dc_ratio
 
@@ -92,12 +93,15 @@ def _residual_cut_size(
         Dc: float,
         cut_size_target: float,
         conditions: OperationConditions,
-        ratios: dict[str, float],
+        diameter_proportions: NDArray,
+        length_proportions: NDArray,
+        cone_angle: float,
         hydrocyclone_cls: type[BaseHydrocyclone],
         properties: PhysicalProperties,
 ) -> float:
     """Residual for problem 1: f(Dc) = d50'(Dc, Q) - d50'_target."""
-    hydrocyclone = build_from_ratios(Dc, ratios, hydrocyclone_cls)
+    hydrocyclone = hydrocyclone_cls(
+        '', CycloneDesign(Dc, diameter_proportions, length_proportions, cone_angle))
     results = hydrocyclone.calculate_from_flow_rate(
         properties,
         conditions.feed_volumetric_flow_rate,
@@ -112,7 +116,9 @@ def _residual_efficiency(
         conditions: OperationConditions,
 
         # NOTE это уже лежит в датаклассе с геометрией
-        ratios: dict[str, float],
+        diameter_proportions: NDArray,
+        length_proportions: NDArray,
+        cone_angle: float,
 
         # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
@@ -125,7 +131,8 @@ def _residual_efficiency(
     # NOTE передавать объекты этих датаклассов и не работать с ними?
     """Residual for problem 2: f(Dc) = E_T(Dc, Q) - E_T_target."""
 
-    hydrocyclone = build_from_ratios(Dc, ratios, hydrocyclone_cls)
+    hydrocyclone = hydrocyclone_cls(
+        '', CycloneDesign(Dc, diameter_proportions, length_proportions, cone_angle))
     # NOTE такая функция может работать с уже собранным гидроциклоном, нужно только
     # NOTE предусмотреть возможность переназначить размеры
 
@@ -180,7 +187,9 @@ def find_Dc_by_cut_size(
         conditions: OperationConditions,
 
         # NOTE это уже лежит в датаклассе с геометрией
-        ratios: dict[str, float],
+        diameter_proportions: NDArray,
+        length_proportions: NDArray,
+        cone_angle: float,
 
         # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
@@ -194,19 +203,19 @@ def find_Dc_by_cut_size(
 
     Solves: f(Dc) = d50'(Dc, Q) - cut_size_target = 0
     """
-    _validate_cone_angle(ratios)
+    _validate_cone_angle(cone_angle)
 
     if Dc0 is None:
-        Dc0 = _initial_Dc(
-            conditions.feed_volumetric_flow_rate, ratios['Di/Dc'])
+        Dc0 = _initial_Dc(conditions.feed_volumetric_flow_rate, diameter_proportions)
 
     Dc_solution = fsolve(
         _residual_cut_size, x0=Dc0,
-        args=(cut_size_target, conditions, ratios,
-              hydrocyclone_cls, properties),
+        args=(cut_size_target, conditions, diameter_proportions,
+              length_proportions, cone_angle, hydrocyclone_cls, properties),
     )[0]
 
-    hydrocyclone = build_from_ratios(Dc_solution, ratios, hydrocyclone_cls)
+    hydrocyclone = hydrocyclone_cls(
+        '', CycloneDesign(Dc_solution, diameter_proportions, length_proportions, cone_angle))
     results = hydrocyclone.calculate_from_flow_rate(
         properties,
         conditions.feed_volumetric_flow_rate,
@@ -221,7 +230,9 @@ def find_Dc_by_efficiency(
         conditions: OperationConditions,
 
         # NOTE это уже лежит в датаклассе с геометрией
-        ratios: dict[str, float],
+        diameter_proportions: NDArray,
+        length_proportions: NDArray,
+        cone_angle: float,
 
         # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
@@ -235,19 +246,19 @@ def find_Dc_by_efficiency(
 
     Solves: f(Dc) = E_T(Dc, Q) - efficiency_target = 0
     """
-    _validate_cone_angle(ratios)
+    _validate_cone_angle(cone_angle)
 
     if Dc0 is None:
-        Dc0 = _initial_Dc(
-            conditions.feed_volumetric_flow_rate, ratios['Di/Dc'])
+        Dc0 = _initial_Dc(conditions.feed_volumetric_flow_rate, diameter_proportions)
 
     Dc_solution = fsolve(
         _residual_efficiency, x0=Dc0,
-        args=(efficiency_target, conditions, ratios,
-              hydrocyclone_cls, properties, size_dist),
+        args=(efficiency_target, conditions, diameter_proportions,
+              length_proportions, cone_angle, hydrocyclone_cls, properties, size_dist),
     )[0]
 
-    hydrocyclone = build_from_ratios(Dc_solution, ratios, hydrocyclone_cls)
+    hydrocyclone = hydrocyclone_cls(
+        '', CycloneDesign(Dc_solution, diameter_proportions, length_proportions, cone_angle))
     results = hydrocyclone.calculate_from_flow_rate(
         properties,
         conditions.feed_volumetric_flow_rate,
@@ -262,20 +273,15 @@ def find_Dc_by_efficiency(
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    from pytroleum.plant.solid_cyclone.geometry import (
+        RIETEMA_DIAMETER_PROPORTIONS,
+        RIETEMA_LENGTH_PROPORTIONS,
+        RIETEMA_CONE_ANGLE,
+    )
     from pytroleum.plant.solid_cyclone.inputs import PhysicalProperties
     from pytroleum.plant.solid_cyclone.models import RietemaHydrocyclone
 
     properties = PhysicalProperties(solid_density=1500)
-
-    # NOTE этот словарь дублирует информацию из массива в geometry
-    ratios_rietema = {
-        'Di/Dc': 0.20,
-        'Do/Dc': 0.25,
-        'Du/Dc': 0.15,
-        'L/Dc': 4.5,
-        'l/Dc': 0.40,
-        'angle': 15.0,
-    }
 
     conditions = OperationConditions(
         feed_volumetric_concentration=0.00033,
@@ -295,13 +301,18 @@ if __name__ == '__main__':
     res1 = find_Dc_by_cut_size(
         cut_size_target=cut_size_target,
         conditions=conditions,
-        ratios=ratios_rietema,
+        diameter_proportions=RIETEMA_DIAMETER_PROPORTIONS,
+        length_proportions=RIETEMA_LENGTH_PROPORTIONS,
+        cone_angle=RIETEMA_CONE_ANGLE,
         hydrocyclone_cls=RietemaHydrocyclone,
         properties=properties,
         size_dist=size_dist,
     )
-    build_from_ratios(res1['Dc'], ratios_rietema,
-                      RietemaHydrocyclone).design.summary()
+    RietemaHydrocyclone(
+        'Rietema',
+        CycloneDesign(res1['Dc'], RIETEMA_DIAMETER_PROPORTIONS,
+                      RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE),
+    ).design.summary()
     print(
         f"Volumetric flow rate  Q = {res1['feed_volumetric_flow_rate']*6e4:.3f} L/min")
     print(f"Pressure drop ΔP = {res1['pressure_drop']/1e3:.2f} kPa")
@@ -321,13 +332,18 @@ if __name__ == '__main__':
     res2 = find_Dc_by_efficiency(
         efficiency_target=efficiency_target,
         conditions=conditions,
-        ratios=ratios_rietema,
+        diameter_proportions=RIETEMA_DIAMETER_PROPORTIONS,
+        length_proportions=RIETEMA_LENGTH_PROPORTIONS,
+        cone_angle=RIETEMA_CONE_ANGLE,
         hydrocyclone_cls=RietemaHydrocyclone,
         properties=properties,
         size_dist=size_dist,
     )
-    build_from_ratios(res2['Dc'], ratios_rietema,
-                      RietemaHydrocyclone).design.summary()
+    RietemaHydrocyclone(
+        'Rietema',
+        CycloneDesign(res2['Dc'], RIETEMA_DIAMETER_PROPORTIONS,
+                      RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE),
+    ).design.summary()
     print(
         f"Volumetric flow rate Q = {res2['feed_volumetric_flow_rate']*6e4:.3f} L/min")
     print(f"Pressure drop ΔP = {res2['pressure_drop']/1e3:.2f} kPa")
@@ -343,8 +359,11 @@ if __name__ == '__main__':
     # Verification
     print("VERIFICATION OF TASK 1 (d50')")
     print("-" * 60)
-    hc_check1 = build_from_ratios(
-        res1['Dc'], ratios_rietema, RietemaHydrocyclone)
+    hc_check1 = RietemaHydrocyclone(
+        'Rietema',
+        CycloneDesign(res1['Dc'], RIETEMA_DIAMETER_PROPORTIONS,
+                      RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE),
+    )
     check1 = hc_check1.calculate_from_flow_rate(
         properties,
         conditions.feed_volumetric_flow_rate,
@@ -366,8 +385,11 @@ if __name__ == '__main__':
 
     print("VERIFICATION OF TASK 2 (E_T)")
     print("-" * 60)
-    hc_check2 = build_from_ratios(
-        res2['Dc'], ratios_rietema, RietemaHydrocyclone)
+    hc_check2 = RietemaHydrocyclone(
+        'Rietema',
+        CycloneDesign(res2['Dc'], RIETEMA_DIAMETER_PROPORTIONS,
+                      RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE),
+    )
     check2 = hc_check2.calculate_from_flow_rate(
         properties,
         conditions.feed_volumetric_flow_rate,
