@@ -91,19 +91,19 @@ def _compute_grid(
                               length_proportions,
                               cone_angle))
         for j in range(n_Q):
-            res = hydrocyclone.calculate_from_flow_rate(
+            hydrocyclone.calculate_from_flow_rate(
                 properties, Q_grid[i, j], feed_volumetric_concentration)
 
             grade_eff = calculate_reduced_grade_efficiency(
-                size_dist.particle_diameters, res['reduced_cut_size'],
-                'plitt', res['m'], res['alpha'])
+                size_dist.particle_diameters, hydrocyclone.reduced_cut_size,
+                'plitt', hydrocyclone.m, hydrocyclone.alpha)
             reduced_total = calculate_reduced_total_efficiency(
                 size_dist.particle_diameters, grade_eff, size_dist.k, size_dist.n)
             total = calculate_total_efficiency(
-                reduced_total, res['water_flow_ratio'])
+                reduced_total, hydrocyclone.water_flow_ratio)
 
-            cut_size[i, j] = res['reduced_cut_size'] * 1e6
-            water_ratio[i, j] = res['water_flow_ratio']
+            cut_size[i, j] = hydrocyclone.reduced_cut_size * 1e6
+            water_ratio[i, j] = hydrocyclone.water_flow_ratio
             reduced_eff[i, j] = reduced_total * 100
             total_eff[i, j] = total * 100
 
@@ -119,6 +119,7 @@ if __name__ == '__main__':
     feed_volumetric_concentration = 0.00033
 
     size_dist = SizeDistribution(
+        # type: ignore[call-overload]
         particle_diameters=np.linspace(1e-6, 200e-6, 500),
         k=10.9918e-6,
         n=0.9187,

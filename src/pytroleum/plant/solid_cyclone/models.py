@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC
 import numpy as np
 
-from pytroleum.plant.solid_cyclone.inputs import PhysicalProperties
+from pytroleum.plant.solid_cyclone.inputs import PhysicalProperties, OperationConditions
 from pytroleum.plant.solid_cyclone.geometry import (
     CycloneDesign,
     HydrocycloneDiameters,
@@ -38,33 +38,45 @@ class BaseHydrocyclone(ABC):
         self.design = design
         self.alpha: float
         self.m: float
+        self.feed_volumetric_flow_rate: float = 0.0
+        self.pressure_drop: float = 0.0
+        self.water_flow_ratio: float = 0.0
+        self.Re: float = 0.0
+        self.Eu: float = 0.0
+        self.reduced_cut_size: float = 0.0
 
     def calculate_from_flow_rate(
         self,
         properties: PhysicalProperties,
         feed_volumetric_flow_rate: float,
         feed_volumetric_concentration: float,
-    ) -> dict[str, float]:
+    ) -> None:
         """Calculate parameters for a given volumetric flow rate (ΔP = (Q/K)^(1/0.472)).
         """
         K = self.compute_K(properties, feed_volumetric_concentration)
         pressure_drop = (feed_volumetric_flow_rate / K) ** (1 / 0.472)
-        return self.compute_results(
-            properties, feed_volumetric_flow_rate,
-            pressure_drop, feed_volumetric_concentration)
+        self.compute_results(properties, OperationConditions(
+            feed_volumetric_concentration=feed_volumetric_concentration,
+            mode='Q',
+            feed_volumetric_flow_rate=feed_volumetric_flow_rate,
+            pressure_drop=pressure_drop,
+        ))
 
     def calculate_from_pressure_drop(
         self,
         properties: PhysicalProperties,
         pressure_drop: float,
         feed_volumetric_concentration: float,
-    ) -> dict[str, float]:
+    ) -> None:
         """Calculate parameters for a given pressure drop (Q = K·ΔP^0.472)."""
         K = self.compute_K(properties, feed_volumetric_concentration)
         feed_volumetric_flow_rate = K * pressure_drop**0.472
-        return self.compute_results(
-            properties, feed_volumetric_flow_rate,
-            pressure_drop, feed_volumetric_concentration)
+        self.compute_results(properties, OperationConditions(
+            feed_volumetric_concentration=feed_volumetric_concentration,
+            mode='delta_p',
+            feed_volumetric_flow_rate=feed_volumetric_flow_rate,
+            pressure_drop=pressure_drop,
+        ))
 
     def compute_K(
         self,
@@ -131,9 +143,7 @@ class BaseHydrocyclone(ABC):
     def compute_reduced_cut_size(
         self,
         properties: PhysicalProperties,
-        feed_volumetric_flow_rate: float,
-        pressure_drop: float,
-        feed_volumetric_concentration: float,
+        conditions: OperationConditions,
         water_flow_ratio: float,
     ) -> float:
         """Calculate reduced cut size d₅₀'."""
@@ -148,53 +158,26 @@ class BaseHydrocyclone(ABC):
                 (overflow_diameter**0.475 * L_minus_l**0.665) *
                 np.sqrt((properties.liquid_eos.viscosity() *
                          properties.liquid_eos.rhomass() *
-                         feed_volumetric_flow_rate) /
-                        (rhos_minus_rho * pressure_drop)) *
+                         conditions.feed_volumetric_flow_rate) /
+                        (rhos_minus_rho * conditions.pressure_drop)) *
                 np.log(1 / water_flow_ratio)**0.395 *
-                np.exp(6.0 * feed_volumetric_concentration))
+                np.exp(6.0 * conditions.feed_volumetric_concentration))
 
     def compute_results(
         self,
         properties: PhysicalProperties,
-        feed_volumetric_flow_rate: float,
-        pressure_drop: float,
-        feed_volumetric_concentration: float,
-    ) -> dict[str, float]:
-        # NOTE в модуле inputs есть dataclass OperatingConditions, который
-        # NOTE сделан для хранения feed_volumetric_concentration и
-        # NOTE feed_volumetric_flow_rate (либо pressure_drop)
-        # NOTE
-        # NOTE Почему не передавать объект этого класса этому методу как один параметр
-        # NOTE вместо трёх независимых? Это справедливо для всех методов, где нам нужна
-        # NOTE эта информация/часть этой информации
-        """Assemble all hydrocyclone output parameters."""
-        Re = self.compute_reynolds_number(properties,
-                                          feed_volumetric_flow_rate)
-        Eu = self.compute_euler_number(feed_volumetric_concentration,
-                                       Re)
-        water_flow_ratio = self.compute_water_flow_ratio(Eu)
-        reduced_cut_size = self.compute_reduced_cut_size(properties,
-                                                         feed_volumetric_flow_rate,
-                                                         pressure_drop,
-                                                         feed_volumetric_concentration,
-                                                         water_flow_ratio)
-
-        # NOTE всё, что возвращается в этом словаре - может быть безболезненно и логично
-        # NOTE сделано атрибутами базового класса гидроциклона, тогда :
-        # NOTE
-        # NOTE 1. Нам не нужно работать со словарями (значит не нужно помнить ключи)
-        # NOTE 2. Везде, где передаётся словарь такой формы, можно просто передать объект
-        # NOTE    этого класса (сигнатуры вызова функций становятся последовательными)
-        return {
-            'feed_volumetric_flow_rate': feed_volumetric_flow_rate,
-            'pressure_drop': pressure_drop,
-            'water_flow_ratio': water_flow_ratio,
-            'Re': Re,
-            'Eu': Eu,
-            'reduced_cut_size': reduced_cut_size,
-            'alpha': self.alpha,
-            'm': self.m,
-        }
+        conditions: OperationConditions,
+    ) -> None:
+        """Compute all hydrocyclone output parameters and store them as attributes."""
+        self.feed_volumetric_flow_rate = conditions.feed_volumetric_flow_rate
+        self.pressure_drop = conditions.pressure_drop
+        self.Re = self.compute_reynolds_number(
+            properties, conditions.feed_volumetric_flow_rate)
+        self.Eu = self.compute_euler_number(
+            conditions.feed_volumetric_concentration, self.Re)
+        self.water_flow_ratio = self.compute_water_flow_ratio(self.Eu)
+        self.reduced_cut_size = self.compute_reduced_cut_size(
+            properties, conditions, self.water_flow_ratio)
 
 
 class RietemaHydrocyclone(BaseHydrocyclone):

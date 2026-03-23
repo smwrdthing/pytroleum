@@ -1,3 +1,5 @@
+"""Console output utilities."""
+
 _DIVIDER_LENGTH = 60
 _MINOR_DIVIDER = '-' * _DIVIDER_LENGTH
 _MAJOR_DIVIDER = '=' * _DIVIDER_LENGTH

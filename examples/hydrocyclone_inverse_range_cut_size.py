@@ -44,7 +44,7 @@ conditions = OperationConditions(
 )
 
 size_dist = SizeDistribution(
-    particle_diameters=np.linspace(1e-6, 200e-6, 500),
+    particle_diameters=np.linspace(1e-6, 200e-6, 500),  # type: ignore[call-overload]
     k=10.9918e-6,
     n=0.9187,
 )
