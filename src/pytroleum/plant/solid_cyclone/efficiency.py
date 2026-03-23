@@ -50,25 +50,32 @@ def calculate_reduced_grade_efficiency(
 
 def calculate_reduced_total_efficiency(
     particle_diameters: NDArray,
+    reduced_grade_efficiency: NDArray,
     k: float,
     n: float,
-    reduced_grade_efficiency: NDArray,
 ) -> NDArray | np.floating:
-    # NOTE здесь нужно либо передавать информацию о размерах и классификационной кривой
-    # NOTE совместно, либо считать reduced_grade_efficiency внутри функции для переданных
-    # NOTE диаметров (сомнительное решение)
-    # NOTE
-    # NOTE сейчас ничего не мешает передать в качестве reduced_grade_efficiency, например
-    # NOTE единицу - функция отработает, всё посчитается, сообщения об ошибке не будет,
-    # NOTE даже получится какое-то число
-    # NOTE
-    # NOTE Ещё одно решение - задокументировать функцию подробнее и написать, что
-    # NOTE reduced_grade_efficiency и particle_diameters должны быть согласованы между
-    # NOTE собой
-    # NOTE
-    # NOTE И следует передавать reduced_grade_efficiency после размеров частиц, не в
-    # NOTE самом конце
-    """Calculate reduced total efficiency E_T'."""
+    """
+    Calculate reduced total efficiency E_T'.
+
+    E_T' = ∫₀^∞ G'(d) * (dy/dd) dd
+
+    Parameters
+    ----------
+    particle_diameters : np.ndarray
+        Particle diameters, m.
+    reduced_grade_efficiency : np.ndarray
+        Reduced grade efficiency G'(d) for each particle size. Reduced_grade_efficiency
+        and particle_diameters must be consistent with each other.
+    k : float
+        Rosin-Rammler scale parameter, m.
+    n : float
+        Rosin-Rammler shape parameter.
+
+    Returns
+    -------
+    float
+        Reduced total efficiency E_T'.
+    """
     dy_dd = probability_density(particle_diameters, k, n)
     return np.trapezoid(reduced_grade_efficiency * dy_dd, particle_diameters, axis=0)
 

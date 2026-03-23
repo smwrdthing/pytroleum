@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from pytroleum.plant.solid_cyclone.models import BaseHydrocyclone
 from pytroleum.plant.solid_cyclone.inputs import (
     PhysicalProperties,
-    OperatingConditions,
+    OperationConditions,
     SizeDistribution,
 )
 from pytroleum.plant.solid_cyclone.geometry import build_standard_configs
@@ -90,7 +90,7 @@ def _plot_grade_efficiency(
     hydrocyclone: BaseHydrocyclone,
     size_dist: SizeDistribution,
     results: dict[str, float],
-    conditions: OperatingConditions,
+    conditions: OperationConditions,
 ) -> NDArray:
     """Plot reduced and total grade efficiency."""
     reduced_cut_size = results['reduced_cut_size']
@@ -127,7 +127,7 @@ def _plot_grade_efficiency(
 def _grade_efficiency_info_text(
     hydrocyclone: BaseHydrocyclone,
     results: dict[str, float],
-    conditions: OperatingConditions,
+    conditions: OperationConditions,
 ) -> str:
     """Build annotation text for the G(d) plot."""
     reduced_cut_size = results['reduced_cut_size']
@@ -155,8 +155,8 @@ def _compute_total_efficiencies(
 ) -> tuple[NDArray | np.floating, NDArray | np.floating]:
     """Calculate E_T' and E_T."""
     reduced_total_efficiency = calculate_reduced_total_efficiency(
-        size_dist.particle_diameters, size_dist.k, size_dist.n,
-        reduced_grade_efficiency)
+        size_dist.particle_diameters, reduced_grade_efficiency,
+        size_dist.k, size_dist.n)
     total_efficiency = calculate_total_efficiency(
         reduced_total_efficiency, results['water_flow_ratio'])
     return reduced_total_efficiency, total_efficiency
@@ -183,7 +183,7 @@ def _plot_row(
     hydrocyclone: BaseHydrocyclone,
     results: dict[str, float],
     size_dist: SizeDistribution,
-    conditions: OperatingConditions,
+    conditions: OperationConditions,
 ) -> None:
     """Draw a row of three plots for one hydrocyclone type."""
     reduced_cut_size = results['reduced_cut_size']
@@ -211,7 +211,7 @@ def _plot_row(
 def _calculate_results(
     hydrocyclone: BaseHydrocyclone,
     properties: PhysicalProperties,
-    conditions: OperatingConditions,
+    conditions: OperationConditions,
 ) -> dict[str, float]:
     """Calculate hydrocyclone output parameters for the given operating conditions."""
     if conditions.mode == 'Q':
@@ -228,7 +228,7 @@ def _calculate_results(
 
 
 def plot_hydrocyclone_analysis(
-    conditions: OperatingConditions,
+    conditions: OperationConditions,
     hydrocyclone_diameter: float,
     properties: PhysicalProperties,
     size_dist: SizeDistribution,
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
     print("\n[Mode 2] Fixed flow rate")
     plot_hydrocyclone_analysis(
-        conditions=OperatingConditions(
+        conditions=OperationConditions(
             feed_volumetric_concentration=0.00033,
             mode='Q',
             feed_volumetric_flow_rate=0.0002,

@@ -69,6 +69,7 @@ IDX_DI_DC, IDX_DO_DC, IDX_DU_DC, IDX_L_DC, IDX_l_DC, IDX_ANGLE = 0, 1, 2, 3, 4, 
 # Geometry parameter array indices
 # ---------------------------------------------------------------------------
 
+
 class HydrocycloneDiameters(IntEnum):
     C, CYCLONE = 0, 0    # index 0 — cyclone body diameter Dc
     I, INLET = 1, 1      # index 1 — inlet nozzle diameter Di

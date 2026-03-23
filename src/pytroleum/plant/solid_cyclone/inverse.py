@@ -14,7 +14,7 @@ from pytroleum.plant.solid_cyclone.geometry import (
 )
 from pytroleum.plant.solid_cyclone.inputs import (
     PhysicalProperties,
-    OperatingConditions,
+    OperationConditions,
     SizeDistribution,
 )
 from pytroleum.plant.solid_cyclone.models import BaseHydrocyclone
@@ -76,8 +76,8 @@ def _compute_efficiencies(
         results['alpha'],
     )
     reduced_total_efficiency = calculate_reduced_total_efficiency(
-        size_dist.particle_diameters, size_dist.k, size_dist.n,
-        reduced_grade_efficiency)
+        size_dist.particle_diameters, reduced_grade_efficiency,
+        size_dist.k, size_dist.n)
     total_efficiency = calculate_total_efficiency(
         reduced_total_efficiency, results['water_flow_ratio'])
 
@@ -91,7 +91,7 @@ def _compute_efficiencies(
 def _residual_cut_size(
         Dc: float,
         cut_size_target: float,
-        conditions: OperatingConditions,
+        conditions: OperationConditions,
         ratios: dict[str, float],
         hydrocyclone_cls: type[BaseHydrocyclone],
         properties: PhysicalProperties,
@@ -109,7 +109,7 @@ def _residual_cut_size(
 def _residual_efficiency(
         Dc: float,
         efficiency_target: float,
-        conditions: OperatingConditions,
+        conditions: OperationConditions,
 
         # NOTE это уже лежит в датаклассе с геометрией
         ratios: dict[str, float],
@@ -179,7 +179,7 @@ def _assemble_output(
 
 def find_Dc_by_cut_size(
         cut_size_target: float,
-        conditions: OperatingConditions,
+        conditions: OperationConditions,
 
         # NOTE это уже лежит в датаклассе с геометрией
         ratios: dict[str, float],
@@ -220,7 +220,7 @@ def find_Dc_by_cut_size(
 
 def find_Dc_by_efficiency(
         efficiency_target: float,
-        conditions: OperatingConditions,
+        conditions: OperationConditions,
 
         # NOTE это уже лежит в датаклассе с геометрией
         ratios: dict[str, float],
@@ -279,7 +279,7 @@ if __name__ == '__main__':
         'angle': 15.0,
     }
 
-    conditions = OperatingConditions(
+    conditions = OperationConditions(
         feed_volumetric_concentration=0.00033,
         mode='Q',
         feed_volumetric_flow_rate=12.0 / (1000 * 60),

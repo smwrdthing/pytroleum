@@ -82,7 +82,7 @@ def _compute_grid(
                 size_dist.particle_diameters, res['reduced_cut_size'],
                 'plitt', res['m'], res['alpha'])
             reduced_total = calculate_reduced_total_efficiency(
-                size_dist.particle_diameters, size_dist.k, size_dist.n, grade_eff)
+                size_dist.particle_diameters, grade_eff, size_dist.k, size_dist.n)
             total = calculate_total_efficiency(
                 reduced_total, res['water_flow_ratio'])
 

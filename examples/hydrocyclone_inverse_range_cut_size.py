@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from pytroleum.plant.solid_cyclone.inputs import (
     PhysicalProperties,
-    OperatingConditions,
+    OperationConditions,
     SizeDistribution,
 )
 from pytroleum.plant.solid_cyclone.models import (
@@ -41,7 +41,7 @@ RATIOS = {
 
 properties = PhysicalProperties(solid_density=1500)
 
-conditions = OperatingConditions(
+conditions = OperationConditions(
     feed_volumetric_concentration=0.00033,
     mode='Q',
     feed_volumetric_flow_rate=12.0 / (1000 * 60),   # L/min → m³/s
