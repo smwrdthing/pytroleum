@@ -145,15 +145,13 @@ def _assemble_output(
 ) -> dict:
     """Assemble output dict: geometry + hydraulics + efficiency."""
     from pytroleum.plant.solid_cyclone.geometry import (
-        HydrocycloneDiameters, HydrocycloneLengths, IDX_ANGLE,
+        HydrocycloneDiameters, HydrocycloneLengths,
     )
     reduced_total_efficiency, total_efficiency = _compute_efficiencies(
         results, size_dist)
 
     d = hydrocyclone.design.diameters
     le = hydrocyclone.design.lengths
-    p = hydrocyclone.design.proportions
-
     geometry = {
         'Dc': d[HydrocycloneDiameters.C],
         'Di': d[HydrocycloneDiameters.I],
@@ -162,7 +160,7 @@ def _assemble_output(
         'L': le[HydrocycloneLengths.T],
         'Lc': le[HydrocycloneLengths.C],
         'vortex_finder_length': le[HydrocycloneLengths.V],
-        'angle': p[IDX_ANGLE],
+        'angle': hydrocyclone.design.cone_angle,
     }
 
     return {

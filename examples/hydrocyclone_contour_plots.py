@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 from pytroleum.plant.solid_cyclone.geometry import (
     CycloneDesign,
-    RIETEMA_DEFAULT_PROPORTIONS,
-    BRADLEY_DEFAULT_PROPORTIONS,
-    DEMCO_DEFAULT_PROPORTIONS,
+    RIETEMA_DIAMETER_PROPORTIONS, RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE,
+    BRADLEY_DIAMETER_PROPORTIONS, BRADLEY_LENGTH_PROPORTIONS, BRADLEY_CONE_ANGLE,
+    DEMCO_DIAMETER_PROPORTIONS, DEMCO_LENGTH_PROPORTIONS, DEMCO_CONE_ANGLE,
 )
 from pytroleum.plant.solid_cyclone.inputs import (
     PhysicalProperties,
@@ -45,10 +45,21 @@ Q_MAX = 25.0   # L/min
 DC_MIN = 10e-3  # m
 DC_MAX = 30e-3  # m
 
-MODELS: list[tuple[str, list, type[BaseHydrocyclone]]] = [
-    ('Rietema', RIETEMA_DEFAULT_PROPORTIONS, RietemaHydrocyclone),
-    ('Bradley', BRADLEY_DEFAULT_PROPORTIONS, BradleyHydrocyclone),
-    ('Demco', DEMCO_DEFAULT_PROPORTIONS, DemcoHydrocyclone),
+MODELS = [
+    ('Rietema', RIETEMA_DIAMETER_PROPORTIONS,
+     RIETEMA_LENGTH_PROPORTIONS,
+     RIETEMA_CONE_ANGLE,
+     RietemaHydrocyclone),
+    ('Bradley',
+     BRADLEY_DIAMETER_PROPORTIONS,
+     BRADLEY_LENGTH_PROPORTIONS,
+     BRADLEY_CONE_ANGLE,
+     BradleyHydrocyclone),
+    ('Demco',
+     DEMCO_DIAMETER_PROPORTIONS,
+     DEMCO_LENGTH_PROPORTIONS,
+     DEMCO_CONE_ANGLE,
+     DemcoHydrocyclone),
 ]
 
 # ---------------------------------------------------------------------------
@@ -59,7 +70,9 @@ MODELS: list[tuple[str, list, type[BaseHydrocyclone]]] = [
 def _compute_grid(
     Dc_grid: np.ndarray,
     Q_grid: np.ndarray,
-    proportions: list[float],
+    diameter_proportions,
+    length_proportions,
+    cone_angle: float,
     hydrocyclone_cls: type[BaseHydrocyclone],
     properties: PhysicalProperties,
     feed_volumetric_concentration: float,
@@ -73,7 +86,10 @@ def _compute_grid(
 
     for i in range(n_Dc):
         hydrocyclone = hydrocyclone_cls(
-            '', CycloneDesign(Dc_grid[i, 0], proportions))
+            '', CycloneDesign(Dc_grid[i, 0],
+                              diameter_proportions,
+                              length_proportions,
+                              cone_angle))
         for j in range(n_Q):
             res = hydrocyclone.calculate_from_flow_rate(
                 properties, Q_grid[i, j], feed_volumetric_concentration)
@@ -117,9 +133,9 @@ if __name__ == '__main__':
 
     # Compute grids for each model
     grids = {}
-    for name, proportions, cls in MODELS:
+    for name, dp, lp, angle, cls in MODELS:
         grids[name] = _compute_grid(
-            Dc_grid, Q_grid, proportions, cls,
+            Dc_grid, Q_grid, dp, lp, angle, cls,
             properties, feed_volumetric_concentration, size_dist,
         )
 
