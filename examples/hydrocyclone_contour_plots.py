@@ -137,7 +137,7 @@ if __name__ == '__main__':
     for name, dp, lp, angle, cls in MODELS:
         grids[name] = _compute_grid(
             Dc_grid, Q_grid, dp, lp, angle, cls,
-            properties, feed_volumetric_concentration, size_dist,
+            properties, feed_volumetric_concentration, size_dist
         )
 
     # ---------------------------------------------------------------------------

@@ -69,8 +69,11 @@ class HydrocycloneLengths(IntEnum):
 # Standard configuration proportions.
 # ---------------------------------------------------------------------------
 
-# diameter_proportions — indexed by HydrocycloneDiameters: [Dc/Dc, Di/Dc, Do/Dc, Du/Dc]
-# length_proportions   — indexed by HydrocycloneLengths:   [L/Dc, l/Dc]  (Lc is computed)
+# diameter_proportions[i] corresponds to
+# HydrocycloneDiameters(i): [Dc/Dc, Di/Dc, Do/Dc, Du/Dc]
+
+# length_proportions[i] corresponds to
+# HydrocycloneLengths(i): [L/Dc, l/Dc]
 
 
 RIETEMA_DIAMETER_PROPORTIONS = np.array([1.0, 0.20, 0.25, 0.15])
