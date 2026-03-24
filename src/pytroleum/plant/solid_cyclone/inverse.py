@@ -76,6 +76,11 @@ def _compute_efficiencies(
         size_dist.k, size_dist.n)
     total_efficiency = calculate_total_efficiency(
         reduced_total_efficiency, hydrocyclone.water_flow_ratio)
+
+    # NOTE насколько часто нам нужно считать сразу обе эффективности?
+    # NOTE функции для их расчёта по отдельности уже есть в отдельном модуле,
+    # NOTE смысл в таком оборачивании есть только если нам нужно очень часто
+    # NOTE считать сразу обе эффективности
     return reduced_total_efficiency, total_efficiency
 
 
@@ -84,6 +89,8 @@ def _residual_cut_size(
         cut_size_target: float,
         conditions: OperationConditions,
         design: CycloneDesign,
+
+        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
         properties: PhysicalProperties,
 ) -> float:
@@ -104,6 +111,7 @@ def _residual_efficiency(
         efficiency_target: float,
         conditions: OperationConditions,
         design: CycloneDesign,
+        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
         properties: PhysicalProperties,
         size_dist: SizeDistribution,
@@ -130,6 +138,7 @@ def find_Dc_by_cut_size(
         cut_size_target: float,
         conditions: OperationConditions,
         design: CycloneDesign,
+        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
         properties: PhysicalProperties,
         Dc0: float | None = None,
@@ -167,6 +176,7 @@ def find_Dc_by_efficiency(
         efficiency_target: float,
         conditions: OperationConditions,
         design: CycloneDesign,
+        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
         hydrocyclone_cls: type[BaseHydrocyclone],
         properties: PhysicalProperties,
         size_dist: SizeDistribution,
@@ -183,9 +193,8 @@ def find_Dc_by_efficiency(
         Dc0 = _initial_Dc(conditions.feed_volumetric_flow_rate, design)
 
     Dc_solution = fsolve(
-        _residual_efficiency, x0=Dc0,
-        args=(efficiency_target, conditions, design,
-              hydrocyclone_cls, properties, size_dist),
+        _residual_efficiency, x0=Dc0, args=(efficiency_target, conditions, design,
+                                            hydrocyclone_cls, properties, size_dist),
     )[0]
 
     hydrocyclone = hydrocyclone_cls(
@@ -228,7 +237,6 @@ if __name__ == '__main__':
         n=0.9187,
     )
 
-    # Geometry template — Dc is a placeholder (solver finds the real value)
     rietema_design = CycloneDesign(
         0.01, RIETEMA_DIAMETER_PROPORTIONS,
         RIETEMA_LENGTH_PROPORTIONS,
@@ -252,7 +260,7 @@ if __name__ == '__main__':
     print(f"Pressure drop ΔP = {res1.pressure_drop/1e3:.2f} kPa")
     print(f"Water flow ratio Rw = {res1.water_flow_ratio:.4f}")
     print(f"Reduced cut size d50'= {res1.reduced_cut_size*1e6:.2f} µm"
-          f"  (target: {cut_size_target*1e6:.2f} µm)")
+          f" (target: {cut_size_target*1e6:.2f} µm)")
     print(f"Reduced total efficiency E_T'= {et1_reduced*100:.1f} %")
     print(f"Total efficiency E_T = {et1_total*100:.2f} %")
 
