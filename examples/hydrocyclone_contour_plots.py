@@ -46,19 +46,17 @@ DC_MIN = 10e-3  # m
 DC_MAX = 30e-3  # m
 
 MODELS = [
-    ('Rietema', RIETEMA_DIAMETER_PROPORTIONS,
-     RIETEMA_LENGTH_PROPORTIONS,
-     RIETEMA_CONE_ANGLE,
+    ('Rietema',
+     CycloneDesign(0.01, RIETEMA_DIAMETER_PROPORTIONS,
+                   RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE),
      RietemaHydrocyclone),
     ('Bradley',
-     BRADLEY_DIAMETER_PROPORTIONS,
-     BRADLEY_LENGTH_PROPORTIONS,
-     BRADLEY_CONE_ANGLE,
+     CycloneDesign(0.01, BRADLEY_DIAMETER_PROPORTIONS,
+                   BRADLEY_LENGTH_PROPORTIONS, BRADLEY_CONE_ANGLE),
      BradleyHydrocyclone),
     ('Demco',
-     DEMCO_DIAMETER_PROPORTIONS,
-     DEMCO_LENGTH_PROPORTIONS,
-     DEMCO_CONE_ANGLE,
+     CycloneDesign(0.01, DEMCO_DIAMETER_PROPORTIONS,
+                   DEMCO_LENGTH_PROPORTIONS, DEMCO_CONE_ANGLE),
      DemcoHydrocyclone),
 ]
 
@@ -70,9 +68,7 @@ MODELS = [
 def _compute_grid(
     Dc_grid: np.ndarray,
     Q_grid: np.ndarray,
-    diameter_proportions,
-    length_proportions,
-    cone_angle: float,
+    design: CycloneDesign,
     hydrocyclone_cls: type[BaseHydrocyclone],
     properties: PhysicalProperties,
     feed_volumetric_concentration: float,
@@ -87,9 +83,9 @@ def _compute_grid(
     for i in range(n_Dc):
         hydrocyclone = hydrocyclone_cls(
             '', CycloneDesign(Dc_grid[i, 0],
-                              diameter_proportions,
-                              length_proportions,
-                              cone_angle))
+                              design.diameter_proportions,
+                              design.length_proportions,
+                              design.cone_angle))
         for j in range(n_Q):
             hydrocyclone.calculate_from_flow_rate(
                 properties, Q_grid[i, j], feed_volumetric_concentration)
@@ -134,9 +130,9 @@ if __name__ == '__main__':
 
     # Compute grids for each model
     grids = {}
-    for name, dp, lp, angle, cls in MODELS:
+    for name, design, cls in MODELS:
         grids[name] = _compute_grid(
-            Dc_grid, Q_grid, dp, lp, angle, cls,
+            Dc_grid, Q_grid, design, cls,
             properties, feed_volumetric_concentration, size_dist
         )
 
