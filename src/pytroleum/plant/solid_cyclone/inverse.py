@@ -3,6 +3,8 @@ Hydrocyclone inverse problem: find body diameter Dc
 for a given flow rate Q, phase properties, and concentration.
 """
 
+from typing import Literal
+
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import fsolve
@@ -63,15 +65,13 @@ def _initial_Dc(Q: float, design: CycloneDesign) -> float:
 def _compute_efficiencies(
         hydrocyclone: BaseHydrocyclone,
         size_dist: SizeDistribution,
+        model: Literal['plitt', 'lynch_rao'] = 'plitt',
 ) -> tuple[NDArray | np.floating, NDArray | np.floating]:
     """Calculate reduced E_T' and total E_T efficiencies."""
     reduced_grade_efficiency = calculate_reduced_grade_efficiency(
         size_dist.particle_diameters,
         hydrocyclone.reduced_cut_size,
-
-        # NOTE это следует передавать как параметр функции со значением по умолчанию
-        'plitt',
-
+        model,
         hydrocyclone.m,
         hydrocyclone.alpha,
     )
@@ -80,11 +80,6 @@ def _compute_efficiencies(
         size_dist.k, size_dist.n)
     total_efficiency = calculate_total_efficiency(
         reduced_total_efficiency, hydrocyclone.water_flow_ratio)
-
-    # NOTE насколько часто нам нужно считать сразу обе эффективности?
-    # NOTE функции для их расчёта по отдельности уже есть в отдельном модуле,
-    # NOTE смысл в таком оборачивании есть только если нам нужно очень часто
-    # NOTE считать сразу обе эффективности
     return reduced_total_efficiency, total_efficiency
 
 
@@ -263,12 +258,8 @@ if __name__ == '__main__':
         n=0.9187,
     )
 
-    # NOTE вместо такой записи чисел лучше предпочитать научную нотацию,
-    # NOTE потому что при её использовании легко определить, что диаметр 10 мм
-    # NOTE
-    # NOTE вместо 0.01 -> 10e-3
     rietema_design = CycloneDesign(
-        0.01, RIETEMA_DIAMETER_PROPORTIONS,
+        10e-3, RIETEMA_DIAMETER_PROPORTIONS,
         RIETEMA_LENGTH_PROPORTIONS,
         RIETEMA_CONE_ANGLE)
 
