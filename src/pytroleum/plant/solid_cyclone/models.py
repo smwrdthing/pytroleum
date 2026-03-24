@@ -38,8 +38,15 @@ class BaseHydrocyclone(ABC):
         self.design = design
         self.alpha: float
         self.m: float
+
+        # NOTE это есть в OperationConditions, можно как и с design использовать
+        # NOTE объект в этого класса
         self.feed_volumetric_flow_rate: float = 0.0
         self.pressure_drop: float = 0.0
+        # NOTE В целом идея подобного класса в том, что объекты этого класса предоставляют
+        # NOTE удобный интерфейс для менеджмента других объектов, которые описывают тип
+        # NOTE гидроциклона, рабочие условия и т.д.
+
         self.water_flow_ratio: float = 0.0
         self.Re: float = 0.0
         self.Eu: float = 0.0
@@ -55,6 +62,9 @@ class BaseHydrocyclone(ABC):
         """
         K = self.compute_K(properties, feed_volumetric_concentration)
         pressure_drop = (feed_volumetric_flow_rate / K) ** (1 / 0.472)
+
+        # NOTE вместо создания объекта OperationConditions здесь по переданному расходу -
+        # NOTE можно сразу передавать объект этого класса (см. dependency injection)
         self.compute_results(properties, OperationConditions(
             feed_volumetric_concentration=feed_volumetric_concentration,
             mode='Q',
@@ -71,6 +81,10 @@ class BaseHydrocyclone(ABC):
         """Calculate parameters for a given pressure drop (Q = K·ΔP^0.472)."""
         K = self.compute_K(properties, feed_volumetric_concentration)
         feed_volumetric_flow_rate = K * pressure_drop**0.472
+
+        # NOTE вместо создания объекта OperationConditions здесь по переданному перепаду
+        # NOTE давлений - можно сразу передавать объект этого класса
+        # NOTE (см. dependency injection)
         self.compute_results(properties, OperationConditions(
             feed_volumetric_concentration=feed_volumetric_concentration,
             mode='delta_p',
