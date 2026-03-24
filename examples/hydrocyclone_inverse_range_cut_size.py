@@ -19,9 +19,17 @@ from pytroleum.plant.solid_cyclone.models import (
     BaseHydrocyclone,
 )
 from pytroleum.plant.solid_cyclone.geometry import (
+    CycloneDesign,
+    HydrocycloneDiameters,
+    HydrocycloneLengths,
     RIETEMA_DIAMETER_PROPORTIONS,
     RIETEMA_LENGTH_PROPORTIONS,
     RIETEMA_CONE_ANGLE,
+)
+from pytroleum.plant.solid_cyclone.efficiency import (
+    calculate_reduced_grade_efficiency,
+    calculate_reduced_total_efficiency,
+    calculate_total_efficiency,
 )
 from pytroleum.plant.solid_cyclone.inverse import find_Dc_by_cut_size
 
@@ -56,20 +64,32 @@ print(f"Model: {MODEL_NAME}")
 print(f"Target d50': {CUT_SIZE_TARGETS} µm")
 print(f"Flow rate: Q = {conditions.feed_volumetric_flow_rate*6e4:.1f} L/min")
 
-results = []
+rietema_design = CycloneDesign(
+    0.01, RIETEMA_DIAMETER_PROPORTIONS, RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE)
+
+hydrocyclones = []
 for d50_target in cut_size_targets_m:
-    res = find_Dc_by_cut_size(
+    hc = find_Dc_by_cut_size(
         cut_size_target=d50_target,
         conditions=conditions,
-        diameter_proportions=RIETEMA_DIAMETER_PROPORTIONS,
-        length_proportions=RIETEMA_LENGTH_PROPORTIONS,
-        cone_angle=RIETEMA_CONE_ANGLE,
+        design=rietema_design,
         hydrocyclone_cls=HYDROCYCLONE_CLS,
         properties=properties,
-        size_dist=size_dist,
     )
-    results.append(res)
+    hydrocyclones.append(hc)
 
+
+def _efficiencies(hc):
+    reduced_grade = calculate_reduced_grade_efficiency(
+        size_dist.particle_diameters, hc.reduced_cut_size, 'plitt', hc.m, hc.alpha)
+    reduced_total = calculate_reduced_total_efficiency(
+        size_dist.particle_diameters, reduced_grade, size_dist.k, size_dist.n)
+    total = calculate_total_efficiency(reduced_total, hc.water_flow_ratio)
+    return reduced_total, total
+
+
+d = HydrocycloneDiameters
+le = HydrocycloneLengths
 x_um = CUT_SIZE_TARGETS
 
 print(f"\n{'='*75}")
@@ -79,20 +99,21 @@ header = (
 )
 print(header)
 print('-' * 75)
-for target, r in zip(cut_size_targets_m, results):
+for target, hc in zip(cut_size_targets_m, hydrocyclones):
+    et_reduced, et_total = _efficiencies(hc)
     print(
         f"{target*1e6:>16.1f} "
-        f"{r['reduced_cut_size']*1e6:>15.2f} "
-        f"{r['Dc']*1e3:>8.2f} "
-        f"{r['pressure_drop']/1e3:>10.2f} "
-        f"{r['water_flow_ratio']:>8.4f} "
-        f"{r['total_efficiency']*100:>8.1f} "
-        f"{r['reduced_total_efficiency']*100:>8.1f}"
+        f"{hc.reduced_cut_size*1e6:>15.2f} "
+        f"{hc.design.diameters[d.C]*1e3:>8.2f} "
+        f"{hc.pressure_drop/1e3:>10.2f} "
+        f"{hc.water_flow_ratio:>8.4f} "
+        f"{et_total*100:>8.1f} "
+        f"{et_reduced*100:>8.1f}"
     )
 
 # ΔP
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [r['pressure_drop'] / 1e3 for r in results],
+ax.plot(x_um, [hc.pressure_drop / 1e3 for hc in hydrocyclones],
         color='steelblue', linewidth=1.8, marker='o', markersize=6)
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel('ΔP, kPa', fontsize=10)
@@ -102,7 +123,7 @@ plt.show()
 
 # Rw
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [r['water_flow_ratio'] for r in results],
+ax.plot(x_um, [hc.water_flow_ratio for hc in hydrocyclones],
         color='steelblue', linewidth=1.8, marker='o', markersize=6)
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel('$R_w$', fontsize=10)
@@ -110,9 +131,11 @@ ax.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
 
+efficiencies = [_efficiencies(hc) for hc in hydrocyclones]
+
 # E_T
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [r['total_efficiency'] * 100 for r in results],
+ax.plot(x_um, [et[1] * 100 for et in efficiencies],
         color='steelblue', linewidth=1.8, marker='o', markersize=6)
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel('$E_T$, %', fontsize=10)
@@ -122,7 +145,7 @@ plt.show()
 
 # E_T'
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [r['reduced_total_efficiency'] * 100 for r in results],
+ax.plot(x_um, [et[0] * 100 for et in efficiencies],
         color='steelblue', linewidth=1.8, marker='o', markersize=6)
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel("$E_T'$, %", fontsize=10)
@@ -132,13 +155,13 @@ plt.show()
 
 # Diameters
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [r['Dc'] * 1e3 for r in results],
+ax.plot(x_um, [hc.design.diameters[d.C] * 1e3 for hc in hydrocyclones],
         color='slategray', linewidth=1.8, label='$D_c$')
-ax.plot(x_um, [r['Di'] * 1e3 for r in results],
+ax.plot(x_um, [hc.design.diameters[d.I] * 1e3 for hc in hydrocyclones],
         color='cornflowerblue', linewidth=1.8, label='$D_i$')
-ax.plot(x_um, [r['Do'] * 1e3 for r in results],
+ax.plot(x_um, [hc.design.diameters[d.O] * 1e3 for hc in hydrocyclones],
         color='salmon', linewidth=1.8, label='$D_o$')
-ax.plot(x_um, [r['Du'] * 1e3 for r in results],
+ax.plot(x_um, [hc.design.diameters[d.U] * 1e3 for hc in hydrocyclones],
         color='mediumseagreen', linewidth=1.8, label='$D_u$')
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel('Diameter, mm', fontsize=10)
@@ -149,11 +172,11 @@ plt.show()
 
 # Lengths
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [r['L'] * 1e3 for r in results],
+ax.plot(x_um, [hc.design.lengths[le.T] * 1e3 for hc in hydrocyclones],
         color='slategray', linewidth=1.8, label='$L$')
-ax.plot(x_um, [r['Lc'] * 1e3 for r in results],
+ax.plot(x_um, [hc.design.lengths[le.C] * 1e3 for hc in hydrocyclones],
         color='cornflowerblue', linewidth=1.8, label='$L_c$')
-ax.plot(x_um, [r['vortex_finder_length'] * 1e3 for r in results],
+ax.plot(x_um, [hc.design.lengths[le.V] * 1e3 for hc in hydrocyclones],
         color='salmon', linewidth=1.8, label='$l$')
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel('Length, mm', fontsize=10)
