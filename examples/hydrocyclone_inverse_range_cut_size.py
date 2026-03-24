@@ -14,10 +14,7 @@ from pytroleum.plant.solid_cyclone.inputs import (
     OperationConditions,
     SizeDistribution,
 )
-from pytroleum.plant.solid_cyclone.models import (
-    RietemaHydrocyclone,
-    BaseHydrocyclone,
-)
+from pytroleum.plant.solid_cyclone.models import RietemaHydrocyclone
 from pytroleum.plant.solid_cyclone.geometry import (
     CycloneDesign,
     HydrocycloneDiameters,
@@ -39,8 +36,6 @@ from pytroleum.plant.solid_cyclone.utils import _minor_divider, _major_divider
 # ---------------------------------------------------------------------------
 
 CUT_SIZE_TARGETS = np.array([1, 2, 3, 5, 7, 8, 10])   # µm
-
-HYDROCYCLONE_CLS: type[BaseHydrocyclone] = RietemaHydrocyclone
 
 MODEL_NAME = 'Rietema'
 
@@ -66,18 +61,20 @@ print(f"Model: {MODEL_NAME}")
 print(f"Target d50': {CUT_SIZE_TARGETS} µm")
 print(f"Flow rate: Q = {conditions.feed_volumetric_flow_rate*6e4:.1f} L/min")
 
-rietema_design = CycloneDesign(
-    0.01, RIETEMA_DIAMETER_PROPORTIONS, RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE)
+rietema_hydrocyclone = RietemaHydrocyclone(
+    '', CycloneDesign(10e-3, RIETEMA_DIAMETER_PROPORTIONS,
+                      RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE))
 
 hydrocyclones = []
 for d50_target in cut_size_targets_m:
-    hc = find_Dc_by_cut_size(
+    find_Dc_by_cut_size(
         cut_size_target=d50_target,
         conditions=conditions,
-        design=rietema_design,
-        hydrocyclone_cls=HYDROCYCLONE_CLS,
+        hydrocyclone=rietema_hydrocyclone,
         properties=properties,
     )
+    hc = RietemaHydrocyclone('', rietema_hydrocyclone.design)
+    hc.calculate_from_flow_rate(properties, conditions)
     hydrocyclones.append(hc)
 
 

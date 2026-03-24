@@ -87,17 +87,14 @@ def _residual_cut_size(
         Dc: float,
         cut_size_target: float,
         conditions: OperationConditions,
-        design: CycloneDesign,
-
-        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
-        hydrocyclone_cls: type[BaseHydrocyclone],
+        hydrocyclone: BaseHydrocyclone,
         properties: PhysicalProperties,
 ) -> float:
     """Residual for problem 1: f(Dc) = d50'(Dc, Q) - d50'_target."""
-    hydrocyclone = hydrocyclone_cls(
-        '', CycloneDesign(Dc, design.diameter_proportions,
-                          design.length_proportions,
-                          design.cone_angle))
+    hydrocyclone.design = CycloneDesign(
+        Dc, hydrocyclone.design.diameter_proportions,
+        hydrocyclone.design.length_proportions,
+        hydrocyclone.design.cone_angle)
     hydrocyclone.calculate_from_flow_rate(properties, conditions)
     return hydrocyclone.reduced_cut_size - cut_size_target
 
@@ -106,129 +103,77 @@ def _residual_efficiency(
         Dc: float,
         efficiency_target: float,
         conditions: OperationConditions,
-        design: CycloneDesign,
-        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
-        hydrocyclone_cls: type[BaseHydrocyclone],
+        hydrocyclone: BaseHydrocyclone,
         properties: PhysicalProperties,
         size_dist: SizeDistribution,
 ) -> NDArray | np.floating:
     """Residual for problem 2: f(Dc) = E_T(Dc, Q) - E_T_target."""
-    hydrocyclone = hydrocyclone_cls(
-        '', CycloneDesign(Dc, design.diameter_proportions,
-                          design.length_proportions,
-                          design.cone_angle))
+    hydrocyclone.design = CycloneDesign(
+        Dc, hydrocyclone.design.diameter_proportions,
+        hydrocyclone.design.length_proportions,
+        hydrocyclone.design.cone_angle)
     hydrocyclone.calculate_from_flow_rate(properties, conditions)
     _, total_efficiency = _compute_efficiencies(hydrocyclone, size_dist)
     return total_efficiency - efficiency_target
+
 
 # ---------------------------------------------------------------------------
 # Public inverse problem functions
 # ---------------------------------------------------------------------------
 
-
-# NOTE эти функции нужно перепсиать так, чтобы не нужно было передавать
-# NOTE класс гидроциклона как параметр
-# NOTE
-# NOTE Передача класса в качестве параметра редко когда действительно нужна, иногда это
-# NOTE может использоваться при работе с метаклассам или для динамической генерации новых
-# NOTE классов (чего лишний раз тоже делать не нужно) — это продвинутые техники,здесь
-# NOTE легко допустить трудно отслеживаемые семантические ошибки и чаще всего желаемого
-# NOTE резульата можно добиться проще
-# NOTE
-# NOTE чаще это сигнализирует о неудачном решении при проектировании функции
-
-
 def find_Dc_by_cut_size(
         cut_size_target: float,
         conditions: OperationConditions,
-        design: CycloneDesign,
-        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
-        hydrocyclone_cls: type[BaseHydrocyclone],
+        hydrocyclone: BaseHydrocyclone,
         properties: PhysicalProperties,
         Dc0: float | None = None,
-) -> BaseHydrocyclone:
+) -> float:
     """
     Problem 1. Find Dc such that d50'(Dc, Q) = cut_size_target.
-
     Solves: f(Dc) = d50'(Dc, Q) - cut_size_target = 0
     """
-    _validate_cone_angle(design)
+    _validate_cone_angle(hydrocyclone.design)
 
     if Dc0 is None:
-        Dc0 = _initial_Dc(conditions.feed_volumetric_flow_rate, design)
+        Dc0 = _initial_Dc(
+            conditions.feed_volumetric_flow_rate, hydrocyclone.design)
 
     Dc_solution = fsolve(
         _residual_cut_size, x0=Dc0,
-        args=(cut_size_target, conditions, design,
-              hydrocyclone_cls, properties),
+        args=(cut_size_target, conditions, hydrocyclone, properties),
     )[0]
-
-    # NOTE Здесь (и выше при вызове fsolve) мы создаём гидроциклон по переданному в
-    # NOTE качестве параметра функции классу. Вместо этого можно передавать уже собранный
-    # NOTE объект класса BaseHydrocyclone (см. dependency injection)
-    # NOTE (объекты наследующих классов тоже считаются объектами класса BaseHydrocyclone)
-    # NOTE
-    # NOTE У такого объекта уже есть доступ ко всему, что нам нужно - к геометрии через
-    # NOTE атрибут design, к рабочиим параметрам через отдельный атрибут
-    # NOTE (если добавить в BaseHydrocyclone). Дальше мы просто пользуемся этим объектом
-    # NOTE в функции как нам надо (а не создаём его на месте)
-    # NOTE
-    # NOTE Такое решение тоже неидеально, так как нарушает "законы" Деметеры, но лучше
-    # NOTE нарушить субъективный паттерн проектирования, чем перегружать код излишне
-    # NOTE сложным концептом (в целом при проектировании чего угодно, не обязательно
-    # NOTE                    ПО, лучше пользоваться только тем, что понимаешь)
-    # NOTE
-    # NOTE Всё то же прикладывается к функции ниже
-    # NOTE
-    # NOTE По "законам" Деметры :
-    # NOTE Можно обойти и нарушение "законов" Деметеры - через примитивные методы для
-    # NOTE передачи запрсов либо через независимую передачу каждого компонента составного
-    # NOTE объекта, но сейчас в этом нет острой необходимости.
-
-    hydrocyclone = hydrocyclone_cls(
-        '', CycloneDesign(Dc_solution,
-                          design.diameter_proportions,
-                          design.length_proportions,
-                          design.cone_angle))
-    hydrocyclone.calculate_from_flow_rate(properties, conditions)
-
-    # NOTE имя функции врёт, мы обещаем найти Dc по отсечному размеру,
-    # NOTE а возвращаем гидроциклон (то же для функции ниже)
-    return hydrocyclone
+    _residual_cut_size(Dc_solution, cut_size_target, conditions,
+                       hydrocyclone, properties)
+    return Dc_solution
 
 
 def find_Dc_by_efficiency(
         efficiency_target: float,
         conditions: OperationConditions,
-        design: CycloneDesign,
-        # NOTE зачем мы делаем функцию, которой нужно передавать класс?
-        hydrocyclone_cls: type[BaseHydrocyclone],
+        hydrocyclone: BaseHydrocyclone,
         properties: PhysicalProperties,
         size_dist: SizeDistribution,
         Dc0: float | None = None,
-) -> BaseHydrocyclone:
+) -> float:
     """
     Problem 2. Find Dc such that E_T(Dc, Q) = efficiency_target.
 
     Solves: f(Dc) = E_T(Dc, Q) - efficiency_target = 0
     """
-    _validate_cone_angle(design)
+    _validate_cone_angle(hydrocyclone.design)
 
     if Dc0 is None:
-        Dc0 = _initial_Dc(conditions.feed_volumetric_flow_rate, design)
+        Dc0 = _initial_Dc(
+            conditions.feed_volumetric_flow_rate, hydrocyclone.design)
 
     Dc_solution = fsolve(
-        _residual_efficiency, x0=Dc0, args=(efficiency_target, conditions, design,
-                                            hydrocyclone_cls, properties, size_dist),
+        _residual_efficiency, x0=Dc0,
+        args=(efficiency_target, conditions,
+              hydrocyclone, properties, size_dist),
     )[0]
-
-    hydrocyclone = hydrocyclone_cls(
-        '', CycloneDesign(Dc_solution,
-                          design.diameter_proportions,
-                          design.length_proportions,
-                          design.cone_angle))
-    hydrocyclone.calculate_from_flow_rate(properties, conditions)
-    return hydrocyclone
+    _residual_efficiency(Dc_solution, efficiency_target, conditions,
+                         hydrocyclone, properties, size_dist)
+    return Dc_solution
 
 
 # ---------------------------------------------------------------------------
@@ -258,33 +203,35 @@ if __name__ == '__main__':
         n=0.9187,
     )
 
-    rietema_design = CycloneDesign(
-        10e-3, RIETEMA_DIAMETER_PROPORTIONS,
-        RIETEMA_LENGTH_PROPORTIONS,
-        RIETEMA_CONE_ANGLE)
+    rietema_hydrocyclone = RietemaHydrocyclone(
+        '', CycloneDesign(10e-3, RIETEMA_DIAMETER_PROPORTIONS,
+                          RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE))
 
     # Task 1: find Dc for target d50'
     cut_size_target = 5e-6
     print("TASK 1: FIND Dc FOR TARGET REDUCED CUT SIZE d50'")
     _minor_divider()
-    res1 = find_Dc_by_cut_size(
+    find_Dc_by_cut_size(
         cut_size_target=cut_size_target,
         conditions=conditions,
-        design=rietema_design,
-        hydrocyclone_cls=RietemaHydrocyclone,
+        hydrocyclone=rietema_hydrocyclone,
         properties=properties,
     )
-    res1.design.summary()
-    et1_reduced, et1_total = _compute_efficiencies(res1, size_dist)
+    rietema_hydrocyclone.design.summary()
+    et1_reduced, et1_total = _compute_efficiencies(
+        rietema_hydrocyclone, size_dist)
     print(
         f"Volumetric flow rate  Q = "
-        f"{res1.conditions.feed_volumetric_flow_rate*6e4:.3f} L/min")
-    print(f"Pressure drop ΔP = {res1.conditions.pressure_drop/1e3:.2f} kPa")
-    print(f"Water flow ratio Rw = {res1.water_flow_ratio:.4f}")
-    print(f"Reduced cut size d50'= {res1.reduced_cut_size*1e6:.2f} µm"
+        f"{rietema_hydrocyclone.conditions.feed_volumetric_flow_rate*6e4:.3f} L/min")
+    print(
+        f"Pressure drop ΔP = "
+        f"{rietema_hydrocyclone.conditions.pressure_drop/1e3:.2f} kPa")
+    print(f"Water flow ratio Rw = {rietema_hydrocyclone.water_flow_ratio:.4f}")
+    print(f"Reduced cut size d50'= {rietema_hydrocyclone.reduced_cut_size*1e6:.2f} µm"
           f" (target: {cut_size_target*1e6:.2f} µm)")
     print(f"Reduced total efficiency E_T'= {et1_reduced*100:.1f} %")
     print(f"Total efficiency E_T = {et1_total*100:.2f} %")
+    reduced_cut_size_1 = rietema_hydrocyclone.reduced_cut_size
 
     print()
     _major_divider()
@@ -294,22 +241,26 @@ if __name__ == '__main__':
     efficiency_target = 0.9
     print("TASK 2: FIND Dc FOR TARGET TOTAL EFFICIENCY E_T")
     _minor_divider()
-    res2 = find_Dc_by_efficiency(
+    find_Dc_by_efficiency(
         efficiency_target=efficiency_target,
         conditions=conditions,
-        design=rietema_design,
-        hydrocyclone_cls=RietemaHydrocyclone,
+        hydrocyclone=rietema_hydrocyclone,
         properties=properties,
         size_dist=size_dist,
     )
-    res2.design.summary()
-    et2_reduced, et2_total = _compute_efficiencies(res2, size_dist)
+    rietema_hydrocyclone.design.summary()
+    et2_reduced, et2_total = _compute_efficiencies(
+        rietema_hydrocyclone, size_dist)
     print(
         f"Volumetric flow rate Q = "
-        f"{res2.conditions.feed_volumetric_flow_rate*6e4:.3f} L/min")
-    print(f"Pressure drop ΔP = {res2.conditions.pressure_drop/1e3:.2f} kPa")
-    print(f"Water flow ratio Rw = {res2.water_flow_ratio:.4f}")
-    print(f"Reduced cut size d50' = {res2.reduced_cut_size*1e6:.2f} µm")
+        f"{rietema_hydrocyclone.conditions.feed_volumetric_flow_rate*6e4:.3f} L/min")
+    print(
+        f"Pressure drop ΔP = "
+        f"{rietema_hydrocyclone.conditions.pressure_drop/1e3:.2f} kPa")
+    print(f"Water flow ratio Rw = {rietema_hydrocyclone.water_flow_ratio:.4f}")
+    print(
+        f"Reduced cut size d50' = "
+        f"{rietema_hydrocyclone.reduced_cut_size*1e6:.2f} µm")
     print(f"Reduced total efficiency E_T'= {et2_reduced*100:.1f} %")
     print(f"Total efficiency E_T  = {et2_total*100:.2f} %"
           f"  (target: {efficiency_target*100:.2f} %)")
@@ -321,8 +272,8 @@ if __name__ == '__main__':
     # Verification
     print("VERIFICATION OF TASK 1 (d50')")
     _minor_divider()
-    rel_err1 = abs(res1.reduced_cut_size - cut_size_target) / cut_size_target
-    print(f"d50' (found)  = {res1.reduced_cut_size*1e6:.4f} µm")
+    rel_err1 = abs(reduced_cut_size_1 - cut_size_target) / cut_size_target
+    print(f"d50' (found)  = {reduced_cut_size_1*1e6:.4f} µm")
     print(f"d50' (target) = {cut_size_target*1e6:.4f} µm")
     print(f"Relative error: {rel_err1:.2e}")
     if rel_err1 <= TOL_RELATIVE:

@@ -161,7 +161,12 @@ class BaseHydrocyclone(ABC):
         conditions: OperationConditions,
     ) -> None:
         """Compute all hydrocyclone output parameters and store them as attributes."""
-        self.conditions = conditions
+        self.conditions = OperationConditions(
+            feed_volumetric_concentration=conditions.feed_volumetric_concentration,
+            mode=conditions.mode,
+            feed_volumetric_flow_rate=conditions.feed_volumetric_flow_rate,
+            pressure_drop=conditions.pressure_drop,
+        )
         self.Re = self.compute_reynolds_number(
             properties, conditions.feed_volumetric_flow_rate)
         self.Eu = self.compute_euler_number(

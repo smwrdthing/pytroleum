@@ -48,17 +48,17 @@ DC_MAX = 30e-3  # m
 
 MODELS = [
     ('Rietema',
-     CycloneDesign(0.01, RIETEMA_DIAMETER_PROPORTIONS,
-                   RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE),
-     RietemaHydrocyclone),
+     RietemaHydrocyclone('', CycloneDesign(10e-3, RIETEMA_DIAMETER_PROPORTIONS,
+                                           RIETEMA_LENGTH_PROPORTIONS,
+                                           RIETEMA_CONE_ANGLE))),
     ('Bradley',
-     CycloneDesign(0.01, BRADLEY_DIAMETER_PROPORTIONS,
-                   BRADLEY_LENGTH_PROPORTIONS, BRADLEY_CONE_ANGLE),
-     BradleyHydrocyclone),
+     BradleyHydrocyclone('', CycloneDesign(10e-3, BRADLEY_DIAMETER_PROPORTIONS,
+                                           BRADLEY_LENGTH_PROPORTIONS,
+                                           BRADLEY_CONE_ANGLE))),
     ('Demco',
-     CycloneDesign(0.01, DEMCO_DIAMETER_PROPORTIONS,
-                   DEMCO_LENGTH_PROPORTIONS, DEMCO_CONE_ANGLE),
-     DemcoHydrocyclone),
+     DemcoHydrocyclone('', CycloneDesign(10e-3, DEMCO_DIAMETER_PROPORTIONS,
+                                         DEMCO_LENGTH_PROPORTIONS,
+                                         DEMCO_CONE_ANGLE))),
 ]
 
 # ---------------------------------------------------------------------------
@@ -69,10 +69,9 @@ MODELS = [
 def _compute_grid(
     Dc_grid: np.ndarray,
     Q_grid: np.ndarray,
-    design: CycloneDesign,
-    hydrocyclone_cls: type[BaseHydrocyclone],
+    hydrocyclone: BaseHydrocyclone,
     properties: PhysicalProperties,
-    feed_volumetric_concentration: float,
+    conditions: OperationConditions,
     size_dist: SizeDistribution,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
@@ -83,20 +82,14 @@ def _compute_grid(
     total_eff = np.empty((n_Dc, n_Q))
 
     for i in range(n_Dc):
-        hydrocyclone = hydrocyclone_cls(
-            '', CycloneDesign(Dc_grid[i, 0],
-                              design.diameter_proportions,
-                              design.length_proportions,
-                              design.cone_angle))
+        hydrocyclone.design = CycloneDesign(
+            Dc_grid[i, 0],
+            hydrocyclone.design.diameter_proportions,
+            hydrocyclone.design.length_proportions,
+            hydrocyclone.design.cone_angle)
         for j in range(n_Q):
-            hydrocyclone.calculate_from_flow_rate(
-                properties,
-                OperationConditions(
-                    feed_volumetric_concentration=feed_volumetric_concentration,
-                    mode='Q',
-                    feed_volumetric_flow_rate=Q_grid[i, j],
-                ),
-            )
+            conditions.feed_volumetric_flow_rate = Q_grid[i, j]
+            hydrocyclone.calculate_from_flow_rate(properties, conditions)
 
             grade_eff = calculate_reduced_grade_efficiency(
                 size_dist.particle_diameters, hydrocyclone.reduced_cut_size,
@@ -120,7 +113,11 @@ def _compute_grid(
 
 if __name__ == '__main__':
     properties = PhysicalProperties(solid_density=1500)
-    feed_volumetric_concentration = 0.00033
+
+    conditions = OperationConditions(
+        feed_volumetric_concentration=0.00033,
+        mode='Q',
+    )
 
     size_dist = SizeDistribution(
         # type: ignore[call-overload]
@@ -138,10 +135,10 @@ if __name__ == '__main__':
 
     # Compute grids for each model
     grids = {}
-    for name, design, cls in MODELS:
+    for name, hydrocyclone in MODELS:
         grids[name] = _compute_grid(
-            Dc_grid, Q_grid, design, cls,
-            properties, feed_volumetric_concentration, size_dist
+            Dc_grid, Q_grid, hydrocyclone,
+            properties, conditions, size_dist
         )
 
     # ---------------------------------------------------------------------------
