@@ -128,9 +128,10 @@ def _grade_efficiency_info_text(
 ) -> str:
     """Build annotation text for the G(d) plot."""
     if conditions.mode == 'Q':
-        operating_line = f'Q={hydrocyclone.feed_volumetric_flow_rate*1000*60:.1f} L/min'
+        Q = conditions.feed_volumetric_flow_rate * 1000 * 60
+        operating_line = f'Q={Q:.1f} L/min'
     else:
-        operating_line = f'ΔP={hydrocyclone.pressure_drop/1000:.2f} kPa'
+        operating_line = f'ΔP={conditions.pressure_drop/1000:.2f} kPa'
 
     return (
         f'{hydrocyclone.name}\n'
@@ -163,8 +164,8 @@ def _print_efficiency(
     """Print separation efficiency to console."""
     hydrocyclone.design.summary()
     print(f"=== {hydrocyclone.name} ===")
-    print(f"Q = {hydrocyclone.feed_volumetric_flow_rate*1000*60:.2f} L/min, "
-          f"ΔP = {hydrocyclone.pressure_drop/1000:.2f} kPa")
+    print(f"Q = {hydrocyclone.conditions.feed_volumetric_flow_rate*1000*60:.2f} L/min, "
+          f"ΔP = {hydrocyclone.conditions.pressure_drop/1000:.2f} kPa")
     print(f"E_T' = {reduced_total_efficiency*100:.1f}%")
     print(f"E_T  = {total_efficiency*100:.1f}%")
     print()
@@ -203,17 +204,9 @@ def _calculate_results(
 ) -> None:
     """Calculate hydrocyclone output parameters for the given operating conditions."""
     if conditions.mode == 'Q':
-        hydrocyclone.calculate_from_flow_rate(
-            properties,
-            conditions.feed_volumetric_flow_rate,
-            conditions.feed_volumetric_concentration,
-        )
+        hydrocyclone.calculate_from_flow_rate(properties, conditions)
     else:
-        hydrocyclone.calculate_from_pressure_drop(
-            properties,
-            conditions.pressure_drop,
-            conditions.feed_volumetric_concentration,
-        )
+        hydrocyclone.calculate_from_pressure_drop(properties, conditions)
 
 
 def plot_hydrocyclone_analysis(

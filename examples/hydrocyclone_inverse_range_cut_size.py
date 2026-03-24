@@ -104,7 +104,7 @@ for target, hc in zip(cut_size_targets_m, hydrocyclones):
         f"{target*1e6:>16.1f} "
         f"{hc.reduced_cut_size*1e6:>15.2f} "
         f"{hc.design.diameters[HydrocycloneDiameters.C]*1e3:>8.2f} "
-        f"{hc.pressure_drop/1e3:>10.2f} "
+        f"{hc.conditions.pressure_drop/1e3:>10.2f} "
         f"{hc.water_flow_ratio:>8.4f} "
         f"{et_total*100:>8.1f} "
         f"{et_reduced*100:>8.1f}"
@@ -112,7 +112,7 @@ for target, hc in zip(cut_size_targets_m, hydrocyclones):
 
 # ΔP
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(CUT_SIZE_TARGETS, [hc.pressure_drop / 1e3 for hc in hydrocyclones],
+ax.plot(CUT_SIZE_TARGETS, [hc.conditions.pressure_drop / 1e3 for hc in hydrocyclones],
         color='steelblue', linewidth=1.8, marker='o', markersize=6)
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel('ΔP, kPa', fontsize=10)

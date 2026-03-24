@@ -13,6 +13,7 @@ from pytroleum.plant.solid_cyclone.geometry import (
 )
 from pytroleum.plant.solid_cyclone.inputs import (
     PhysicalProperties,
+    OperationConditions,
     SizeDistribution,
 )
 from pytroleum.plant.solid_cyclone.models import (
@@ -89,7 +90,13 @@ def _compute_grid(
                               design.cone_angle))
         for j in range(n_Q):
             hydrocyclone.calculate_from_flow_rate(
-                properties, Q_grid[i, j], feed_volumetric_concentration)
+                properties,
+                OperationConditions(
+                    feed_volumetric_concentration=feed_volumetric_concentration,
+                    mode='Q',
+                    feed_volumetric_flow_rate=Q_grid[i, j],
+                ),
+            )
 
             grade_eff = calculate_reduced_grade_efficiency(
                 size_dist.particle_diameters, hydrocyclone.reduced_cut_size,

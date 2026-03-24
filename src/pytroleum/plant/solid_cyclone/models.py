@@ -39,14 +39,7 @@ class BaseHydrocyclone(ABC):
         self.alpha: float
         self.m: float
 
-        # NOTE это есть в OperationConditions, можно как и с design использовать
-        # NOTE объект в этого класса
-        self.feed_volumetric_flow_rate: float = 0.0
-        self.pressure_drop: float = 0.0
-        # NOTE В целом идея подобного класса в том, что объекты этого класса предоставляют
-        # NOTE удобный интерфейс для менеджмента других объектов, которые описывают тип
-        # NOTE гидроциклона, рабочие условия и т.д.
-
+        self.conditions: OperationConditions
         self.water_flow_ratio: float = 0.0
         self.Re: float = 0.0
         self.Eu: float = 0.0
@@ -55,42 +48,27 @@ class BaseHydrocyclone(ABC):
     def calculate_from_flow_rate(
         self,
         properties: PhysicalProperties,
-        feed_volumetric_flow_rate: float,
-        feed_volumetric_concentration: float,
+        conditions: OperationConditions,
     ) -> None:
-        """Calculate parameters for a given volumetric flow rate (ΔP = (Q/K)^(1/0.472)).
-        """
-        K = self.compute_K(properties, feed_volumetric_concentration)
-        pressure_drop = (feed_volumetric_flow_rate / K) ** (1 / 0.472)
-
-        # NOTE вместо создания объекта OperationConditions здесь по переданному расходу -
-        # NOTE можно сразу передавать объект этого класса (см. dependency injection)
-        self.compute_results(properties, OperationConditions(
-            feed_volumetric_concentration=feed_volumetric_concentration,
-            mode='Q',
-            feed_volumetric_flow_rate=feed_volumetric_flow_rate,
-            pressure_drop=pressure_drop,
-        ))
+        """Calculate parameters for a given volumetric flow rate
+        (ΔP = (Q/K)^(1/0.472))."""
+        K = self.compute_K(
+            properties, conditions.feed_volumetric_concentration)
+        conditions.pressure_drop = (
+            (conditions.feed_volumetric_flow_rate / K) ** (1 / 0.472)
+        )
+        self.compute_results(properties, conditions)
 
     def calculate_from_pressure_drop(
         self,
         properties: PhysicalProperties,
-        pressure_drop: float,
-        feed_volumetric_concentration: float,
+        conditions: OperationConditions,
     ) -> None:
         """Calculate parameters for a given pressure drop (Q = K·ΔP^0.472)."""
-        K = self.compute_K(properties, feed_volumetric_concentration)
-        feed_volumetric_flow_rate = K * pressure_drop**0.472
-
-        # NOTE вместо создания объекта OperationConditions здесь по переданному перепаду
-        # NOTE давлений - можно сразу передавать объект этого класса
-        # NOTE (см. dependency injection)
-        self.compute_results(properties, OperationConditions(
-            feed_volumetric_concentration=feed_volumetric_concentration,
-            mode='delta_p',
-            feed_volumetric_flow_rate=feed_volumetric_flow_rate,
-            pressure_drop=pressure_drop,
-        ))
+        K = self.compute_K(
+            properties, conditions.feed_volumetric_concentration)
+        conditions.feed_volumetric_flow_rate = K * conditions.pressure_drop**0.472
+        self.compute_results(properties, conditions)
 
     def compute_K(
         self,
@@ -183,8 +161,7 @@ class BaseHydrocyclone(ABC):
         conditions: OperationConditions,
     ) -> None:
         """Compute all hydrocyclone output parameters and store them as attributes."""
-        self.feed_volumetric_flow_rate = conditions.feed_volumetric_flow_rate
-        self.pressure_drop = conditions.pressure_drop
+        self.conditions = conditions
         self.Re = self.compute_reynolds_number(
             properties, conditions.feed_volumetric_flow_rate)
         self.Eu = self.compute_euler_number(

@@ -103,10 +103,7 @@ def _residual_cut_size(
         '', CycloneDesign(Dc, design.diameter_proportions,
                           design.length_proportions,
                           design.cone_angle))
-    hydrocyclone.calculate_from_flow_rate(
-        properties, conditions.feed_volumetric_flow_rate,
-        conditions.feed_volumetric_concentration,
-    )
+    hydrocyclone.calculate_from_flow_rate(properties, conditions)
     return hydrocyclone.reduced_cut_size - cut_size_target
 
 
@@ -125,11 +122,7 @@ def _residual_efficiency(
         '', CycloneDesign(Dc, design.diameter_proportions,
                           design.length_proportions,
                           design.cone_angle))
-    hydrocyclone.calculate_from_flow_rate(
-        properties,
-        conditions.feed_volumetric_flow_rate,
-        conditions.feed_volumetric_concentration,
-    )
+    hydrocyclone.calculate_from_flow_rate(properties, conditions)
     _, total_efficiency = _compute_efficiencies(hydrocyclone, size_dist)
     return total_efficiency - efficiency_target
 
@@ -202,11 +195,7 @@ def find_Dc_by_cut_size(
                           design.diameter_proportions,
                           design.length_proportions,
                           design.cone_angle))
-    hydrocyclone.calculate_from_flow_rate(
-        properties,
-        conditions.feed_volumetric_flow_rate,
-        conditions.feed_volumetric_concentration,
-    )
+    hydrocyclone.calculate_from_flow_rate(properties, conditions)
 
     # NOTE имя функции врёт, мы обещаем найти Dc по отсечному размеру,
     # NOTE а возвращаем гидроциклон (то же для функции ниже)
@@ -243,11 +232,7 @@ def find_Dc_by_efficiency(
                           design.diameter_proportions,
                           design.length_proportions,
                           design.cone_angle))
-    hydrocyclone.calculate_from_flow_rate(
-        properties,
-        conditions.feed_volumetric_flow_rate,
-        conditions.feed_volumetric_concentration,
-    )
+    hydrocyclone.calculate_from_flow_rate(properties, conditions)
     return hydrocyclone
 
 
@@ -301,8 +286,9 @@ if __name__ == '__main__':
     res1.design.summary()
     et1_reduced, et1_total = _compute_efficiencies(res1, size_dist)
     print(
-        f"Volumetric flow rate  Q = {res1.feed_volumetric_flow_rate*6e4:.3f} L/min")
-    print(f"Pressure drop ΔP = {res1.pressure_drop/1e3:.2f} kPa")
+        f"Volumetric flow rate  Q = "
+        f"{res1.conditions.feed_volumetric_flow_rate*6e4:.3f} L/min")
+    print(f"Pressure drop ΔP = {res1.conditions.pressure_drop/1e3:.2f} kPa")
     print(f"Water flow ratio Rw = {res1.water_flow_ratio:.4f}")
     print(f"Reduced cut size d50'= {res1.reduced_cut_size*1e6:.2f} µm"
           f" (target: {cut_size_target*1e6:.2f} µm)")
@@ -328,8 +314,9 @@ if __name__ == '__main__':
     res2.design.summary()
     et2_reduced, et2_total = _compute_efficiencies(res2, size_dist)
     print(
-        f"Volumetric flow rate Q = {res2.feed_volumetric_flow_rate*6e4:.3f} L/min")
-    print(f"Pressure drop ΔP = {res2.pressure_drop/1e3:.2f} kPa")
+        f"Volumetric flow rate Q = "
+        f"{res2.conditions.feed_volumetric_flow_rate*6e4:.3f} L/min")
+    print(f"Pressure drop ΔP = {res2.conditions.pressure_drop/1e3:.2f} kPa")
     print(f"Water flow ratio Rw = {res2.water_flow_ratio:.4f}")
     print(f"Reduced cut size d50' = {res2.reduced_cut_size*1e6:.2f} µm")
     print(f"Reduced total efficiency E_T'= {et2_reduced*100:.1f} %")
