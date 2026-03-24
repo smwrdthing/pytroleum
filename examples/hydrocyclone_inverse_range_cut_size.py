@@ -89,8 +89,6 @@ def _efficiencies(hc):
     return reduced_total, total
 
 
-x_um = CUT_SIZE_TARGETS
-
 print(f"\n{'='*75}")
 header = (
     f"{'d50_target, µm':>16} {'d50_found, µm':>15} {'Dc, mm':>8} "
@@ -112,7 +110,7 @@ for target, hc in zip(cut_size_targets_m, hydrocyclones):
 
 # ΔP
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [hc.pressure_drop / 1e3 for hc in hydrocyclones],
+ax.plot(CUT_SIZE_TARGETS, [hc.pressure_drop / 1e3 for hc in hydrocyclones],
         color='steelblue', linewidth=1.8, marker='o', markersize=6)
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel('ΔP, kPa', fontsize=10)
@@ -122,7 +120,7 @@ plt.show()
 
 # Rw
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [hc.water_flow_ratio for hc in hydrocyclones],
+ax.plot(CUT_SIZE_TARGETS, [hc.water_flow_ratio for hc in hydrocyclones],
         color='steelblue', linewidth=1.8, marker='o', markersize=6)
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel('$R_w$', fontsize=10)
@@ -134,7 +132,7 @@ efficiencies = [_efficiencies(hc) for hc in hydrocyclones]
 
 # E_T
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [et[1] * 100 for et in efficiencies],
+ax.plot(CUT_SIZE_TARGETS, [et[1] * 100 for et in efficiencies],
         color='steelblue', linewidth=1.8, marker='o', markersize=6)
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel('$E_T$, %', fontsize=10)
@@ -144,7 +142,7 @@ plt.show()
 
 # E_T'
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um, [et[0] * 100 for et in efficiencies],
+ax.plot(CUT_SIZE_TARGETS, [et[0] * 100 for et in efficiencies],
         color='steelblue', linewidth=1.8, marker='o', markersize=6)
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
 ax.set_ylabel("$E_T'$, %", fontsize=10)
@@ -154,16 +152,16 @@ plt.show()
 
 # Diameters
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um,
+ax.plot(CUT_SIZE_TARGETS,
         [hc.design.diameters[HydrocycloneDiameters.C] * 1e3 for hc in hydrocyclones],
         color='slategray', linewidth=1.8, label='$D_c$')
-ax.plot(x_um,
+ax.plot(CUT_SIZE_TARGETS,
         [hc.design.diameters[HydrocycloneDiameters.I] * 1e3 for hc in hydrocyclones],
         color='cornflowerblue', linewidth=1.8, label='$D_i$')
-ax.plot(x_um,
+ax.plot(CUT_SIZE_TARGETS,
         [hc.design.diameters[HydrocycloneDiameters.O] * 1e3 for hc in hydrocyclones],
         color='salmon', linewidth=1.8, label='$D_o$')
-ax.plot(x_um,
+ax.plot(CUT_SIZE_TARGETS,
         [hc.design.diameters[HydrocycloneDiameters.U] * 1e3 for hc in hydrocyclones],
         color='mediumseagreen', linewidth=1.8, label='$D_u$')
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)
@@ -175,13 +173,13 @@ plt.show()
 
 # Lengths
 _, ax = plt.subplots(figsize=(7, 5))
-ax.plot(x_um,
+ax.plot(CUT_SIZE_TARGETS,
         [hc.design.lengths[HydrocycloneLengths.T] * 1e3 for hc in hydrocyclones],
         color='slategray', linewidth=1.8, label='$L$')
-ax.plot(x_um,
+ax.plot(CUT_SIZE_TARGETS,
         [hc.design.lengths[HydrocycloneLengths.C] * 1e3 for hc in hydrocyclones],
         color='cornflowerblue', linewidth=1.8, label='$L_c$')
-ax.plot(x_um,
+ax.plot(CUT_SIZE_TARGETS,
         [hc.design.lengths[HydrocycloneLengths.V] * 1e3 for hc in hydrocyclones],
         color='salmon', linewidth=1.8, label='$l$')
 ax.set_xlabel("$d_{50}'$, µm", fontsize=10)

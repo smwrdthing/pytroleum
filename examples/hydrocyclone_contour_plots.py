@@ -31,10 +31,6 @@ from pytroleum.plant.solid_cyclone.efficiency import (
 # Constants
 # ---------------------------------------------------------------------------
 
-CUT_SIZE_IDX = 0
-WATER_RATIO_IDX = 1
-REDUCED_EFF_IDX = 2
-TOTAL_EFF_IDX = 3
 
 GRID_ROWS = 50
 GRID_COLS = 50
@@ -74,6 +70,7 @@ def _compute_grid(
     feed_volumetric_concentration: float,
     size_dist: SizeDistribution,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+
     n_Dc, n_Q = Dc_grid.shape
     cut_size = np.empty((n_Dc, n_Q))
     water_ratio = np.empty((n_Dc, n_Q))
@@ -128,151 +125,50 @@ if __name__ == '__main__':
     Q_plot = Q_grid * 1000 * 60   # m³/s → L/min
     Dc_plot = Dc_grid * 1000        # m → mm
 
-    # Compute grids for each model
-    grids = {}
     for name, design, cls in MODELS:
-        grids[name] = _compute_grid(
+        cut_size, water_ratio, reduced_eff, total_eff = _compute_grid(
             Dc_grid, Q_grid, design, cls,
             properties, feed_volumetric_concentration, size_dist
         )
 
-    # ---------------------------------------------------------------------------
-    # Rietema
-    # ---------------------------------------------------------------------------
+        _, ax = plt.subplots(figsize=(6, 5))
+        contour = ax.contour(Q_plot, Dc_plot, cut_size)
+        ax.clabel(contour, inline=True, fontsize=8)
+        ax.set_xlabel('$Q$, L/min')
+        ax.set_ylabel('$D_c$, mm')
+        ax.set_title(f"{name} — reduced cut size $d_{{50}}'$, µm")
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
 
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(Q_plot, Dc_plot, grids['Rietema'][CUT_SIZE_IDX])
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title("Rietema — reduced cut size $d_{50}'$, µm")
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+        _, ax = plt.subplots(figsize=(6, 5))
+        contour = ax.contour(Q_plot, Dc_plot, water_ratio, levels=10)
+        ax.clabel(contour, inline=True, fontsize=8)
+        ax.set_xlabel('$Q$, L/min')
+        ax.set_ylabel('$D_c$, mm')
+        ax.set_title(f'{name} — liquid fraction in underflow $R_w$')
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
 
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(
-        Q_plot, Dc_plot, grids['Rietema'][WATER_RATIO_IDX], levels=10)
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title('Rietema — liquid fraction in underflow $R_w$')
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+        _, ax = plt.subplots(figsize=(6, 5))
+        contour = ax.contour(
+            Q_plot, Dc_plot, reduced_eff, levels=np.arange(50, 105, 5))
+        ax.clabel(contour, inline=True, fontsize=8)
+        ax.set_xlabel('$Q$, L/min')
+        ax.set_ylabel('$D_c$, mm')
+        ax.set_title(f"{name} — reduced efficiency $E_T'$, %")
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
 
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(
-        Q_plot, Dc_plot, grids['Rietema'][REDUCED_EFF_IDX], levels=np.arange(50, 105, 5))
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title("Rietema — reduced efficiency $E_T'$, %")
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(
-        Q_plot, Dc_plot, grids['Rietema'][TOTAL_EFF_IDX], levels=np.arange(50, 105, 5))
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title('Rietema — total efficiency $E_T$, %')
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    # ---------------------------------------------------------------------------
-    # Bradley
-    # ---------------------------------------------------------------------------
-
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(Q_plot, Dc_plot, grids['Bradley'][CUT_SIZE_IDX])
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title("Bradley — reduced cut size $d_{50}'$, µm")
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(
-        Q_plot, Dc_plot, grids['Bradley'][WATER_RATIO_IDX], levels=10)
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title('Bradley — liquid fraction in underflow $R_w$')
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(
-        Q_plot, Dc_plot, grids['Bradley'][REDUCED_EFF_IDX], levels=np.arange(50, 105, 5))
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title("Bradley — reduced efficiency $E_T'$, %")
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(
-        Q_plot, Dc_plot, grids['Bradley'][TOTAL_EFF_IDX], levels=np.arange(50, 105, 5))
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title('Bradley — total efficiency $E_T$, %')
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    # ---------------------------------------------------------------------------
-    # Demco
-    # ---------------------------------------------------------------------------
-
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(Q_plot, Dc_plot, grids['Demco'][CUT_SIZE_IDX])
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title("Demco — reduced cut size $d_{50}'$, µm")
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(
-        Q_plot, Dc_plot, grids['Demco'][WATER_RATIO_IDX], levels=10)
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title('Demco — liquid fraction in underflow $R_w$')
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(
-        Q_plot, Dc_plot, grids['Demco'][REDUCED_EFF_IDX], levels=np.arange(50, 105, 5))
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title("Demco — reduced efficiency $E_T'$, %")
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    _, ax = plt.subplots(figsize=(6, 5))
-    contour = ax.contour(
-        Q_plot, Dc_plot, grids['Demco'][TOTAL_EFF_IDX], levels=np.arange(50, 105, 5))
-    ax.clabel(contour, inline=True, fontsize=8)
-    ax.set_xlabel('$Q$, L/min')
-    ax.set_ylabel('$D_c$, mm')
-    ax.set_title('Demco — total efficiency $E_T$, %')
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+        _, ax = plt.subplots(figsize=(6, 5))
+        contour = ax.contour(
+            Q_plot, Dc_plot, total_eff, levels=np.arange(50, 105, 5))
+        ax.clabel(contour, inline=True, fontsize=8)
+        ax.set_xlabel('$Q$, L/min')
+        ax.set_ylabel('$D_c$, mm')
+        ax.set_title(f'{name} — total efficiency $E_T$, %')
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
