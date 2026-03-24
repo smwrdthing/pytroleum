@@ -244,7 +244,8 @@ if __name__ == "__main__":
     properties = PhysicalProperties(solid_density=1500)
 
     size_dist = SizeDistribution(
-        particle_diameters=np.linspace(1e-6, 200e-6, 500),  # type: ignore[call-overload]
+        # type: ignore[call-overload]
+        particle_diameters=np.linspace(1e-6, 200e-6, 500),
         k=10.9918e-6,
         n=0.9187,
     )
