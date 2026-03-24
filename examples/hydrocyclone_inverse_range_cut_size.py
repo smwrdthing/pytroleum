@@ -32,6 +32,7 @@ from pytroleum.plant.solid_cyclone.efficiency import (
     calculate_total_efficiency,
 )
 from pytroleum.plant.solid_cyclone.inverse import find_Dc_by_cut_size
+from pytroleum.plant.solid_cyclone.utils import _minor_divider, _major_divider
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -89,13 +90,14 @@ def _efficiencies(hc):
     return reduced_total, total
 
 
-print(f"\n{'='*75}")
+print()
+_major_divider()
 header = (
     f"{'d50_target, µm':>16} {'d50_found, µm':>15} {'Dc, mm':>8} "
     f"{'ΔP, kPa':>10} {'Rw':>8} {'E_T, %':>8} {'E_T\', %':>8}"
 )
 print(header)
-print('-' * 75)
+_minor_divider()
 for target, hc in zip(cut_size_targets_m, hydrocyclones):
     et_reduced, et_total = _efficiencies(hc)
     print(

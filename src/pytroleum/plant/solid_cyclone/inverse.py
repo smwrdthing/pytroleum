@@ -24,6 +24,7 @@ from pytroleum.plant.solid_cyclone.efficiency import (
     calculate_reduced_total_efficiency,
     calculate_total_efficiency,
 )
+from pytroleum.plant.solid_cyclone.utils import _minor_divider, _major_divider
 
 
 # ---------------------------------------------------------------------------
@@ -245,7 +246,7 @@ if __name__ == '__main__':
     # Task 1: find Dc for target d50'
     cut_size_target = 5e-6
     print("TASK 1: FIND Dc FOR TARGET REDUCED CUT SIZE d50'")
-    print("-" * 60)
+    _minor_divider()
     res1 = find_Dc_by_cut_size(
         cut_size_target=cut_size_target,
         conditions=conditions,
@@ -264,12 +265,14 @@ if __name__ == '__main__':
     print(f"Reduced total efficiency E_T'= {et1_reduced*100:.1f} %")
     print(f"Total efficiency E_T = {et1_total*100:.2f} %")
 
-    print("\n" + "=" * 60 + "\n")
+    print()
+    _major_divider()
+    print()
 
     # Task 2: find Dc for target E_T
     efficiency_target = 0.9
     print("TASK 2: FIND Dc FOR TARGET TOTAL EFFICIENCY E_T")
-    print("-" * 60)
+    _minor_divider()
     res2 = find_Dc_by_efficiency(
         efficiency_target=efficiency_target,
         conditions=conditions,
@@ -289,11 +292,13 @@ if __name__ == '__main__':
     print(f"Total efficiency E_T  = {et2_total*100:.2f} %"
           f"  (target: {efficiency_target*100:.2f} %)")
 
-    print("\n" + "=" * 60 + "\n")
+    print()
+    _major_divider()
+    print()
 
     # Verification
     print("VERIFICATION OF TASK 1 (d50')")
-    print("-" * 60)
+    _minor_divider()
     rel_err1 = abs(res1.reduced_cut_size - cut_size_target) / cut_size_target
     print(f"d50' (found)  = {res1.reduced_cut_size*1e6:.4f} µm")
     print(f"d50' (target) = {cut_size_target*1e6:.4f} µm")
@@ -303,10 +308,12 @@ if __name__ == '__main__':
     else:
         print("Task 1 did NOT converge — error exceeds tolerance")
 
-    print("\n" + "=" * 60 + "\n")
+    print()
+    _major_divider()
+    print()
 
     print("VERIFICATION OF TASK 2 (E_T)")
-    print("-" * 60)
+    _minor_divider()
     rel_err2 = abs(et2_total - efficiency_target) / efficiency_target
     print(f"E_T (found)  = {et2_total*100:.2f} %")
     print(f"E_T (target) = {efficiency_target*100:.2f} %")
@@ -316,4 +323,6 @@ if __name__ == '__main__':
     else:
         print("Task 2 did NOT converge — error exceeds tolerance")
 
-    print("\n" + "=" * 60 + "\n")
+    print()
+    _major_divider()
+    print()

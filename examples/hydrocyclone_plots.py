@@ -15,6 +15,7 @@ from pytroleum.plant.solid_cyclone.inputs import (
     SizeDistribution,
 )
 from pytroleum.plant.solid_cyclone.geometry import build_standard_configs
+from pytroleum.plant.solid_cyclone.utils import _minor_divider, _major_divider
 from pytroleum.plant.solid_cyclone.efficiency import (
     cumulative_size_distribution,
     calculate_reduced_grade_efficiency,
@@ -235,9 +236,10 @@ def plot_hydrocyclone_analysis(
 
 
 if __name__ == "__main__":
-    print("\n" + "="*60)
+    print()
+    _major_divider()
     print("HYDROCYCLONE CALCULATION MODEL")
-    print("="*60)
+    _major_divider()
 
     properties = PhysicalProperties(solid_density=1500)
 
