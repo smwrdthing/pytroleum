@@ -142,8 +142,6 @@ def find_Dc_by_cut_size(
         _residual_cut_size, x0=Dc0,
         args=(cut_size_target, conditions, hydrocyclone, properties),
     )[0]
-    _residual_cut_size(Dc_solution, cut_size_target, conditions,
-                       hydrocyclone, properties)
     return Dc_solution
 
 
@@ -171,8 +169,6 @@ def find_Dc_by_efficiency(
         args=(efficiency_target, conditions,
               hydrocyclone, properties, size_dist),
     )[0]
-    _residual_efficiency(Dc_solution, efficiency_target, conditions,
-                         hydrocyclone, properties, size_dist)
     return Dc_solution
 
 
