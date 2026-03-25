@@ -81,9 +81,12 @@ for d50_target in cut_size_targets_m:
 def _efficiencies(hc):
     reduced_grade = calculate_reduced_grade_efficiency(
         size_dist.particle_diameters, hc.reduced_cut_size, 'plitt', hc.m, hc.alpha)
+
     reduced_total = calculate_reduced_total_efficiency(
         size_dist.particle_diameters, reduced_grade, size_dist.k, size_dist.n)
+
     total = calculate_total_efficiency(reduced_total, hc.water_flow_ratio)
+
     return reduced_total, total
 
 

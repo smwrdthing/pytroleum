@@ -59,6 +59,7 @@ def _initial_Dc(Q: float, design: CycloneDesign) -> float:
     """
     Di_Dc_ratio = design.diameter_proportions[HydrocycloneDiameters.I]
     Di0 = np.sqrt(4.0 * Q / (_V_IN_INITIAL * np.pi))
+
     return Di0 / Di_Dc_ratio
 
 
@@ -75,11 +76,14 @@ def _compute_efficiencies(
         hydrocyclone.m,
         hydrocyclone.alpha,
     )
+
     reduced_total_efficiency = calculate_reduced_total_efficiency(
         size_dist.particle_diameters, reduced_grade_efficiency,
         size_dist.k, size_dist.n)
+
     total_efficiency = calculate_total_efficiency(
         reduced_total_efficiency, hydrocyclone.water_flow_ratio)
+
     return reduced_total_efficiency, total_efficiency
 
 
@@ -95,7 +99,9 @@ def _residual_cut_size(
         Dc, hydrocyclone.design.diameter_proportions,
         hydrocyclone.design.length_proportions,
         hydrocyclone.design.cone_angle)
+
     hydrocyclone.calculate_from_flow_rate(properties, conditions)
+
     return hydrocyclone.reduced_cut_size - cut_size_target
 
 
@@ -112,12 +118,14 @@ def _residual_efficiency(
         Dc, hydrocyclone.design.diameter_proportions,
         hydrocyclone.design.length_proportions,
         hydrocyclone.design.cone_angle)
+
     hydrocyclone.calculate_from_flow_rate(properties, conditions)
 
     # NOTE Здесь нам нужна только полная эффективность и у нас уже есть
     # NOTE calculate_total_efficiency, зачем считать и возвращать в _
     # NOTE приведённую эффективность?
     _, total_efficiency = _compute_efficiencies(hydrocyclone, size_dist)
+
     return total_efficiency - efficiency_target
 
 
@@ -146,6 +154,7 @@ def find_Dc_by_cut_size(
         _residual_cut_size, x0=Dc0,
         args=(cut_size_target, conditions, hydrocyclone, properties),
     )[0]
+
     return Dc_solution
 
 
@@ -184,6 +193,7 @@ def find_Dc_by_efficiency(
         args=(efficiency_target, conditions,
               hydrocyclone, properties, size_dist),
     )[0]
+
     return Dc_solution
 
 

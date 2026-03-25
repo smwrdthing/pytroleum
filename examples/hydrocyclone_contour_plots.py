@@ -94,8 +94,10 @@ def _compute_grid(
             grade_eff = calculate_reduced_grade_efficiency(
                 size_dist.particle_diameters, hydrocyclone.reduced_cut_size,
                 'plitt', hydrocyclone.m, hydrocyclone.alpha)
+
             reduced_total = calculate_reduced_total_efficiency(
                 size_dist.particle_diameters, grade_eff, size_dist.k, size_dist.n)
+
             total = calculate_total_efficiency(
                 reduced_total, hydrocyclone.water_flow_ratio)
 

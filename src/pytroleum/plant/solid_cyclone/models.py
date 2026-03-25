@@ -59,9 +59,11 @@ class BaseHydrocyclone(ABC):
         (ΔP = (Q/K)^(1/0.472))."""
         K = self.compute_K(
             properties, conditions.feed_volumetric_concentration)
+
         conditions.pressure_drop = (
             (conditions.feed_volumetric_flow_rate / K) ** (1 / 0.472)
         )
+
         self.compute_results(properties, conditions)
 
     def calculate_from_pressure_drop(
@@ -72,7 +74,9 @@ class BaseHydrocyclone(ABC):
         """Calculate parameters for a given pressure drop (Q = K·ΔP^0.472)."""
         K = self.compute_K(
             properties, conditions.feed_volumetric_concentration)
+
         conditions.feed_volumetric_flow_rate = K * conditions.pressure_drop**0.472
+
         self.compute_results(properties, conditions)
 
     def compute_K(
@@ -102,6 +106,7 @@ class BaseHydrocyclone(ABC):
     ) -> float:
         """Calculate Reynolds number Re."""
         hydrocyclone_diameter = self.design.diameters[HydrocycloneDiameters.C]
+
         return (4 * properties.liquid_eos.rhomass() * feed_volumetric_flow_rate /
                 (np.pi * properties.liquid_eos.viscosity() * hydrocyclone_diameter))
 
@@ -175,10 +180,12 @@ class BaseHydrocyclone(ABC):
             feed_volumetric_flow_rate=conditions.feed_volumetric_flow_rate,
             pressure_drop=conditions.pressure_drop,
         )
+
         self.Re = self.compute_reynolds_number(
             properties, conditions.feed_volumetric_flow_rate)
         self.Eu = self.compute_euler_number(
             conditions.feed_volumetric_concentration, self.Re)
+
         self.water_flow_ratio = self.compute_water_flow_ratio(self.Eu)
         self.reduced_cut_size = self.compute_reduced_cut_size(
             properties, conditions, self.water_flow_ratio)

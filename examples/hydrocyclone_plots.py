@@ -151,8 +151,10 @@ def _compute_total_efficiencies(
     reduced_total_efficiency = calculate_reduced_total_efficiency(
         size_dist.particle_diameters, reduced_grade_efficiency,
         size_dist.k, size_dist.n)
+
     total_efficiency = calculate_total_efficiency(
         reduced_total_efficiency, hydrocyclone.water_flow_ratio)
+
     return reduced_total_efficiency, total_efficiency
 
 
@@ -182,10 +184,12 @@ def _plot_row(
                                   hydrocyclone,
                                   size_dist,
                                   hydrocyclone.reduced_cut_size)
+
     _plot_probability_density(axes_row[PROBABILITY_DENSITY_COL],
                               hydrocyclone,
                               size_dist,
                               hydrocyclone.reduced_cut_size)
+
     reduced_grade_efficiency = _plot_grade_efficiency(axes_row[GRADE_EFFICIENCY_COL],
                                                       hydrocyclone,
                                                       size_dist,
@@ -193,6 +197,7 @@ def _plot_row(
 
     reduced_total_efficiency, total_efficiency = _compute_total_efficiencies(
         hydrocyclone, size_dist, reduced_grade_efficiency)
+
     _print_efficiency(
         hydrocyclone, float(reduced_total_efficiency), float(total_efficiency))
 

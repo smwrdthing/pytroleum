@@ -113,6 +113,7 @@ class CycloneDesign:
         angle_rad = np.radians(self.cone_angle)
 
         self.diameters = Dc * self.diameter_proportions
+
         self.lengths = np.zeros(HydrocycloneLengths.SIZE)
         self.lengths[:HydrocycloneLengths.C] = Dc * self.length_proportions
         self.lengths[HydrocycloneLengths.C] = (

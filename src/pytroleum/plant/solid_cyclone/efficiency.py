@@ -24,6 +24,7 @@ def probability_density(
 ) -> NDArray:
     """Derivative of the Rosin-Rammler cumulative distribution (density)."""
     ratio = particle_diameters / k
+
     return (n / k) * ratio ** (n - 1) * np.exp(-ratio ** n)
 
 
@@ -77,6 +78,7 @@ def calculate_reduced_total_efficiency(
         Reduced total efficiency E_T'.
     """
     dy_dd = probability_density(particle_diameters, k, n)
+
     return np.trapezoid(reduced_grade_efficiency * dy_dd, particle_diameters, axis=0)
 
 
