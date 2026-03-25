@@ -113,6 +113,10 @@ def _residual_efficiency(
         hydrocyclone.design.length_proportions,
         hydrocyclone.design.cone_angle)
     hydrocyclone.calculate_from_flow_rate(properties, conditions)
+
+    # NOTE Здесь нам нужна только полная эффективность и у нас уже есть
+    # NOTE calculate_total_efficiency, зачем считать и возвращать в _
+    # NOTE приведённую эффективность?
     _, total_efficiency = _compute_efficiencies(hydrocyclone, size_dist)
     return total_efficiency - efficiency_target
 
@@ -147,12 +151,23 @@ def find_Dc_by_cut_size(
 
 def find_Dc_by_efficiency(
         efficiency_target: float,
-        conditions: OperationConditions,
-        hydrocyclone: BaseHydrocyclone,
-        properties: PhysicalProperties,
-        size_dist: SizeDistribution,
-        Dc0: float | None = None,
+        conditions: OperationConditions,  # NOTE conditions уже есть в hydrocyclone,
+        hydrocyclone: BaseHydrocyclone,   # NOTE нет нужды в дубликате, может даже
+        properties: PhysicalProperties,   # NOTE есть смысл перенести properties тоже
+        size_dist: SizeDistribution,      # NOTE в conditions, тогда можно предавать
+        Dc0: float | None = None,         # NOTE только hydrocyclone
 ) -> float:
+
+    # NOTE Тут может быть два архитектурных решения: либо у нас есть управляющий класс
+    # NOTE hydrocyclone, либо мы объединяем design, conditions, properties и всё
+    # NOTE остальное, что нам нужно в какой-нибудь список/кортеж, который передаём
+    # NOTE функции и распаковываем на месте
+    # NOTE
+    # NOTE Что лучше - спорный вопрос, у обоих подходов есть плюсы/минусы, но
+    # NOTE нужно выбрать одно из двух
+    # NOTE
+    # NOTE Cейчас получается странная комбинация, когда у нас есть управляющий класс,
+    # NOTE но мы всё равно тащим везде все его компоненты отдельно
     """
     Problem 2. Find Dc such that E_T(Dc, Q) = efficiency_target.
 

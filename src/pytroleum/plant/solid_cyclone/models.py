@@ -39,7 +39,12 @@ class BaseHydrocyclone(ABC):
         self.alpha: float
         self.m: float
 
+        # NOTE следует дать возможность передать conditions через конструктор, как и
+        # NOTE design
         self.conditions: OperationConditions
+        # NOTE если мы храним conditions в объектке класса - зачем нам во всех методах
+        # NOTE передавать объект OperationConditions извне? Нужно выбрать одно из двух
+
         self.water_flow_ratio: float = 0.0
         self.Re: float = 0.0
         self.Eu: float = 0.0
@@ -161,6 +166,9 @@ class BaseHydrocyclone(ABC):
         conditions: OperationConditions,
     ) -> None:
         """Compute all hydrocyclone output parameters and store them as attributes."""
+
+        # NOTE Мы передали здесь объект класса conditions. Зачем создавать новый с такими
+        # NOTE же параметрами на месте?
         self.conditions = OperationConditions(
             feed_volumetric_concentration=conditions.feed_volumetric_concentration,
             mode=conditions.mode,
