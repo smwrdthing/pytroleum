@@ -1,0 +1,90 @@
+"""
+Particle size distribution and hydrocyclone efficiency.
+
+"""
+from typing import Literal
+
+from numpy.typing import NDArray
+import numpy as np
+
+
+def cumulative_size_distribution(
+    particle_diameters: NDArray,
+    k: float,
+    n: float,
+) -> NDArray:
+    """Cumulative particle size distribution (Rosin-Rammler)."""
+    return 1.0 - np.exp(-(particle_diameters / k) ** n)
+
+
+def probability_density(
+    particle_diameters: NDArray,
+    k: float,
+    n: float,
+) -> NDArray:
+    """Derivative of the Rosin-Rammler cumulative distribution (density)."""
+    ratio = particle_diameters / k
+
+    return (n / k) * ratio ** (n - 1) * np.exp(-ratio ** n)
+
+
+def calculate_reduced_grade_efficiency(
+    particle_diameters: NDArray,
+    reduced_cut_size: float,
+    model_reduced_grade_efficiency: Literal['plitt', 'lynch_rao'],
+    m: float,
+    alpha: float,
+) -> NDArray:
+    """Calculate reduced grade efficiency G'(d)."""
+    ratio = particle_diameters / reduced_cut_size
+
+    match model_reduced_grade_efficiency:
+        case 'plitt':
+            return 1 - np.exp(-0.693 * ratio ** m)
+        case 'lynch_rao':
+            exp_term = np.exp(alpha * ratio)
+            return (exp_term - 1) / (exp_term + np.exp(alpha) - 2)
+        case _:
+            raise ValueError(
+                f"Unknown model: {model_reduced_grade_efficiency}")
+
+
+def calculate_reduced_total_efficiency(
+    particle_diameters: NDArray,
+    reduced_grade_efficiency: NDArray,
+    k: float,
+    n: float,
+) -> NDArray | np.floating:
+    """
+    Calculate reduced total efficiency E_T'.
+
+    E_T' = ∫₀^∞ G'(d) * (dy/dd) dd
+
+    Parameters
+    ----------
+    particle_diameters : np.ndarray
+        Particle diameters, m.
+    reduced_grade_efficiency : np.ndarray
+        Reduced grade efficiency G'(d) for each particle size. Reduced_grade_efficiency
+        and particle_diameters must be consistent with each other.
+    k : float
+        Rosin-Rammler scale parameter, m.
+    n : float
+        Rosin-Rammler shape parameter.
+
+    Returns
+    -------
+    float
+        Reduced total efficiency E_T'.
+    """
+    dy_dd = probability_density(particle_diameters, k, n)
+
+    return np.trapezoid(reduced_grade_efficiency * dy_dd, particle_diameters, axis=0)
+
+
+def calculate_total_efficiency(
+    reduced_total_efficiency: NDArray | np.floating,
+    water_flow_ratio: NDArray | np.floating | float,
+) -> NDArray | np.floating:
+    """Calculate total efficiency E_T from reduced E_T'."""
+    return reduced_total_efficiency * (1 - water_flow_ratio) + water_flow_ratio
