@@ -163,7 +163,7 @@ def _print_efficiency(
 ) -> None:
     """Print separation efficiency to console."""
     hydrocyclone.design.summary()
-    print(f"=== {hydrocyclone.name} ===")
+    print(f" {hydrocyclone.name} ".center(75, '='))
     print(f"Q = {hydrocyclone.conditions.feed_volumetric_flow_rate*1000*60:.2f} L/min, "
           f"ΔP = {hydrocyclone.conditions.pressure_drop/1000:.2f} kPa")
     print(f"E_T' = {reduced_total_efficiency*100:.1f}%")
