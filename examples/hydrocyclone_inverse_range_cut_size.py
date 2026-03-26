@@ -28,7 +28,7 @@ from pytroleum.plant.solid_cyclone.efficiency import (
     calculate_reduced_total_efficiency,
     calculate_total_efficiency,
 )
-from pytroleum.plant.solid_cyclone.inverse import find_Dc_by_cut_size
+from inverse import find_Dc_by_cut_size
 from pytroleum.plant.solid_cyclone.utils import _minor_divider, _major_divider
 
 # ---------------------------------------------------------------------------
