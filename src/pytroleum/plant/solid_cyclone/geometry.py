@@ -17,7 +17,10 @@ if TYPE_CHECKING:
         BradleyHydrocyclone,
         DemcoHydrocyclone,
     )
-    from pytroleum.plant.solid_cyclone.inputs import OperationConditions
+    from pytroleum.plant.solid_cyclone.inputs import (
+        OperationConditions,
+        PhysicalProperties,
+    )
 
 from pytroleum.plant.solid_cyclone.utils import _minor_divider, _major_divider
 
@@ -214,6 +217,7 @@ class CycloneDesign:
 def build_rietema_config(
     hydrocyclone_diameter: float,
     conditions: OperationConditions,
+    properties: PhysicalProperties,
     diameter_proportions: NDArray = RIETEMA_DIAMETER_PROPORTIONS,
     length_proportions: NDArray = RIETEMA_LENGTH_PROPORTIONS,
     cone_angle: float = RIETEMA_CONE_ANGLE,
@@ -225,12 +229,14 @@ def build_rietema_config(
         CycloneDesign(hydrocyclone_diameter, diameter_proportions,
                       length_proportions, cone_angle),
         conditions,
+        properties,
     )
 
 
 def build_bradley_config(
     hydrocyclone_diameter: float,
     conditions: OperationConditions,
+    properties: PhysicalProperties,
     diameter_proportions: NDArray = BRADLEY_DIAMETER_PROPORTIONS,
     length_proportions: NDArray = BRADLEY_LENGTH_PROPORTIONS,
     cone_angle: float = BRADLEY_CONE_ANGLE,
@@ -242,12 +248,14 @@ def build_bradley_config(
         CycloneDesign(hydrocyclone_diameter, diameter_proportions,
                       length_proportions, cone_angle),
         conditions,
+        properties,
     )
 
 
 def build_demco_config(
     hydrocyclone_diameter: float,
     conditions: OperationConditions,
+    properties: PhysicalProperties,
     diameter_proportions: NDArray = DEMCO_DIAMETER_PROPORTIONS,
     length_proportions: NDArray = DEMCO_LENGTH_PROPORTIONS,
     cone_angle: float = DEMCO_CONE_ANGLE,
@@ -259,25 +267,29 @@ def build_demco_config(
         CycloneDesign(hydrocyclone_diameter, diameter_proportions,
                       length_proportions, cone_angle),
         conditions,
+        properties,
     )
 
 
 def build_standard_configs(
     hydrocyclone_diameter: float,
     conditions: OperationConditions,
+    properties: PhysicalProperties,
 ) -> list[BaseHydrocyclone]:
     """Return list of standard configurations [Rietema, Bradley, Demco]."""
     return [
-        build_rietema_config(hydrocyclone_diameter, conditions),
-        build_bradley_config(hydrocyclone_diameter, conditions),
-        build_demco_config(hydrocyclone_diameter, conditions),
+        build_rietema_config(hydrocyclone_diameter, conditions, properties),
+        build_bradley_config(hydrocyclone_diameter, conditions, properties),
+        build_demco_config(hydrocyclone_diameter, conditions, properties),
     ]
 
 
 def print_standard_configs_summary(
     hydrocyclone_diameter: float,
     conditions: OperationConditions,
+    properties: PhysicalProperties,
 ) -> None:
     """Print geometry summary for the three standard configurations."""
-    for hydrocyclone in build_standard_configs(hydrocyclone_diameter, conditions):
+    for hydrocyclone in build_standard_configs(hydrocyclone_diameter,
+                                               conditions, properties):
         hydrocyclone.design.summary()

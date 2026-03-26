@@ -55,8 +55,6 @@ def _compute_grid(
     Dc_grid: np.ndarray,
     Q_grid: np.ndarray,
     hydrocyclone: BaseHydrocyclone,
-    properties: PhysicalProperties,
-    conditions: OperationConditions,
     size_dist: SizeDistribution,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
@@ -66,7 +64,6 @@ def _compute_grid(
     reduced_eff = np.empty((n_Dc, n_Q))
     total_eff = np.empty((n_Dc, n_Q))
 
-    hydrocyclone.conditions = conditions
     for i in range(n_Dc):
         hydrocyclone.design = CycloneDesign(
             Dc_grid[i, 0],
@@ -75,7 +72,7 @@ def _compute_grid(
             hydrocyclone.design.cone_angle)
         for j in range(n_Q):
             hydrocyclone.conditions.feed_volumetric_flow_rate = Q_grid[i, j]
-            hydrocyclone.calculate_from_flow_rate(properties)
+            hydrocyclone.calculate_from_flow_rate()
 
             grade_eff = calculate_reduced_grade_efficiency(
                 size_dist.particle_diameters, hydrocyclone.reduced_cut_size,
@@ -125,23 +122,25 @@ if __name__ == '__main__':
         ('Rietema',
          RietemaHydrocyclone('', CycloneDesign(10e-3, RIETEMA_DIAMETER_PROPORTIONS,
                                                RIETEMA_LENGTH_PROPORTIONS,
-                                               RIETEMA_CONE_ANGLE), conditions)),
+                                               RIETEMA_CONE_ANGLE),
+                             conditions, properties)),
         ('Bradley',
          BradleyHydrocyclone('', CycloneDesign(10e-3, BRADLEY_DIAMETER_PROPORTIONS,
                                                BRADLEY_LENGTH_PROPORTIONS,
-                                               BRADLEY_CONE_ANGLE), conditions)),
+                                               BRADLEY_CONE_ANGLE),
+                             conditions, properties)),
         ('Demco',
          DemcoHydrocyclone('', CycloneDesign(10e-3, DEMCO_DIAMETER_PROPORTIONS,
                                              DEMCO_LENGTH_PROPORTIONS,
-                                             DEMCO_CONE_ANGLE), conditions)),
+                                             DEMCO_CONE_ANGLE),
+                           conditions, properties)),
     ]
 
     # Compute grids for each model
     grids = {}
     for name, hydrocyclone in models:
         grids[name] = _compute_grid(
-            Dc_grid, Q_grid, hydrocyclone,
-            properties, conditions, size_dist
+            Dc_grid, Q_grid, hydrocyclone, size_dist
         )
 
     # ---------------------------------------------------------------------------

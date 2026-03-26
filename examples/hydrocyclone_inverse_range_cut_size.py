@@ -64,17 +64,17 @@ print(f"Flow rate: Q = {conditions.feed_volumetric_flow_rate*6e4:.1f} L/min")
 rietema_hydrocyclone = RietemaHydrocyclone(
     '', CycloneDesign(10e-3, RIETEMA_DIAMETER_PROPORTIONS,
                       RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE),
-    conditions)
+    conditions, properties)
 
 hydrocyclones = []
 for d50_target in cut_size_targets_m:
     find_Dc_by_cut_size(
         cut_size_target=d50_target,
         hydrocyclone=rietema_hydrocyclone,
-        properties=properties,
     )
-    hc = RietemaHydrocyclone('', rietema_hydrocyclone.design, conditions)
-    hc.calculate_from_flow_rate(properties)
+    hc = RietemaHydrocyclone(
+        '', rietema_hydrocyclone.design, conditions, properties)
+    hc.calculate_from_flow_rate()
     hydrocyclones.append(hc)
 
 

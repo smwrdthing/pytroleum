@@ -3,8 +3,6 @@ Hydrocyclone inverse problem: find body diameter Dc
 for a given flow rate Q, phase properties, and concentration.
 """
 
-from typing import Literal
-
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import fsolve
@@ -63,35 +61,10 @@ def _initial_Dc(Q: float, design: CycloneDesign) -> float:
     return Di0 / Di_Dc_ratio
 
 
-def _compute_efficiencies(
-        hydrocyclone: BaseHydrocyclone,
-        size_dist: SizeDistribution,
-        model: Literal['plitt', 'lynch_rao'] = 'plitt',
-) -> tuple[NDArray | np.floating, NDArray | np.floating]:
-    """Calculate reduced E_T' and total E_T efficiencies."""
-    reduced_grade_efficiency = calculate_reduced_grade_efficiency(
-        size_dist.particle_diameters,
-        hydrocyclone.reduced_cut_size,
-        model,
-        hydrocyclone.m,
-        hydrocyclone.alpha,
-    )
-
-    reduced_total_efficiency = calculate_reduced_total_efficiency(
-        size_dist.particle_diameters, reduced_grade_efficiency,
-        size_dist.k, size_dist.n)
-
-    total_efficiency = calculate_total_efficiency(
-        reduced_total_efficiency, hydrocyclone.water_flow_ratio)
-
-    return reduced_total_efficiency, total_efficiency
-
-
 def _residual_cut_size(
         Dc: float,
         cut_size_target: float,
         hydrocyclone: BaseHydrocyclone,
-        properties: PhysicalProperties,
 ) -> float:
     """Residual for problem 1: f(Dc) = d50'(Dc, Q) - d50'_target."""
     hydrocyclone.design = CycloneDesign(
@@ -99,7 +72,7 @@ def _residual_cut_size(
         hydrocyclone.design.length_proportions,
         hydrocyclone.design.cone_angle)
 
-    hydrocyclone.calculate_from_flow_rate(properties)
+    hydrocyclone.calculate_from_flow_rate()
 
     return hydrocyclone.reduced_cut_size - cut_size_target
 
@@ -108,7 +81,6 @@ def _residual_efficiency(
         Dc: float,
         efficiency_target: float,
         hydrocyclone: BaseHydrocyclone,
-        properties: PhysicalProperties,
         size_dist: SizeDistribution,
 ) -> NDArray | np.floating:
     """Residual for problem 2: f(Dc) = E_T(Dc, Q) - E_T_target."""
@@ -117,12 +89,17 @@ def _residual_efficiency(
         hydrocyclone.design.length_proportions,
         hydrocyclone.design.cone_angle)
 
-    hydrocyclone.calculate_from_flow_rate(properties)
+    hydrocyclone.calculate_from_flow_rate()
 
-    # NOTE Здесь нам нужна только полная эффективность и у нас уже есть
-    # NOTE calculate_total_efficiency, зачем считать и возвращать в _
-    # NOTE приведённую эффективность?
-    _, total_efficiency = _compute_efficiencies(hydrocyclone, size_dist)
+    reduced_grade_efficiency = calculate_reduced_grade_efficiency(
+        size_dist.particle_diameters, hydrocyclone.reduced_cut_size,
+        'plitt', hydrocyclone.m, hydrocyclone.alpha)
+
+    reduced_total_efficiency = calculate_reduced_total_efficiency(
+        size_dist.particle_diameters, reduced_grade_efficiency, size_dist.k, size_dist.n)
+
+    total_efficiency = calculate_total_efficiency(
+        reduced_total_efficiency, hydrocyclone.water_flow_ratio)
 
     return total_efficiency - efficiency_target
 
@@ -134,7 +111,6 @@ def _residual_efficiency(
 def find_Dc_by_cut_size(
         cut_size_target: float,
         hydrocyclone: BaseHydrocyclone,
-        properties: PhysicalProperties,
         Dc0: float | None = None,
 ) -> float:
     """
@@ -149,7 +125,7 @@ def find_Dc_by_cut_size(
 
     Dc_solution = fsolve(
         _residual_cut_size, x0=Dc0,
-        args=(cut_size_target, hydrocyclone, properties),
+        args=(cut_size_target, hydrocyclone),
     )[0]
 
     return Dc_solution
@@ -158,7 +134,6 @@ def find_Dc_by_cut_size(
 def find_Dc_by_efficiency(
         efficiency_target: float,
         hydrocyclone: BaseHydrocyclone,
-        properties: PhysicalProperties,
         size_dist: SizeDistribution,
         Dc0: float | None = None,
 ) -> float:
@@ -175,7 +150,7 @@ def find_Dc_by_efficiency(
 
     Dc_solution = fsolve(
         _residual_efficiency, x0=Dc0,
-        args=(efficiency_target, hydrocyclone, properties, size_dist),
+        args=(efficiency_target, hydrocyclone, size_dist),
     )[0]
 
     return Dc_solution
@@ -191,7 +166,6 @@ if __name__ == '__main__':
         RIETEMA_LENGTH_PROPORTIONS,
         RIETEMA_CONE_ANGLE,
     )
-    from pytroleum.plant.solid_cyclone.inputs import PhysicalProperties
     from pytroleum.plant.solid_cyclone.models import RietemaHydrocyclone
 
     properties = PhysicalProperties(solid_density=1500)
@@ -211,7 +185,7 @@ if __name__ == '__main__':
     rietema_hydrocyclone = RietemaHydrocyclone(
         '', CycloneDesign(10e-3, RIETEMA_DIAMETER_PROPORTIONS,
                           RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE),
-        conditions)
+        conditions, properties)
 
     # Task 1: find Dc for target d50'
     cut_size_target = 5e-6
@@ -220,11 +194,20 @@ if __name__ == '__main__':
     find_Dc_by_cut_size(
         cut_size_target=cut_size_target,
         hydrocyclone=rietema_hydrocyclone,
-        properties=properties,
     )
+
     rietema_hydrocyclone.design.summary()
-    et1_reduced, et1_total = _compute_efficiencies(
-        rietema_hydrocyclone, size_dist)
+
+    et1_reduced_grade = calculate_reduced_grade_efficiency(
+        size_dist.particle_diameters, rietema_hydrocyclone.reduced_cut_size,
+        'plitt', rietema_hydrocyclone.m, rietema_hydrocyclone.alpha)
+
+    et1_reduced = calculate_reduced_total_efficiency(
+        size_dist.particle_diameters, et1_reduced_grade, size_dist.k, size_dist.n)
+
+    et1_total = calculate_total_efficiency(
+        et1_reduced, rietema_hydrocyclone.water_flow_ratio)
+
     print(
         f"Volumetric flow rate  Q = "
         f"{rietema_hydrocyclone.conditions.feed_volumetric_flow_rate*6e4:.3f} L/min")
@@ -249,12 +232,20 @@ if __name__ == '__main__':
     find_Dc_by_efficiency(
         efficiency_target=efficiency_target,
         hydrocyclone=rietema_hydrocyclone,
-        properties=properties,
         size_dist=size_dist,
     )
     rietema_hydrocyclone.design.summary()
-    et2_reduced, et2_total = _compute_efficiencies(
-        rietema_hydrocyclone, size_dist)
+
+    et2_reduced_grade = calculate_reduced_grade_efficiency(
+        size_dist.particle_diameters, rietema_hydrocyclone.reduced_cut_size,
+        'plitt', rietema_hydrocyclone.m, rietema_hydrocyclone.alpha)
+
+    et2_reduced = calculate_reduced_total_efficiency(
+        size_dist.particle_diameters, et2_reduced_grade, size_dist.k, size_dist.n)
+
+    et2_total = calculate_total_efficiency(
+        et2_reduced, rietema_hydrocyclone.water_flow_ratio)
+
     print(
         f"Volumetric flow rate Q = "
         f"{rietema_hydrocyclone.conditions.feed_volumetric_flow_rate*6e4:.3f} L/min")

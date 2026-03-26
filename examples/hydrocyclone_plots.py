@@ -90,7 +90,6 @@ def _plot_grade_efficiency(
     ax: Axes,
     hydrocyclone: BaseHydrocyclone,
     size_dist: SizeDistribution,
-    conditions: OperationConditions,
 ) -> NDArray:
     """Plot reduced and total grade efficiency."""
     normalized_diameter = size_dist.particle_diameters / hydrocyclone.reduced_cut_size
@@ -113,7 +112,7 @@ def _plot_grade_efficiency(
     ax.legend(loc='best')
     ax.text(
         0.95, 0.05,
-        _grade_efficiency_info_text(hydrocyclone, conditions),
+        _grade_efficiency_info_text(hydrocyclone),
         transform=ax.transAxes, fontsize=9,
         verticalalignment='bottom', horizontalalignment='right',
         bbox=dict(boxstyle='round', facecolor='white', alpha=0.5),
@@ -124,14 +123,13 @@ def _plot_grade_efficiency(
 
 def _grade_efficiency_info_text(
     hydrocyclone: BaseHydrocyclone,
-    conditions: OperationConditions,
 ) -> str:
     """Build annotation text for the G(d) plot."""
-    if conditions.mode == 'Q':
-        Q = conditions.feed_volumetric_flow_rate * 1000 * 60
+    if hydrocyclone.conditions.mode == 'Q':
+        Q = hydrocyclone.conditions.feed_volumetric_flow_rate * 1000 * 60
         operating_line = f'Q={Q:.1f} L/min'
     else:
-        operating_line = f'ΔP={conditions.pressure_drop/1000:.2f} kPa'
+        operating_line = f'ΔP={hydrocyclone.conditions.pressure_drop/1000:.2f} kPa'
 
     return (
         f'{hydrocyclone.name}\n'
@@ -177,7 +175,6 @@ def _plot_row(
     axes_row,
     hydrocyclone: BaseHydrocyclone,
     size_dist: SizeDistribution,
-    conditions: OperationConditions,
 ) -> None:
     """Draw a row of three plots for one hydrocyclone type."""
     _plot_cumulative_distribution(axes_row[CUMULATIVE_DISTRIBUTION_COL],
@@ -192,8 +189,7 @@ def _plot_row(
 
     reduced_grade_efficiency = _plot_grade_efficiency(axes_row[GRADE_EFFICIENCY_COL],
                                                       hydrocyclone,
-                                                      size_dist,
-                                                      conditions)
+                                                      size_dist)
 
     reduced_total_efficiency, total_efficiency = _compute_total_efficiencies(
         hydrocyclone, size_dist, reduced_grade_efficiency)
@@ -204,15 +200,12 @@ def _plot_row(
 
 def _calculate_results(
     hydrocyclone: BaseHydrocyclone,
-    properties: PhysicalProperties,
-    conditions: OperationConditions,
 ) -> None:
     """Calculate hydrocyclone output parameters for the given operating conditions."""
-    hydrocyclone.conditions = conditions
-    if conditions.mode == 'Q':
-        hydrocyclone.calculate_from_flow_rate(properties)
+    if hydrocyclone.conditions.mode == 'Q':
+        hydrocyclone.calculate_from_flow_rate()
     else:
-        hydrocyclone.calculate_from_pressure_drop(properties)
+        hydrocyclone.calculate_from_pressure_drop()
 
 
 def plot_hydrocyclone_analysis(
@@ -222,13 +215,14 @@ def plot_hydrocyclone_analysis(
     size_dist: SizeDistribution,
 ) -> None:
     """Plot hydrocyclone analysis charts."""
-    hydrocyclones = build_standard_configs(hydrocyclone_diameter, conditions)
+    hydrocyclones = build_standard_configs(
+        hydrocyclone_diameter, conditions, properties)
 
     fig, axes = plt.subplots(3, 3, figsize=(16, 12))
 
     for row, hydrocyclone in enumerate(hydrocyclones):
-        _calculate_results(hydrocyclone, properties, conditions)
-        _plot_row(axes[row], hydrocyclone, size_dist, conditions)
+        _calculate_results(hydrocyclone)
+        _plot_row(axes[row], hydrocyclone, size_dist)
 
     plt.tight_layout()
     plt.show()
