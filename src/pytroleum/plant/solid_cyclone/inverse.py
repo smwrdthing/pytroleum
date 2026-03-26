@@ -90,7 +90,6 @@ def _compute_efficiencies(
 def _residual_cut_size(
         Dc: float,
         cut_size_target: float,
-        conditions: OperationConditions,
         hydrocyclone: BaseHydrocyclone,
         properties: PhysicalProperties,
 ) -> float:
@@ -100,7 +99,7 @@ def _residual_cut_size(
         hydrocyclone.design.length_proportions,
         hydrocyclone.design.cone_angle)
 
-    hydrocyclone.calculate_from_flow_rate(properties, conditions)
+    hydrocyclone.calculate_from_flow_rate(properties)
 
     return hydrocyclone.reduced_cut_size - cut_size_target
 
@@ -108,7 +107,6 @@ def _residual_cut_size(
 def _residual_efficiency(
         Dc: float,
         efficiency_target: float,
-        conditions: OperationConditions,
         hydrocyclone: BaseHydrocyclone,
         properties: PhysicalProperties,
         size_dist: SizeDistribution,
@@ -119,7 +117,7 @@ def _residual_efficiency(
         hydrocyclone.design.length_proportions,
         hydrocyclone.design.cone_angle)
 
-    hydrocyclone.calculate_from_flow_rate(properties, conditions)
+    hydrocyclone.calculate_from_flow_rate(properties)
 
     # NOTE Здесь нам нужна только полная эффективность и у нас уже есть
     # NOTE calculate_total_efficiency, зачем считать и возвращать в _
@@ -135,7 +133,6 @@ def _residual_efficiency(
 
 def find_Dc_by_cut_size(
         cut_size_target: float,
-        conditions: OperationConditions,
         hydrocyclone: BaseHydrocyclone,
         properties: PhysicalProperties,
         Dc0: float | None = None,
@@ -148,11 +145,11 @@ def find_Dc_by_cut_size(
 
     if Dc0 is None:
         Dc0 = _initial_Dc(
-            conditions.feed_volumetric_flow_rate, hydrocyclone.design)
+            hydrocyclone.conditions.feed_volumetric_flow_rate, hydrocyclone.design)
 
     Dc_solution = fsolve(
         _residual_cut_size, x0=Dc0,
-        args=(cut_size_target, conditions, hydrocyclone, properties),
+        args=(cut_size_target, hydrocyclone, properties),
     )[0]
 
     return Dc_solution
@@ -160,23 +157,11 @@ def find_Dc_by_cut_size(
 
 def find_Dc_by_efficiency(
         efficiency_target: float,
-        conditions: OperationConditions,  # NOTE conditions уже есть в hydrocyclone,
-        hydrocyclone: BaseHydrocyclone,   # NOTE нет нужды в дубликате, может даже
-        properties: PhysicalProperties,   # NOTE есть смысл перенести properties тоже
-        size_dist: SizeDistribution,      # NOTE в conditions, тогда можно предавать
-        Dc0: float | None = None,         # NOTE только hydrocyclone
+        hydrocyclone: BaseHydrocyclone,
+        properties: PhysicalProperties,
+        size_dist: SizeDistribution,
+        Dc0: float | None = None,
 ) -> float:
-
-    # NOTE Тут может быть два архитектурных решения: либо у нас есть управляющий класс
-    # NOTE hydrocyclone, либо мы объединяем design, conditions, properties и всё
-    # NOTE остальное, что нам нужно в какой-нибудь список/кортеж, который передаём
-    # NOTE функции и распаковываем на месте
-    # NOTE
-    # NOTE Что лучше - спорный вопрос, у обоих подходов есть плюсы/минусы, но
-    # NOTE нужно выбрать одно из двух
-    # NOTE
-    # NOTE Cейчас получается странная комбинация, когда у нас есть управляющий класс,
-    # NOTE но мы всё равно тащим везде все его компоненты отдельно
     """
     Problem 2. Find Dc such that E_T(Dc, Q) = efficiency_target.
 
@@ -186,12 +171,11 @@ def find_Dc_by_efficiency(
 
     if Dc0 is None:
         Dc0 = _initial_Dc(
-            conditions.feed_volumetric_flow_rate, hydrocyclone.design)
+            hydrocyclone.conditions.feed_volumetric_flow_rate, hydrocyclone.design)
 
     Dc_solution = fsolve(
         _residual_efficiency, x0=Dc0,
-        args=(efficiency_target, conditions,
-              hydrocyclone, properties, size_dist),
+        args=(efficiency_target, hydrocyclone, properties, size_dist),
     )[0]
 
     return Dc_solution
@@ -226,7 +210,8 @@ if __name__ == '__main__':
 
     rietema_hydrocyclone = RietemaHydrocyclone(
         '', CycloneDesign(10e-3, RIETEMA_DIAMETER_PROPORTIONS,
-                          RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE))
+                          RIETEMA_LENGTH_PROPORTIONS, RIETEMA_CONE_ANGLE),
+        conditions)
 
     # Task 1: find Dc for target d50'
     cut_size_target = 5e-6
@@ -234,7 +219,6 @@ if __name__ == '__main__':
     _minor_divider()
     find_Dc_by_cut_size(
         cut_size_target=cut_size_target,
-        conditions=conditions,
         hydrocyclone=rietema_hydrocyclone,
         properties=properties,
     )
@@ -264,7 +248,6 @@ if __name__ == '__main__':
     _minor_divider()
     find_Dc_by_efficiency(
         efficiency_target=efficiency_target,
-        conditions=conditions,
         hydrocyclone=rietema_hydrocyclone,
         properties=properties,
         size_dist=size_dist,

@@ -208,10 +208,11 @@ def _calculate_results(
     conditions: OperationConditions,
 ) -> None:
     """Calculate hydrocyclone output parameters for the given operating conditions."""
+    hydrocyclone.conditions = conditions
     if conditions.mode == 'Q':
-        hydrocyclone.calculate_from_flow_rate(properties, conditions)
+        hydrocyclone.calculate_from_flow_rate(properties)
     else:
-        hydrocyclone.calculate_from_pressure_drop(properties, conditions)
+        hydrocyclone.calculate_from_pressure_drop(properties)
 
 
 def plot_hydrocyclone_analysis(
@@ -221,7 +222,7 @@ def plot_hydrocyclone_analysis(
     size_dist: SizeDistribution,
 ) -> None:
     """Plot hydrocyclone analysis charts."""
-    hydrocyclones = build_standard_configs(hydrocyclone_diameter)
+    hydrocyclones = build_standard_configs(hydrocyclone_diameter, conditions)
 
     fig, axes = plt.subplots(3, 3, figsize=(16, 12))
 

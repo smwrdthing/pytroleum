@@ -46,21 +46,6 @@ Q_MAX = 25.0   # L/min
 DC_MIN = 10e-3  # m
 DC_MAX = 30e-3  # m
 
-MODELS = [
-    ('Rietema',
-     RietemaHydrocyclone('', CycloneDesign(10e-3, RIETEMA_DIAMETER_PROPORTIONS,
-                                           RIETEMA_LENGTH_PROPORTIONS,
-                                           RIETEMA_CONE_ANGLE))),
-    ('Bradley',
-     BradleyHydrocyclone('', CycloneDesign(10e-3, BRADLEY_DIAMETER_PROPORTIONS,
-                                           BRADLEY_LENGTH_PROPORTIONS,
-                                           BRADLEY_CONE_ANGLE))),
-    ('Demco',
-     DemcoHydrocyclone('', CycloneDesign(10e-3, DEMCO_DIAMETER_PROPORTIONS,
-                                         DEMCO_LENGTH_PROPORTIONS,
-                                         DEMCO_CONE_ANGLE))),
-]
-
 # ---------------------------------------------------------------------------
 # Grid computation
 # ---------------------------------------------------------------------------
@@ -81,6 +66,7 @@ def _compute_grid(
     reduced_eff = np.empty((n_Dc, n_Q))
     total_eff = np.empty((n_Dc, n_Q))
 
+    hydrocyclone.conditions = conditions
     for i in range(n_Dc):
         hydrocyclone.design = CycloneDesign(
             Dc_grid[i, 0],
@@ -88,8 +74,8 @@ def _compute_grid(
             hydrocyclone.design.length_proportions,
             hydrocyclone.design.cone_angle)
         for j in range(n_Q):
-            conditions.feed_volumetric_flow_rate = Q_grid[i, j]
-            hydrocyclone.calculate_from_flow_rate(properties, conditions)
+            hydrocyclone.conditions.feed_volumetric_flow_rate = Q_grid[i, j]
+            hydrocyclone.calculate_from_flow_rate(properties)
 
             grade_eff = calculate_reduced_grade_efficiency(
                 size_dist.particle_diameters, hydrocyclone.reduced_cut_size,
@@ -135,9 +121,24 @@ if __name__ == '__main__':
     Q_plot = Q_grid * 1000 * 60   # m³/s → L/min
     Dc_plot = Dc_grid * 1000        # m → mm
 
+    models = [
+        ('Rietema',
+         RietemaHydrocyclone('', CycloneDesign(10e-3, RIETEMA_DIAMETER_PROPORTIONS,
+                                               RIETEMA_LENGTH_PROPORTIONS,
+                                               RIETEMA_CONE_ANGLE), conditions)),
+        ('Bradley',
+         BradleyHydrocyclone('', CycloneDesign(10e-3, BRADLEY_DIAMETER_PROPORTIONS,
+                                               BRADLEY_LENGTH_PROPORTIONS,
+                                               BRADLEY_CONE_ANGLE), conditions)),
+        ('Demco',
+         DemcoHydrocyclone('', CycloneDesign(10e-3, DEMCO_DIAMETER_PROPORTIONS,
+                                             DEMCO_LENGTH_PROPORTIONS,
+                                             DEMCO_CONE_ANGLE), conditions)),
+    ]
+
     # Compute grids for each model
     grids = {}
-    for name, hydrocyclone in MODELS:
+    for name, hydrocyclone in models:
         grids[name] = _compute_grid(
             Dc_grid, Q_grid, hydrocyclone,
             properties, conditions, size_dist

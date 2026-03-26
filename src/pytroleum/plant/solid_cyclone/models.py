@@ -3,6 +3,7 @@ Hydrocyclone calculation model.
 """
 from __future__ import annotations
 from abc import ABC
+from dataclasses import replace
 import numpy as np
 
 from pytroleum.plant.solid_cyclone.inputs import PhysicalProperties, OperationConditions
@@ -33,51 +34,39 @@ DEMCO_M = 3.30
 class BaseHydrocyclone(ABC):
     """Abstract base class for hydrocyclone models (solid-liquid separation)."""
 
-    def __init__(self, name: str, design: CycloneDesign) -> None:
+    def __init__(self, name: str, design: CycloneDesign,
+                 conditions: OperationConditions) -> None:
         self.name = name
         self.design = design
         self.alpha: float
         self.m: float
-
-        # NOTE следует дать возможность передать conditions через конструктор, как и
-        # NOTE design
-        self.conditions: OperationConditions
-        # NOTE если мы храним conditions в объектке класса - зачем нам во всех методах
-        # NOTE передавать объект OperationConditions извне? Нужно выбрать одно из двух
+        self.conditions = conditions
 
         self.water_flow_ratio: float = 0.0
         self.Re: float = 0.0
         self.Eu: float = 0.0
         self.reduced_cut_size: float = 0.0
 
-    def calculate_from_flow_rate(
-        self,
-        properties: PhysicalProperties,
-        conditions: OperationConditions,
-    ) -> None:
+    def calculate_from_flow_rate(self, properties: PhysicalProperties) -> None:
         """Calculate parameters for a given volumetric flow rate
         (ΔP = (Q/K)^(1/0.472))."""
         K = self.compute_K(
-            properties, conditions.feed_volumetric_concentration)
+            properties, self.conditions.feed_volumetric_concentration)
 
-        conditions.pressure_drop = (
-            (conditions.feed_volumetric_flow_rate / K) ** (1 / 0.472)
-        )
+        pressure_drop = (self.conditions.feed_volumetric_flow_rate / K) ** (1 / 0.472)
+        self.conditions = replace(self.conditions, pressure_drop=pressure_drop)
 
-        self.compute_results(properties, conditions)
+        self.compute_results(properties)
 
-    def calculate_from_pressure_drop(
-        self,
-        properties: PhysicalProperties,
-        conditions: OperationConditions,
-    ) -> None:
+    def calculate_from_pressure_drop(self, properties: PhysicalProperties) -> None:
         """Calculate parameters for a given pressure drop (Q = K·ΔP^0.472)."""
         K = self.compute_K(
-            properties, conditions.feed_volumetric_concentration)
+            properties, self.conditions.feed_volumetric_concentration)
 
-        conditions.feed_volumetric_flow_rate = K * conditions.pressure_drop**0.472
+        feed_volumetric_flow_rate = K * self.conditions.pressure_drop**0.472
+        self.conditions = replace(self.conditions, feed_volumetric_flow_rate=feed_volumetric_flow_rate)
 
-        self.compute_results(properties, conditions)
+        self.compute_results(properties)
 
     def compute_K(
         self,
@@ -165,37 +154,24 @@ class BaseHydrocyclone(ABC):
                 np.log(1 / water_flow_ratio)**0.395 *
                 np.exp(6.0 * conditions.feed_volumetric_concentration))
 
-    def compute_results(
-        self,
-        properties: PhysicalProperties,
-        conditions: OperationConditions,
-    ) -> None:
+    def compute_results(self, properties: PhysicalProperties) -> None:
         """Compute all hydrocyclone output parameters and store them as attributes."""
-
-        # NOTE Мы передали здесь объект класса conditions. Зачем создавать новый с такими
-        # NOTE же параметрами на месте?
-        self.conditions = OperationConditions(
-            feed_volumetric_concentration=conditions.feed_volumetric_concentration,
-            mode=conditions.mode,
-            feed_volumetric_flow_rate=conditions.feed_volumetric_flow_rate,
-            pressure_drop=conditions.pressure_drop,
-        )
-
         self.Re = self.compute_reynolds_number(
-            properties, conditions.feed_volumetric_flow_rate)
+            properties, self.conditions.feed_volumetric_flow_rate)
         self.Eu = self.compute_euler_number(
-            conditions.feed_volumetric_concentration, self.Re)
+            self.conditions.feed_volumetric_concentration, self.Re)
 
         self.water_flow_ratio = self.compute_water_flow_ratio(self.Eu)
         self.reduced_cut_size = self.compute_reduced_cut_size(
-            properties, conditions, self.water_flow_ratio)
+            properties, self.conditions, self.water_flow_ratio)
 
 
 class RietemaHydrocyclone(BaseHydrocyclone):
     """Hydrocyclone using the Rietema model."""
 
-    def __init__(self, name: str, design: CycloneDesign) -> None:
-        super().__init__(name, design)
+    def __init__(self, name: str, design: CycloneDesign,
+                 conditions: OperationConditions) -> None:
+        super().__init__(name, design, conditions)
         self.alpha = RIETEMA_ALPHA
         self.m = RIETEMA_M
 
@@ -203,8 +179,9 @@ class RietemaHydrocyclone(BaseHydrocyclone):
 class BradleyHydrocyclone(BaseHydrocyclone):
     """Hydrocyclone using the Bradley model."""
 
-    def __init__(self, name: str, design: CycloneDesign) -> None:
-        super().__init__(name, design)
+    def __init__(self, name: str, design: CycloneDesign,
+                 conditions: OperationConditions) -> None:
+        super().__init__(name, design, conditions)
         self.alpha = BRADLEY_ALPHA
         self.m = BRADLEY_M
 
@@ -212,7 +189,8 @@ class BradleyHydrocyclone(BaseHydrocyclone):
 class DemcoHydrocyclone(BaseHydrocyclone):
     """Hydrocyclone using the Demco model."""
 
-    def __init__(self, name: str, design: CycloneDesign) -> None:
-        super().__init__(name, design)
+    def __init__(self, name: str, design: CycloneDesign,
+                 conditions: OperationConditions) -> None:
+        super().__init__(name, design, conditions)
         self.alpha = DEMCO_ALPHA
         self.m = DEMCO_M
