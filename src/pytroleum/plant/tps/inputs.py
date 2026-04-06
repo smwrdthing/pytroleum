@@ -1,96 +1,158 @@
-pressure_norm = 0.1e6      # Па (0.1 МПа)
-temperature_norm = 293     # К (20°C)
+from dataclasses import dataclass
 
-# Рабочие условия
-pressure_work = 1e6        # Па (1.0 МПа) - рабочее давление
-temperature_work = 353     # К (80°C) - рабочая температура
+DEFAULT_PRESSURE = 0.1e6      # Па
+DEFAULT_TEMPERATURE = 293     # К (20°C)
+SECONDS_PER_DAY = 86400
+KG_PER_TON = 1000
 
-# Плотности компонентов
-gas_density_norm = 0.94       # кг/м³ - плотность газа
-oil_density = 933          # кг/м³ - плотность нефти
-water_density = 966        # кг/м³ - плотность воды
 
-# Обводненность
-water_cut = 0.6            # 60%
+@dataclass
+class OperationConditions:
+    pressure_work: float = 1e6        # Па (1.0 МПа) - рабочее давление
+    temperature_work: float = 353     # К (80°C) - рабочая температура
+    # м³/с - объемный расход газа при н.у.
+    flow_gas_norm: float = 300000 / 86400
+    flow_liquid: float = 500 / 86400  # м³/с объемный расход жидкости
 
-# Газовый фактор
-gas_factor = 267.9         # м³/т
 
-# Расходы (перевод из м³/сут в м³/с)
-flow_gas_norm = 300000 / 86400   # м³/с - расход газа
-flow_liquid = 500 / 86400        # м³/с - расход жидкости (нефть+вода)
+@dataclass
+class PhysicalProperties:
+    gas_density_norm: float = 0.94    # кг/м³ - плотность газа
+    oil_density: float = 933          # кг/м³ - плотность нефти
+    water_density: float = 966        # кг/м³ - плотность воды
+    water_cut: float = 0.6            # Обводненность
+    gas_factor: float = 267.9         # Газовый фактор, м³/т
 
-# Расходы компонентов жидкости
-flow_oil = flow_liquid * (1 - water_cut)     # м³/с - расход нефти
-flow_water = flow_liquid * water_cut         # м³/с - расход воды
+    def liquid_density(self) -> float:
+        """Плотность жидкости (Н+В) при заданной обводненности"""
+        return (self.water_density * self.water_cut +
+                self.oil_density * (1 - self.water_cut))
 
-# Расход газа при рабочих условиях
-flow_gas_work = (flow_gas_norm*pressure_norm*temperature_work) / \
-    ((pressure_work+pressure_norm)*temperature_norm)
+    def gas_density_work(self, conditions: OperationConditions) -> float:
+        """Плотность газа в рабочих условиях"""
+        return self.gas_density_norm * (conditions.pressure_work / DEFAULT_PRESSURE) * \
+            (DEFAULT_TEMPERATURE / conditions.temperature_work)
 
-# ==================== МАССОВЫЕ РАСХОДЫ ====================
 
-# Массовый расход каждого компонента (кг/с)
-mass_flow_gas = flow_gas_norm * gas_density_norm      # газ, кг/с
-mass_flow_oil = flow_oil * oil_density                # нефть, кг/с
-mass_flow_water = flow_water * water_density          # вода, кг/с
+@dataclass
+class FlowRates:
+    conditions: OperationConditions
+    properties: PhysicalProperties
 
-# Массовый расход жидкости (нефть + вода) в кг/с
-mass_flow_liquid = mass_flow_oil + mass_flow_water
+    def flow_oil(self) -> float:
+        """ Расход нефти, м³/с """
+        return self.conditions.flow_liquid * (1 - self.properties.water_cut)
 
-# Суммарный массовый расход (Г+Н+В) в кг/с
-mass_flow_total = mass_flow_gas + mass_flow_oil + mass_flow_water
+    def flow_water(self) -> float:
+        """ Расход воды, м³/с """
+        return self.conditions.flow_liquid * self.properties.water_cut
 
-# ==================== РАСЧЕТ ФИЗИЧЕСКИХ СВОЙСТВ ====================
+    def flow_gas_work(self) -> float:
+        """Расход газа при рабочих условиях"""
+        return (self.conditions.flow_gas_norm*DEFAULT_PRESSURE *
+                self.conditions.temperature_work) / \
+            ((self.conditions.pressure_work+DEFAULT_PRESSURE) *
+             DEFAULT_TEMPERATURE)
 
-# Плотность газа в рабочих условиях
-gas_density_work = gas_density_norm * \
-    (pressure_work / pressure_norm) * (temperature_norm / temperature_work)
+    def mass_flow_gas(self) -> float:
+        """Массовый расход газа, кг/с"""
+        return self.conditions.flow_gas_norm * self.properties.gas_density_norm
 
-# Плотность жидкости (Н+В) при заданной обводненности
-liquid_density = water_density * water_cut + oil_density * (1 - water_cut)
+    def mass_flow_oil(self) -> float:
+        """Массовый расход нефти, кг/с"""
+        return self.flow_oil() * self.properties.oil_density
 
-# Производительность по газу из условия газового фактора
-mass_flow_oil_ton_per_day = mass_flow_oil * 86400 / 1000  # т/сут
-flow_gas_from_gas_factor = gas_factor * mass_flow_oil_ton_per_day  # м³/сут
+    def mass_flow_water(self) -> float:
+        """Массовый расход воды, кг/с"""
+        return self.flow_water() * self.properties.water_density
+
+    def mass_flow_liquid(self) -> float:
+        """Массовый расход жидкости (нефть + вода) в кг/с"""
+        return self.mass_flow_oil() + self.mass_flow_water()
+
+    def mass_flow_total(self) -> float:
+        """Суммарный массовый расход (Г+Н+В) в кг/с"""
+        return self.mass_flow_gas() + self.mass_flow_oil() + self.mass_flow_water()
+
+    def mass_flow_oil_ton_per_day(self) -> float:
+        """Массовый расход по газу из условия газового фактора, т/сут"""
+        return self.mass_flow_oil() * SECONDS_PER_DAY / KG_PER_TON
+
+    def flow_gas_from_gas_factor(self) -> float:
+        """Объемный расход по газу из условия газового фактора, м³/сут"""
+        return self.properties.gas_factor * self.mass_flow_oil_ton_per_day()
 
 # ==================== ВЫВОД РЕЗУЛЬТАТОВ ====================
 
 
-print("=" * 60)
-print("ОБЪЕМНЫЕ РАСХОДЫ")
-print("=" * 60)
-print(f"Объемный расход газа при н.у.: {flow_gas_norm * 86400:.0f} м³/сут")
-print(f"Объемный расход газа при р.у.: {flow_gas_work * 86400:.0f} м³/сут")
-print(f"Объемный расход по нефти: {flow_oil * 86400:.0f} м³/сут")
-print(f"Объемный расход по воде: {flow_water * 86400:.0f} м³/сут")
-print(f"Объемный расход жидкости: {flow_liquid * 86400:.0f} м³/сут")
+if __name__ == '__main__':
+    con = OperationConditions()
+    props = PhysicalProperties()
+    flows = FlowRates(conditions=con, properties=props)
 
-print("\n" + "=" * 60)
-print("МАССОВЫЕ РАСХОДЫ (кг/с)")
-print("=" * 60)
-print(f"Массовый расход газа: {mass_flow_gas:.2f} кг/с")
-print(f"Массовый расход нефти: {mass_flow_oil:.2f} кг/с")
-print(f"Массовый расход воды: {mass_flow_water:.2f} кг/с")
-print(f"Массовый расход жидкости (Н+В): {mass_flow_liquid:.2f} кг/с")
-print(
-    f"Массовый суммарный расход по продукту (Г+Н+В): {mass_flow_total:.2f} кг/с")
+    print("=" * 60)
+    print("УСЛОВИЯ РАБОТЫ")
+    print("=" * 60)
+    print(f"Давление при н.у.: {DEFAULT_PRESSURE / 1e6:.1f} МПа")
+    print(f"Температура при н.у.: {DEFAULT_TEMPERATURE} К")
+    print(f"Рабочее давление: {con.pressure_work / 1e6:.1f} МПа")
+    print(f"Рабочая температура: {con.temperature_work} К")
+    print(
+        f"Объемный расход газа при н.у.: "
+        f"{con.flow_gas_norm * SECONDS_PER_DAY:.0f} м3/сут")
+    print(
+        f"Объемный расход жидкости: {con.flow_liquid * SECONDS_PER_DAY:.0f} м3/сут")
 
-print("\n" + "=" * 60)
-print("МАССОВЫЕ РАСХОДЫ (т/ч)")
-print("=" * 60)
-print(f"Массовый расход газа: {mass_flow_gas * 3.6:.2f} т/ч")
-print(f"Массовый расход нефти: {mass_flow_oil * 3.6:.2f} т/ч")
-print(f"Массовый расход воды: {mass_flow_water * 3.6:.2f} т/ч")
-print(f"Массовый расход жидкости (Н+В): {mass_flow_liquid * 3.6:.2f} т/ч")
-print(
-    f"Массовый суммарный расход по продукту (Г+Н+В): {mass_flow_total * 3.6:.2f} т/ч")
+    print("\n" + "=" * 60)
+    print("СВОЙСТВА ФЛЮИДА")
+    print("=" * 60)
+    print(f"Плотность газа при н.у.: {props.gas_density_norm} кг/м3")
+    print(f"Плотность нефти: {props.oil_density} кг/м3")
+    print(f"Плотность воды: {props.water_density} кг/м3")
+    print(f"Обводненность: {props.water_cut * 100:.0f}%")
+    print(f"Газовый фактор: {props.gas_factor} м3/т")
 
-print("\n" + "=" * 60)
-print("РАСЧЕТ ФИЗИЧЕСКИХ СВОЙСТВ (Г, Н, В) ПРИ РАБОЧИХ УСЛОВИЯХ")
-print("=" * 60)
-print(f"Плотность газа в р.у.: {gas_density_work:.3f} кг/м³")
-print(
-    f"Плотность жидкости (Н+В) при заданной обводненности: {liquid_density:.1f} кг/м³")
-print(f"Производительность по газу из условия газового фактора:"
-      f"{flow_gas_from_gas_factor:.1f} м³/сут")
+    print("\n" + "=" * 60)
+    print("ОБЪЕМНЫЕ РАСХОДЫ")
+    print("=" * 60)
+
+    print(
+        f"Объемный расход газа при р.у.: "
+        f"{flows.flow_gas_work() * SECONDS_PER_DAY:.0f} м³/сут")
+    print(
+        f"Объемный расход по нефти: {flows.flow_oil() * SECONDS_PER_DAY:.0f} м³/сут")
+    print(
+        f"Объемный расход по воде: {flows.flow_water() * SECONDS_PER_DAY:.0f} м³/сут")
+
+    print("\n" + "=" * 60)
+    print("МАССОВЫЕ РАСХОДЫ (кг/с)")
+    print("=" * 60)
+    print(f"Массовый расход газа: {flows.mass_flow_gas():.2f} кг/с")
+    print(f"Массовый расход нефти: {flows.mass_flow_oil():.2f} кг/с")
+    print(f"Массовый расход воды: {flows.mass_flow_water():.2f} кг/с")
+    print(
+        f"Массовый расход жидкости (Н+В): {flows.mass_flow_liquid():.2f} кг/с")
+    print(
+        f"Массовый суммарный расход по продукту (Г+Н+В): "
+        f"{flows.mass_flow_total():.2f} кг/с")
+
+    print("\n" + "=" * 60)
+    print("МАССОВЫЕ РАСХОДЫ (т/ч)")
+    print("=" * 60)
+    print(f"Массовый расход газа: {flows.mass_flow_gas() * 3.6:.2f} т/ч")
+    print(f"Массовый расход нефти: {flows.mass_flow_oil() * 3.6:.2f} т/ч")
+    print(f"Массовый расход воды: {flows.mass_flow_water() * 3.6:.2f} т/ч")
+    print(
+        f"Массовый расход жидкости (Н+В): {flows.mass_flow_liquid() * 3.6:.2f} т/ч")
+    print(
+        f"Массовый суммарный расход по продукту (Г+Н+В): "
+        f"{flows.mass_flow_total() * 3.6:.2f} т/ч")
+    print("\n" + "=" * 60)
+    print("РАСЧЕТ ФИЗИЧЕСКИХ СВОЙСТВ (Г, Н, В) ПРИ РАБОЧИХ УСЛОВИЯХ")
+    print("=" * 60)
+    print(f"Плотность газа в р.у.: {props.gas_density_work(con):.3f} кг/м³")
+    print(
+        f"Плотность жидкости (Н+В) при заданной обводненности: "
+        f"{props.liquid_density():.1f} кг/м³")
+    print(f"Производительность по газу из условия газового фактора:"
+          f"{flows.flow_gas_from_gas_factor():.1f} м³/сут")
