@@ -83,4 +83,3 @@ class FlowRates:
     def flow_gas_from_gas_factor(self) -> float:
         """Объемный расход по газу из условия газового фактора, м³/сут"""
         return self.properties.gas_factor * self.mass_flow_oil_ton_per_day()
-
