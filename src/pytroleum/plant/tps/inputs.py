@@ -7,6 +7,7 @@ KG_PER_TON = 1000
 KG_S_TO_T_H = 3.6
 PERCENT = 100
 PA_TO_MPA = 1e6
+SECONDS_PER_HOUR = 3600
 
 
 @dataclass
@@ -24,6 +25,7 @@ class PhysicalProperties:
     water_density: float        # кг/м³ - плотность воды
     water_cut: float            # Обводненность
     gas_factor: float           # Газовый фактор, м³/т
+    oil_surface_tension: float  # Поверхностное натяжение нефти, Н/м
 
     def liquid_density(self) -> float:
         """Плотность жидкости (Н+В) при заданной обводненности"""

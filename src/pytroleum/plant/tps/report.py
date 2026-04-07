@@ -25,6 +25,7 @@ if __name__ == '__main__':
         water_density=966,
         water_cut=0.6,
         gas_factor=267.9,
+        oil_surface_tension=0.02848
     )
     flows = FlowRates(conditions=con, properties=props)
 
