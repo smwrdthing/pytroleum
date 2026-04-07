@@ -39,6 +39,12 @@ class PhysicalProperties:
 
 
 @dataclass
+class Coefficients:
+    # Коэффициент учитывающий снижение площади сечения элементами насадки
+    area_reduction_coefficient: float
+
+
+@dataclass
 class FlowRates:
     conditions: OperationConditions
     properties: PhysicalProperties
