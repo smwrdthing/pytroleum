@@ -5,11 +5,14 @@ import matplotlib.pyplot as plt
 from pytroleum.plant.tps.utils import _major_header, _minor_divider
 from pytroleum.plant.tps.inputs import (PhysicalProperties,
                                         FlowRates,
-                                        OperationConditions)
+                                        OperationConditions,
+                                        Coefficients)
 from pytroleum.plant.tps.inputs import (SECONDS_PER_DAY,
                                         SECONDS_PER_HOUR,
                                         PA_TO_MPA,
                                         PERCENT)
+
+_TO_MM = 1000
 
 
 class WireMeshDemister:
@@ -63,9 +66,12 @@ class WireMeshDemister:
         _flow_stability_coefficient,
         kind='cubic')
 
-    def __init__(self, properties: PhysicalProperties, flow_rates: FlowRates):
+    def __init__(self, properties: PhysicalProperties,
+                 flow_rates: FlowRates,
+                 сoefficients: Coefficients):
         self.properties = properties
         self.flow_rates = flow_rates
+        self.сoefficients = сoefficients
 
     def get_flow_stability_coefficient(self) -> float:
         """Коэффициент устойчивости режимов течения при текущем давлении"""
@@ -80,6 +86,38 @@ class WireMeshDemister:
                      self.properties.gas_density_work(self.flow_rates.conditions))) /
                     self.properties.gas_density_work(self.flow_rates.conditions)**2)
         )
+
+    def area(self) -> float:
+        """Площадь живого сечения сепаратора, м²"""
+        return (self.сoefficients.area_reduction_coefficient *
+                self.flow_rates.flow_gas_work()) / (self.calculate_critical_velocity())
+
+    def calculate_diameter(self) -> float:
+        """Расчётный диаметр обечайки, м"""
+        return np.sqrt((4 * self.area()) / np.pi)
+
+    def select_nominal_diameter(self) -> float:
+        """Выбор ближайшего большего диаметра, м"""
+        diameter = self.calculate_diameter()
+        for d_nom in sorted(self.nominal_diameters):
+            if d_nom >= diameter:
+                return d_nom
+        raise ValueError(
+            f"Расчётный диаметр {diameter * _TO_MM:.1f} мм "
+            f"больше {max(self.nominal_diameters) * _TO_MM:.0f} мм")
+
+    def actual_area(self) -> float:
+        """Действительная площадь живого сечения, м²"""
+        return (np.pi * self.select_nominal_diameter() ** 2) / \
+            (4 * self.сoefficients.area_reduction_coefficient)
+
+    def actual_velocity(self) -> float:
+        """Действительная скорость набегания, м/с"""
+        return self.flow_rates.flow_gas_work() / self.actual_area()
+
+    def capacity(self) -> float:
+        """Производительности, м³/с"""
+        return self.calculate_critical_velocity() * self.actual_area()
 
     def plot_stability_coefficient(self):
         """Построение графика зависимости коэффициента устойчивости от давления"""
@@ -138,8 +176,10 @@ if __name__ == "__main__":
         oil_surface_tension=0.02848  # Н/м
     )
 
+    coeff = Coefficients(area_reduction_coefficient=1.05)
+
     flow_rates = FlowRates(conditions=con, properties=props)
-    demister = WireMeshDemister(props, flow_rates)
+    demister = WireMeshDemister(props, flow_rates, coeff)
 
     # Вывод результатов
     _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СЕТЧАТОГО КАПЛЕУЛОВИТЕЛЯ")
@@ -162,5 +202,16 @@ if __name__ == "__main__":
     print(f"Коэффициент k: {demister.get_flow_stability_coefficient():.2f}")
     print(
         f"Критическая скорость: {demister.calculate_critical_velocity():.3f} м/с")
+
+    _minor_divider()
+    print(f"Площадь живого сечения сепаратора: {demister.area():.4f} м²")
+    print(f"Диаметр обечайки: {demister.calculate_diameter() * _TO_MM:.1f} мм")
+    print(
+        f"Принятый диаметр: {demister.select_nominal_diameter() * _TO_MM:.0f} мм")
+    print(
+        f"Действительная площадь живого сечения: {demister.actual_area():.4f} м²")
+    print(
+        f"Действительная скорость набегания: {demister.actual_velocity():.3f} м/с")
+    print(f"Производительность: {demister.capacity():.4f} м³/с")
 
     demister.plot_stability_coefficient()
