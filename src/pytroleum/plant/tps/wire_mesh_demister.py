@@ -89,12 +89,12 @@ class WireMeshDemister:
         )
 
     def area(self) -> float:
-        """Площадь живого сечения сепаратора, м²"""
+        """Площадь живого сечения, м²"""
         return (self.сoefficients.area_reduction_coefficient *
                 self.flow_rates.flow_gas_work()) / (self.calculate_critical_velocity())
 
     def calculate_diameter(self) -> float:
-        """Расчётный диаметр обечайки, м"""
+        """Расчётный диаметр, м"""
         return np.sqrt((4 * self.area()) / np.pi)
 
     def select_nominal_diameter(self) -> float:
@@ -117,7 +117,7 @@ class WireMeshDemister:
         return self.flow_rates.flow_gas_work() / self.actual_area()
 
     def capacity(self) -> float:
-        """Производительности, м³/с"""
+        """Производительность, м³/с"""
         return self.calculate_critical_velocity() * self.actual_area()
 
     def plot_stability_coefficient(self):
@@ -209,8 +209,8 @@ if __name__ == "__main__":
         f"Критическая скорость: {demister.calculate_critical_velocity():.3f} м/с")
 
     _minor_divider()
-    print(f"Площадь живого сечения сепаратора: {demister.area():.4f} м²")
-    print(f"Диаметр обечайки: {demister.calculate_diameter() * _TO_MM:.1f} мм")
+    print(f"Площадь живого сечения: {demister.area():.4f} м²")
+    print(f"Диаметр: {demister.calculate_diameter() * _TO_MM:.1f} мм")
     print(
         f"Принятый диаметр: {demister.select_nominal_diameter() * _TO_MM:.0f} мм")
     print(
