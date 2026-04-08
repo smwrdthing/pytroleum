@@ -145,3 +145,93 @@ class LiquidGasNozzle(Nozzle):
                   f"{value} м/с вне диапазона "
                   f"[{self.MIN_LIQUID_SPEED}, {self.MAX_LIQUID_SPEED}] м/с")
         self._liquid_speed = value
+
+
+if __name__ == "__main__":
+    from pytroleum.plant.tps.inputs import (
+        OperationConditions, PhysicalProperties, FlowRates,
+    )
+    from pytroleum.plant.tps.utils import (
+        SECONDS_PER_DAY, _major_header, _minor_header,
+    )
+
+    conditions = OperationConditions(
+        pressure_work=4e6,
+        temperature_work=353,
+        flow_gas_norm=300000 / SECONDS_PER_DAY,
+        flow_liquid=500 / SECONDS_PER_DAY,
+    )
+    properties = PhysicalProperties(
+        gas_density_norm=0.94,
+        oil_density=933,
+        water_density=966,
+        water_cut=0.6,
+        gas_factor=267.9,
+        oil_surface_tension=0.02848
+    )
+    flows = FlowRates(conditions=conditions, properties=properties)
+
+    gasnozzle = GasNozzle(flows=flows, recommended_speed=10.0)
+    oil_nozzle = OilNozzle(flows=flows, recommended_speed=1.0)
+    water_nozzle = WaterNozzle(flows=flows, recommended_speed=1.0)
+    liquid_nozzle = LiquidNozzle(flows=flows, recommended_speed=1.0)
+    liquidgasnozzle = LiquidGasNozzle(
+        flows=flows, gas_speed=10.0, liquid_speed=1.0)
+
+    _major_header("РАСЧЕТ ШТУЦЕРОВ")
+
+    _minor_header(gasnozzle.name)
+    print(f"Рекомендуемая скорость: {gasnozzle.recommended_speed:.2f} м/с")
+    print(
+        f"Расчетный диаметр: {gasnozzle.calculate_diameter() * _TO_MM:.1f} мм")
+    print(
+        f"Стандартный диаметр: {gasnozzle.select_nominal_diameter() * _TO_MM:.0f} мм")
+    print(f"Площадь сечения штуцера: {gasnozzle.nozzle_area():.4f} м²")
+    print(f"Фактическая скорость: {gasnozzle.actual_speed():.4f} м/с")
+
+    print()
+    _minor_header(oil_nozzle.name)
+    print(f"Рекомендуемая скорость: {oil_nozzle.recommended_speed:.2f} м/с")
+    print(
+        f"Расчетный диаметр:  {oil_nozzle.calculate_diameter() * _TO_MM:.1f} мм")
+    print(
+        f"Стандартный диаметр: {oil_nozzle.select_nominal_diameter() * _TO_MM:.0f} мм")
+    print(f"Площадь сечения штуцера: {oil_nozzle.nozzle_area():.4f} м²")
+    print(f"Фактическая скорость: {oil_nozzle.actual_speed():.4f} м/с")
+
+    print()
+    _minor_header(water_nozzle.name)
+    print(
+        f"Рекомендуемая скорость: {water_nozzle.recommended_speed:.2f} м/с")
+    print(
+        f"Расчетный диаметр: {water_nozzle.calculate_diameter() * _TO_MM:.1f} мм")
+    print(
+        f"Стандартный диаметр: {water_nozzle.select_nominal_diameter() * _TO_MM:.0f} мм")
+    print(f"Площадь сечения штуцера: {water_nozzle.nozzle_area():.4f} м²")
+    print(f"Фактическая скорость: {water_nozzle.actual_speed():.4f} м/с")
+
+    print()
+    _minor_header(liquid_nozzle.name)
+    print(
+        f"Рекомендуемая скорость: {liquid_nozzle.recommended_speed:.2f} м/с")
+    print(
+        f"Расчетный диаметр: {liquid_nozzle.calculate_diameter() * _TO_MM:.1f} мм")
+    print(
+        f"Стандартный диаметр: {liquid_nozzle.select_nominal_diameter() * _TO_MM:.0f} мм")
+    print(f"Площадь сечения штуцера: {liquid_nozzle.nozzle_area():.4f} м²")
+    print(f"Фактическая скорость: {liquid_nozzle.actual_speed():.4f} м/с")
+
+    print()
+    _minor_header(liquidgasnozzle.name)
+    print(
+        f"Рекомендуемая скорость газа: {liquidgasnozzle.gas_speed:.2f} м/с")
+    print(
+        f"Рекомендуемая скорость жидкости: {liquidgasnozzle.liquid_speed:.2f} м/с")
+    print(
+        f"Расчетный диаметр: {liquidgasnozzle.calculate_diameter() * _TO_MM:.1f} мм")
+    print(f"Стандартный диаметр: "
+          f"{liquidgasnozzle.select_nominal_diameter() * _TO_MM:.0f} мм")
+    print(
+        f"Площадь сечения штуцера: {liquidgasnozzle.nozzle_area():.4f} м²")
+    print(
+        f"Фактическая скорость: {liquidgasnozzle.actual_speed():.4f} м/с")

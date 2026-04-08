@@ -91,10 +91,8 @@ if __name__ == "__main__":
     _major_header("РАСЧЁТ СОПРОТИВЛЕНИЯ СЕПАРАТОРА")
 
     _minor_divider()
-    print(f"Коэффициент сопротивления сетчатого отбойника: "
-          f"{coefficients.mesh_resistance_coefficient}")
-    print(f"Падение давления на отбойнике: "
-          f"{resistance.pressure_drop_mesh_demister():.3f} Па")
+    print(f"Плотность газа при рабочих условиях: "
+          f"{properties.gas_density_work(conditions):.3f} кг/м³")
 
     _minor_divider()
     print(f"Диаметр штуцера входа ГЖС: "
@@ -113,16 +111,18 @@ if __name__ == "__main__":
           f"{coefficients.inlet_resistance_coefficient}")
     print(f"Коэффициент сопротивления выходного патрубка: "
           f"{coefficients.outlet_resistance_coefficient}")
+    print(f"Коэффициент сопротивления сетчатого отбойника: "
+          f"{coefficients.mesh_resistance_coefficient}")
+    print(f"Коэффициент неучтенных потерь: "
+          f"{coefficients.losses_unaccounted}")
 
     _minor_divider()
+    print(f"Падение давления на отбойнике: "
+          f"{resistance.pressure_drop_mesh_demister():.3f} Па")
     print(f"Потери давления на штуцере входа: "
           f"{resistance.pressure_drop_inlet_nozzle():.3f} Па")
     print(f"Потери давления на штуцере выхода: "
           f"{resistance.pressure_drop_outlet_nozzle():.3f} Па")
-
-    _minor_divider()
-    print(f"Коэффициент неучтенных потерь: "
-          f"{coefficients.losses_unaccounted}")
 
     _minor_divider()
     print(f"Сопротивление сепаратора: "
