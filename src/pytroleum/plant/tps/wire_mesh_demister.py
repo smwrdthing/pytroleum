@@ -176,7 +176,11 @@ if __name__ == "__main__":
         oil_surface_tension=0.02848  # Н/м
     )
 
-    coeff = Coefficients(area_reduction_coefficient=1.05)
+    coeff = Coefficients(area_reduction_coefficient=1.05,
+                         mesh_resistance_coefficient=70,
+                         inlet_resistance_coefficient=1,
+                         outlet_resistance_coefficient=0.5,
+                         losses_unaccounted=1.2)
 
     flow_rates = FlowRates(conditions=con, properties=props)
     demister = WireMeshDemister(props, flow_rates, coeff)

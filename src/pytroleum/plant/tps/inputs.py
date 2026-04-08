@@ -42,6 +42,10 @@ class PhysicalProperties:
 class Coefficients:
     # Коэффициент учитывающий снижение площади сечения элементами насадки
     area_reduction_coefficient: float
+    mesh_resistance_coefficient: float
+    inlet_resistance_coefficient: float
+    outlet_resistance_coefficient: float
+    losses_unaccounted: float
 
 
 @dataclass

@@ -14,7 +14,7 @@ if __name__ == '__main__':
     from pytroleum.plant.tps.utils import _major_header, _minor_header
 
     con = OperationConditions(
-        pressure_work=1e6,
+        pressure_work=4e6,
         temperature_work=353,
         flow_gas_norm=300000 / SECONDS_PER_DAY,
         flow_liquid=500 / SECONDS_PER_DAY,
