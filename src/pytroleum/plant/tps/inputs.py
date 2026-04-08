@@ -1,13 +1,8 @@
 from dataclasses import dataclass
-
-DEFAULT_PRESSURE = 0.1e6      # Па
-DEFAULT_TEMPERATURE = 293     # К (20°C)
-SECONDS_PER_DAY = 86400
-KG_PER_TON = 1000
-KG_S_TO_T_H = 3.6
-PERCENT = 100
-PA_TO_MPA = 1e6
-SECONDS_PER_HOUR = 3600
+from pytroleum.plant.tps.utils import (DEFAULT_PRESSURE,
+                                       DEFAULT_TEMPERATURE,
+                                       SECONDS_PER_DAY,
+                                       KG_PER_TON)
 
 
 @dataclass
@@ -20,7 +15,7 @@ class OperationConditions:
 
 @dataclass
 class PhysicalProperties:
-    gas_density_norm: float     # кг/м³ - плотность газа
+    gas_density_norm: float     # кг/м³ - плотность газа при н.у.
     oil_density: float          # кг/м³ - плотность нефти
     water_density: float        # кг/м³ - плотность воды
     water_cut: float            # Обводненность
@@ -42,9 +37,13 @@ class PhysicalProperties:
 class Coefficients:
     # Коэффициент учитывающий снижение площади сечения элементами насадки
     area_reduction_coefficient: float
+    # Коэффициент сопротивления сетчатого отбойника
     mesh_resistance_coefficient: float
+    # Коэффициент сопротивления для входного патрубка
     inlet_resistance_coefficient: float
+    # Коэффициент сопротивления для выходного патрубка
     outlet_resistance_coefficient: float
+    # Коэффициент неучтенных потерь
     losses_unaccounted: float
 
 

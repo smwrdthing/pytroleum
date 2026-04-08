@@ -3,23 +3,24 @@
 if __name__ == '__main__':
     from pytroleum.plant.tps.inputs import (
         OperationConditions, PhysicalProperties, FlowRates,
+    )
+    from pytroleum.plant.tps.utils import (
         DEFAULT_PRESSURE, DEFAULT_TEMPERATURE,
-        SECONDS_PER_DAY, PA_TO_MPA, PERCENT, KG_S_TO_T_H,
+        SECONDS_PER_DAY, PA_TO_MPA, PERCENT, KG_S_TO_T_H, _TO_MM,
     )
     from pytroleum.plant.tps.nozzle import (
         GasNozzle, OilNozzle, WaterNozzle, LiquidNozzle, LiquidGasNozzle,
-        _TO_MM,
     )
 
     from pytroleum.plant.tps.utils import _major_header, _minor_header
 
-    con = OperationConditions(
+    conditions = OperationConditions(
         pressure_work=4e6,
         temperature_work=353,
         flow_gas_norm=300000 / SECONDS_PER_DAY,
         flow_liquid=500 / SECONDS_PER_DAY,
     )
-    props = PhysicalProperties(
+    properties = PhysicalProperties(
         gas_density_norm=0.94,
         oil_density=933,
         water_density=966,
@@ -27,24 +28,24 @@ if __name__ == '__main__':
         gas_factor=267.9,
         oil_surface_tension=0.02848
     )
-    flows = FlowRates(conditions=con, properties=props)
+    flows = FlowRates(conditions=conditions, properties=properties)
 
     _major_header("УСЛОВИЯ РАБОТЫ")
     print(f"Давление при н.у.: {DEFAULT_PRESSURE / PA_TO_MPA:.1f} МПа")
     print(f"Температура при н.у.: {DEFAULT_TEMPERATURE} К")
-    print(f"Рабочее давление: {con.pressure_work / PA_TO_MPA:.1f} МПа")
-    print(f"Рабочая температура: {con.temperature_work} К")
+    print(f"Рабочее давление: {conditions.pressure_work / PA_TO_MPA:.1f} МПа")
+    print(f"Рабочая температура: {conditions.temperature_work} К")
     print(f"Объемный расход газа при н.у.: "
-          f"{con.flow_gas_norm * SECONDS_PER_DAY:.0f} м3/сут")
+          f"{conditions.flow_gas_norm * SECONDS_PER_DAY:.0f} м3/сут")
     print(f"Объемный расход жидкости: "
-          f"{con.flow_liquid * SECONDS_PER_DAY:.0f} м3/сут")
+          f"{conditions.flow_liquid * SECONDS_PER_DAY:.0f} м3/сут")
 
     _major_header("СВОЙСТВА ФЛЮИДА")
-    print(f"Плотность газа при н.у.: {props.gas_density_norm} кг/м3")
-    print(f"Плотность нефти: {props.oil_density} кг/м3")
-    print(f"Плотность воды: {props.water_density} кг/м3")
-    print(f"Обводненность: {props.water_cut * PERCENT:.0f}%")
-    print(f"Газовый фактор: {props.gas_factor} м3/т")
+    print(f"Плотность газа при н.у.: {properties.gas_density_norm} кг/м3")
+    print(f"Плотность нефти: {properties.oil_density} кг/м3")
+    print(f"Плотность воды: {properties.water_density} кг/м3")
+    print(f"Обводненность: {properties.water_cut * PERCENT:.0f}%")
+    print(f"Газовый фактор: {properties.gas_factor} м3/т")
 
     _major_header("ОБЪЕМНЫЕ РАСХОДЫ")
     print(f"Объемный расход газа при р.у.: "
@@ -76,9 +77,9 @@ if __name__ == '__main__':
           f"{flows.mass_flow_total() * KG_S_TO_T_H:.2f} т/ч")
 
     _major_header("ФИЗИЧЕСКИЕ СВОЙСТВА ПРИ РАБОЧИХ УСЛОВИЯХ")
-    print(f"Плотность газа в р.у.: {props.gas_density_work(con):.3f} кг/м³")
+    print(f"Плотность газа в р.у.: {properties.gas_density_work(conditions):.3f} кг/м³")
     print(f"Плотность жидкости (Н+В) при заданной обводненности: "
-          f"{props.liquid_density():.1f} кг/м³")
+          f"{properties.liquid_density():.1f} кг/м³")
     print(f"Производительность по газу из условия газового фактора: "
           f"{flows.flow_gas_from_gas_factor():.1f} м³/сут")
 

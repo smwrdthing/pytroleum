@@ -1,9 +1,7 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from pytroleum.plant.tps.inputs import FlowRates
-
-
-_TO_MM = 1000
+from pytroleum.plant.tps.utils import _TO_MM
 
 # Андрей сказал
 MAX_GAS_VELOCITY = 20  # м/с
@@ -24,7 +22,7 @@ NOMINAL_DIAMETERS = [
 
 
 class Nozzle(ABC):
-    """Calculation of the nozzle capacity"""
+    """Расчёт пропускной способности штуцера"""
 
     MIN_SPEED: float
     MAX_SPEED: float
@@ -69,7 +67,7 @@ class Nozzle(ABC):
 
 
 class GasNozzle(Nozzle):
-    """Calculation of the gas nozzle capacity."""
+    """Расчёт штуцера газа"""
 
     MIN_SPEED = MIN_GAS_VELOCITY
     MAX_SPEED = MAX_GAS_VELOCITY
@@ -82,7 +80,7 @@ class GasNozzle(Nozzle):
 
 
 class LiquidNozzle(Nozzle):
-    """Calculation of the liquid nozzle capacity."""
+    """Расчёт штуцера жидкости"""
 
     MIN_SPEED = MIN_LIQUID_VELOCITY
     MAX_SPEED = MAX_LIQUID_VELOCITY
@@ -96,7 +94,7 @@ class LiquidNozzle(Nozzle):
 
 
 class OilNozzle(LiquidNozzle):
-    """Calculation of the oil nozzle capacity."""
+    """Расчёт штуцера нефти"""
 
     def __init__(self, flows: FlowRates, recommended_speed: float):
         Nozzle.__init__(self, "Штуцер нефти",
@@ -104,7 +102,7 @@ class OilNozzle(LiquidNozzle):
 
 
 class WaterNozzle(LiquidNozzle):
-    """Calculation of the water nozzle capacity."""
+    """Расчёт штуцера воды"""
 
     def __init__(self, flows: FlowRates, recommended_speed: float):
         Nozzle.__init__(self, "Штуцер воды",
@@ -112,7 +110,7 @@ class WaterNozzle(LiquidNozzle):
 
 
 class LiquidGasNozzle(Nozzle):
-    """Расчёт штуцера для газожидкостной смеси."""
+    """Расчёт штуцера газожидкостной смеси."""
 
     MIN_SPEED = MIN_GAS_VELOCITY
     MAX_SPEED = MAX_GAS_VELOCITY
@@ -125,12 +123,11 @@ class LiquidGasNozzle(Nozzle):
         self.liquid_speed = liquid_speed
 
     def calculate_diameter(self) -> float:
-        """Расчёт диаметра для двухфазной среды по специальной формуле."""
         return 1.13 * np.sqrt(self.flow_rate / (1.3 * self.recommended_speed) +
                               self.liquid_flow_rate / (1.3 * self.liquid_speed))
 
     def actual_speed(self) -> float:
-        """Фактическая скорость газа в штуцере, м/с"""
+        """Фактическая скорость в штуцере, м/с"""
         return self.flow_rate / self.nozzle_area()
 
     @property
