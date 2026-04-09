@@ -5,6 +5,7 @@ DEFAULT_TEMPERATURE = 293   # К (20°C)
 # Коэффициенты перевода единиц измерения
 SECONDS_PER_DAY = 86400
 SECONDS_PER_HOUR = 3600
+SECONDS_PER_MINUTE = 60
 KG_PER_TON = 1000
 KG_S_TO_T_H = 3.6
 PA_TO_MPA = 1e6

@@ -46,6 +46,9 @@ class SeparatorParameters:
     inner_diameter: float  # внутренний диаметр
     length_cylindrical_part: float  # длина цилиндрической части сепаратора
     fill_coefficient: float  # коэффициент заполнения
+    volume_ell_head: float  # внутренний объем эллиптического днища
+    length_first_section: float  # длина цилиндрической части первой секции
+    length_section_after_wall: float  # длина секции после перегородки
 
 
 @dataclass
