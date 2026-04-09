@@ -34,6 +34,13 @@ class PhysicalProperties:
 
 
 @dataclass
+class Geometry:
+    width_inlet_cyclone: float   # м - ширина входа в циклон
+    height_inlet_cyclone: float  # м - высота входа в циклон
+    number_of_cyclones: float    # Количество циклонов
+
+
+@dataclass
 class Coefficients:
     # Коэффициент учитывающий снижение площади сечения элементами насадки
     area_reduction_coefficient: float
@@ -94,6 +101,10 @@ class FlowRates:
     def flow_gas_from_gas_factor(self) -> float:
         """Объемный расход по газу из условия газового фактора, м³/сут"""
         return self.properties.gas_factor * self.mass_flow_oil_ton_per_day()
+
+# ============================================================
+# Пример использования
+# ============================================================
 
 
 if __name__ == "__main__":

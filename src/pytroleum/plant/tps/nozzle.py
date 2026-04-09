@@ -146,6 +146,10 @@ class LiquidGasNozzle(Nozzle):
                   f"[{self.MIN_LIQUID_SPEED}, {self.MAX_LIQUID_SPEED}] м/с")
         self._liquid_speed = value
 
+# ============================================================
+# Пример использования
+# ============================================================
+
 
 if __name__ == "__main__":
     from pytroleum.plant.tps.inputs import (

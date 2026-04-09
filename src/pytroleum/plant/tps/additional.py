@@ -5,13 +5,13 @@ from pytroleum.plant.tps.utils import (_major_header,
 from pytroleum.plant.tps.inputs import (PhysicalProperties,
                                         OperationConditions,
                                         Coefficients,
-                                        FlowRates)
+                                        FlowRates, Geometry)
 from pytroleum.plant.tps.wire_mesh_demister import WireMeshDemister
 from pytroleum.plant.tps.nozzle import LiquidGasNozzle, GasNozzle
 
 
 class Resistance:
-    """Сопротивление сепаратора"""
+    """Расчет сопротивление сепаратора"""
 
     def __init__(self, properties: PhysicalProperties,
                  coefficients: Coefficients,
@@ -48,6 +48,25 @@ class Resistance:
         return self.coefficients.losses_unaccounted*(self.pressure_drop_mesh_demister() +
                                                      self.pressure_drop_inlet_nozzle() +
                                                      self.pressure_drop_outlet_nozzle())
+
+
+class Cyclone:
+    """ Расчет скорости газа в сепарационном элементе (спиральный канал)"""
+
+    def __init__(self, flows: FlowRates, geometry: Geometry):
+        self.flows = flows
+        self.geometry = geometry
+
+    def area_spiral_channel(self) -> float:
+        return self.geometry.width_inlet_cyclone*self.geometry.height_inlet_cyclone
+
+    def velocity_gas_in_spiral_channel(self):
+        return self.flows.flow_gas_work()/(self.geometry.number_of_cyclones *
+                                           self.area_spiral_channel())
+
+# ============================================================
+# Пример использования
+# ============================================================
 
 
 if __name__ == "__main__":
@@ -87,6 +106,10 @@ if __name__ == "__main__":
         liquidgasnozzle=liquidgasnozzle,
         gasnozzle=gasnozzle,
     )
+
+    geometry = Geometry(width_inlet_cyclone=47.5e-3,
+                        height_inlet_cyclone=75e-3, number_of_cyclones=4)
+
     # ВЫВОД РЕЗУЛЬТАТОВ
     _major_header("РАСЧЁТ СОПРОТИВЛЕНИЯ СЕПАРАТОРА")
 
@@ -127,3 +150,23 @@ if __name__ == "__main__":
     _minor_divider()
     print(f"Сопротивление сепаратора: "
           f"{resistance.separator_resistance():.3f} Па")
+
+    cyclone = Cyclone(flows=flows, geometry=geometry)
+
+    _major_header(
+        "РАСЧЁТ СКОРОСТИ ГАЗА В СЕПАРАЦИОННОМ ЭЛЕМЕНТЕ (СПИРАЛЬНЫЙ КАНАЛ)")
+
+    _minor_divider()
+    print(
+        f"Ширина входа в циклон: {geometry.width_inlet_cyclone * _TO_MM:.1f} мм")
+    print(
+        f"Высота входа в циклон: {geometry.height_inlet_cyclone * _TO_MM:.1f} мм")
+    print(f"Количество циклонов: {geometry.number_of_cyclones}")
+
+    _minor_divider()
+    print(f"Расход газа при рабочих условиях: "
+          f"{flows.flow_gas_work() * SECONDS_PER_DAY:.1f} м³/сут")
+    print(f"Площадь сечения спирального канала: "
+          f"{cyclone.area_spiral_channel():.4f} м²")
+    print(f"Скорость газа в спиральном канале: "
+          f"{cyclone.velocity_gas_in_spiral_channel():.3f} м/с")
