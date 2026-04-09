@@ -5,7 +5,7 @@ import numpy as np
 
 
 class Separator:
-    """Расчёт пропускной способности сепаратора по жидкости."""
+    """Расчёт сепаратора"""
 
     def __init__(self, sepparam: SeparatorParameters,
                  conditions: OperationConditions):
@@ -64,6 +64,8 @@ class Separator:
         """Пропускная способность сборника нефти после перегородки, м³/с"""
         return (self.volume_after_wall() * self.sepparam.fill_coeff_after_wall /
                 self.residence_time_after_wall())
+
+    # ---Скорость движения жидкой фазы и газовой фазы в сечении сепаратора ---
 
 
 if __name__ == "__main__":

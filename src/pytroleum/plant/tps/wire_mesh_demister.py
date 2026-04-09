@@ -174,7 +174,9 @@ if __name__ == "__main__":
         water_density=966,          # кг/м³
         water_cut=0.6,              # 60% обводнённость
         gas_factor=267.9,           # м³/т
-        oil_surface_tension=0.02848  # Н/м
+        oil_surface_tension=0.02848,  # Н/м
+        viscosity_oil=3.073e-3,
+        viscosity_water=0.544e-3
     )
 
     coefficients = Coefficients(area_reduction_coefficient=1.05,

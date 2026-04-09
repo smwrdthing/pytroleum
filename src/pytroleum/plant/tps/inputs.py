@@ -22,6 +22,8 @@ class PhysicalProperties:
     water_cut: float            # Обводненность
     gas_factor: float           # Газовый фактор, м³/т
     oil_surface_tension: float  # Поверхностное натяжение нефти, Н/м
+    viscosity_oil: float        # Вязкость нефти, Па*с
+    viscosity_water: float      # Вязкость воды, Па*с
 
     def liquid_density(self) -> float:
         """Плотность жидкости (Н+В) при заданной обводненности"""
@@ -138,7 +140,9 @@ if __name__ == "__main__":
         water_density=966,
         water_cut=0.6,
         gas_factor=267.9,
-        oil_surface_tension=0.02848
+        oil_surface_tension=0.02848,
+        viscosity_oil=3.073e-3,
+        viscosity_water=0.544e-3
     )
     flows = FlowRates(conditions=conditions, properties=properties)
 
