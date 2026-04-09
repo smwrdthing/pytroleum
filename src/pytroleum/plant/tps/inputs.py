@@ -45,7 +45,9 @@ class GeometryCyclone:
 class SeparatorParameters:
     inner_diameter: float  # внутренний диаметр
     length_cylindrical_part: float  # длина цилиндрической части сепаратора
-    fill_coefficient: float  # коэффициент заполнения
+    fill_coeff: float  # коэффициент заполнения сепаратора
+    fill_coeff_first_section: float  # коэффициент заполнения первой секции
+    fill_coeff_after_wall: float  # коэффициент заполнения после перегородки
     volume_ell_head: float  # внутренний объем эллиптического днища
     length_first_section: float  # длина цилиндрической части первой секции
     length_section_after_wall: float  # длина секции после перегородки
