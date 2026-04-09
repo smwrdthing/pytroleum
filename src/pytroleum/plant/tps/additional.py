@@ -5,7 +5,7 @@ from pytroleum.plant.tps.utils import (_major_header,
 from pytroleum.plant.tps.inputs import (PhysicalProperties,
                                         OperationConditions,
                                         Coefficients,
-                                        FlowRates, Geometry)
+                                        FlowRates, GeometryCyclone)
 from pytroleum.plant.tps.wire_mesh_demister import WireMeshDemister
 from pytroleum.plant.tps.nozzle import LiquidGasNozzle, GasNozzle
 
@@ -53,15 +53,16 @@ class Resistance:
 class Cyclone:
     """ Расчет скорости газа в сепарационном элементе (спиральный канал)"""
 
-    def __init__(self, flows: FlowRates, geometry: Geometry):
+    def __init__(self, flows: FlowRates, geometry_cyclone: GeometryCyclone):
         self.flows = flows
-        self.geometry = geometry
+        self.geometry_cyclone = geometry_cyclone
 
     def area_spiral_channel(self) -> float:
-        return self.geometry.width_inlet_cyclone*self.geometry.height_inlet_cyclone
+        return self.geometry_cyclone.width_inlet_cyclone *\
+            self.geometry_cyclone.height_inlet_cyclone
 
     def velocity_gas_in_spiral_channel(self):
-        return self.flows.flow_gas_work()/(self.geometry.number_of_cyclones *
+        return self.flows.flow_gas_work()/(self.geometry_cyclone.number_of_cyclones *
                                            self.area_spiral_channel())
 
 # ============================================================
@@ -107,8 +108,8 @@ if __name__ == "__main__":
         gasnozzle=gasnozzle,
     )
 
-    geometry = Geometry(width_inlet_cyclone=47.5e-3,
-                        height_inlet_cyclone=75e-3, number_of_cyclones=4)
+    geometry_cyclone = GeometryCyclone(width_inlet_cyclone=47.5e-3,
+                                       height_inlet_cyclone=75e-3, number_of_cyclones=4)
 
     # ВЫВОД РЕЗУЛЬТАТОВ
     _major_header("РАСЧЁТ СОПРОТИВЛЕНИЯ СЕПАРАТОРА")
@@ -151,17 +152,17 @@ if __name__ == "__main__":
     print(f"Сопротивление сепаратора: "
           f"{resistance.separator_resistance():.3f} Па")
 
-    cyclone = Cyclone(flows=flows, geometry=geometry)
+    cyclone = Cyclone(flows=flows, geometry_cyclone=geometry_cyclone)
 
     _major_header(
         "РАСЧЁТ СКОРОСТИ ГАЗА В СЕПАРАЦИОННОМ ЭЛЕМЕНТЕ (СПИРАЛЬНЫЙ КАНАЛ)")
 
     _minor_divider()
     print(
-        f"Ширина входа в циклон: {geometry.width_inlet_cyclone * _TO_MM:.1f} мм")
+        f"Ширина входа в циклон: {geometry_cyclone.width_inlet_cyclone * _TO_MM:.1f} мм")
     print(
-        f"Высота входа в циклон: {geometry.height_inlet_cyclone * _TO_MM:.1f} мм")
-    print(f"Количество циклонов: {geometry.number_of_cyclones}")
+        f"Высота входа в циклон: {geometry_cyclone.height_inlet_cyclone * _TO_MM:.1f} мм")
+    print(f"Количество циклонов: {geometry_cyclone.number_of_cyclones}")
 
     _minor_divider()
     print(f"Расход газа при рабочих условиях: "

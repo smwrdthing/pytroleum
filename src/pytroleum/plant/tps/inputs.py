@@ -34,7 +34,7 @@ class PhysicalProperties:
 
 
 @dataclass
-class Geometry:
+class GeometryCyclone:
     width_inlet_cyclone: float   # м - ширина входа в циклон
     height_inlet_cyclone: float  # м - высота входа в циклон
     number_of_cyclones: float    # Количество циклонов
