@@ -11,7 +11,8 @@ from pytroleum.plant.tps.utils import (SECONDS_PER_DAY,
                                        SECONDS_PER_HOUR,
                                        PA_TO_MPA,
                                        PERCENT,
-                                       _TO_MM)
+                                       _TO_MM,
+                                       KELVIN_TO_CELSIUS)
 
 """
 Данные взяты из рис.5 График зависимости коэффициента устойчивости
@@ -188,11 +189,12 @@ if __name__ == "__main__":
     # Вывод результатов
     _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СЕТЧАТОГО КАПЛЕУЛОВИТЕЛЯ")
     print(f"Рабочее давление: {conditions.pressure_work/PA_TO_MPA} МПа")
-    print(f"Рабочая температура: {conditions.temperature_work} K")
+    print(f"Рабочая температура: {conditions.temperature_work} К "
+          f"({conditions.temperature_work - KELVIN_TO_CELSIUS} °C)")
 
     _minor_divider()
     print(f"Объемный расход газа при н.у.: "
-          f"{conditions.flow_gas_norm * SECONDS_PER_DAY} м³/сут")
+          f"{conditions.flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
     print(f"Объемный расход газа при р.у.: "
           f"{flows.flow_gas_work() * SECONDS_PER_HOUR:.4f} м³/ч")
     print(f"Объемный расход жидкости: "

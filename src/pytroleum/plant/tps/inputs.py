@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from pytroleum.plant.tps.utils import (DEFAULT_PRESSURE,
                                        DEFAULT_TEMPERATURE,
                                        SECONDS_PER_DAY,
-                                       KG_PER_TON)
+                                       KG_PER_TON,
+                                       KELVIN_TO_CELSIUS)
 
 
 @dataclass
@@ -38,6 +39,13 @@ class GeometryCyclone:
     width_inlet_cyclone: float   # м - ширина входа в циклон
     height_inlet_cyclone: float  # м - высота входа в циклон
     number_of_cyclones: float    # Количество циклонов
+
+
+@dataclass
+class SeparatorParameters:
+    inner_diameter: float  # внутренний диаметр
+    length_cylindrical_part: float  # длина цилиндрической части сепаратора
+    fill_coefficient: float  # коэффициент заполнения
 
 
 @dataclass
@@ -133,9 +141,10 @@ if __name__ == "__main__":
     print(f"Давление при н.у.: {DEFAULT_PRESSURE / PA_TO_MPA:.1f} МПа")
     print(f"Температура при н.у.: {DEFAULT_TEMPERATURE} К")
     print(f"Рабочее давление: {conditions.pressure_work / PA_TO_MPA:.1f} МПа")
-    print(f"Рабочая температура: {conditions.temperature_work} К")
+    print(f"Рабочая температура: {conditions.temperature_work} К "
+          f"({conditions.temperature_work - KELVIN_TO_CELSIUS} °C)")
     print(f"Объемный расход газа при н.у.: "
-          f"{conditions.flow_gas_norm * SECONDS_PER_DAY:.0f} м3/сут")
+          f"{conditions.flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
     print(f"Объемный расход жидкости: "
           f"{conditions.flow_liquid * SECONDS_PER_DAY:.0f} м3/сут")
 
