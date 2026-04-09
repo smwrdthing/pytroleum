@@ -5,21 +5,24 @@ import numpy as np
 
 
 class Separator:
-    """Расчет пропускной способности сепаратора по жидкости"""
+    """Расчёт пропускной способности сепаратора по жидкости."""
 
     def __init__(self, sepparam: SeparatorParameters,
                  conditions: OperationConditions):
         self.sepparam = sepparam
         self.conditions = conditions
 
-    def volume_separator(self):
-        """Номинальный объем сепаратора"""
-        return (np.pi*self.sepparam.inner_diameter**2/4 *
-                self.sepparam.length_cylindrical_part+2*self.sepparam.volume_ell_head)
+    # --- Сепаратор ---
 
-    def residence_time(self):
-        """Время прибывания"""
-        return (self.volume_separator()*self.sepparam.fill_coefficient /
+    def volume_separator(self) -> float:
+        """Номинальный объём сепаратора, м³"""
+        return (np.pi * self.sepparam.inner_diameter ** 2 / 4 *
+                self.sepparam.length_cylindrical_part +
+                2 * self.sepparam.volume_ell_head)
+
+    def residence_time(self) -> float:
+        """Время пребывания жидкости в сепараторе, с"""
+        return (self.volume_separator() * self.sepparam.fill_coefficient /
                 self.conditions.flow_liquid)
 
     def capacity(self):
@@ -28,35 +31,38 @@ class Separator:
         return (self.volume_separator()*self.sepparam.fill_coefficient /
                 self.residence_time())
 
-    """Первая секция"""
+    # --- Первая секция (Н+В) ---
 
-    def volume_first_section(self):
-        """Объем первой секции"""
-        return np.pi*self.sepparam.inner_diameter**2/4*self.sepparam.length_first_section
+    def volume_first_section(self) -> float:
+        """Объём первой секции, м³"""
+        return (np.pi * self.sepparam.inner_diameter ** 2 / 4 *
+                self.sepparam.length_first_section)
 
-    def residence_time_first_section(self):
-        """"Время прибывания в первой секции"""
-        return (self.volume_first_section()*self.sepparam.fill_coefficient /
+    def residence_time_first_section(self) -> float:
+        """Время пребывания жидкости в первой секции, с"""
+        return (self.volume_first_section() * self.sepparam.fill_coefficient /
                 self.conditions.flow_liquid)
 
-    def capacity_first_section(self):
-        """Пропускная способность первой секции"""
-        return (self.volume_first_section()*self.sepparam.fill_coefficient /
+    def capacity_first_section(self) -> float:
+        """Пропускная способность первой секции, м³/с"""
+        return (self.volume_first_section() * self.sepparam.fill_coefficient /
                 self.residence_time_first_section())
 
-    """Секция после перегородки """
+    # --- Сборник нефти после перегородки ---
 
-    def residence_time_after_wall(self):
-        """Время прибывания после перегородки"""
-        return self.residence_time()-self.residence_time_first_section()
+    def volume_after_wall(self) -> float:
+        """Объём сборника нефти после перегородки, м³"""
+        return (np.pi * self.sepparam.inner_diameter ** 2 / 4 *
+                self.sepparam.length_section_after_wall +
+                self.sepparam.volume_ell_head)
 
-    def volume_after_wall(self):
-        """Объем секции после перегородки"""
-        return (np.pi * self.sepparam.inner_diameter**2/4 *
-                self.sepparam.length_section_after_wall+self.sepparam.volume_ell_head)
+    def residence_time_after_wall(self) -> float:
+        """Время пребывания нефти в сборнике после перегородки, с"""
+        return self.residence_time() - self.residence_time_first_section()
 
-    def capacity_after_wall(self):
-        return (self.volume_after_wall()*self.sepparam.fill_coefficient /
+    def capacity_after_wall(self) -> float:
+        """Пропускная способность сборника нефти после перегородки, м³/с"""
+        return (self.volume_after_wall() * self.sepparam.fill_coefficient /
                 self.residence_time_after_wall())
 
 
@@ -83,37 +89,37 @@ if __name__ == "__main__":
     _major_header("РАСЧЁТ ПРОПУСКНОЙ СПОСОБНОСТИ СЕПАРАТОРА ПО ЖИДКОСТИ")
 
     _minor_divider()
-    print(f"Внутренний диаметр:                      "
-          f"{sepparam.inner_diameter * _TO_MM:.0f} мм")
-    print(f"Длина цилиндрической части:              "
+    print(f"Внутренний диаметр: "
+          f"{sepparam.inner_diameter * _TO_MM} мм")
+    print(f"Длина цилиндрической части: "
           f"{sepparam.length_cylindrical_part:.1f} м")
-    print(f"Объём эллиптического днища:              "
+    print(f"Объём эллиптического днища: "
           f"{sepparam.volume_ell_head:.3f} м³")
-    print(f"Коэффициент заполнения:                  "
+    print(f"Коэффициент заполнения: "
           f"{sepparam.fill_coefficient * PERCENT:.1f} %")
-    print(f"Объёмный расход жидкости:                "
-          f"{conditions.flow_liquid * SECONDS_PER_DAY:.1f} м³/сут")
+    print(f"Объёмный расход жидкости: "
+          f"{conditions.flow_liquid * SECONDS_PER_DAY} м³/сут")
 
     _minor_divider()
-    print(f"Номинальный объём сепаратора:            "
+    print(f"Номинальный объём сепаратора: "
           f"{sep.volume_separator():.3f} м³")
-    print(f"Время пребывания жидкости:               "
+    print(f"Время пребывания жидкости: "
           f"{sep.residence_time() / SECONDS_PER_MINUTE:.2f} мин")
-    print(f"Пропускная способность сепаратора:       "
+    print(f"Пропускная способность сепаратора: "
           f"{sep.capacity() * SECONDS_PER_DAY:.2f} м³/сут")
 
     _minor_divider()
-    print(f"Объём первой секции (Н+В):               "
+    print(f"Объём первой секции (Н+В): "
           f"{sep.volume_first_section():.3f} м³")
-    print(f"Время пребывания в первой секции:        "
+    print(f"Время пребывания в первой секции: "
           f"{sep.residence_time_first_section() / SECONDS_PER_MINUTE:.3f} мин")
-    print(f"Пропускная способность первой секции:    "
+    print(f"Пропускная способность первой секции: "
           f"{sep.capacity_first_section() * SECONDS_PER_DAY:.2f} м³/сут")
 
     _minor_divider()
-    print(f"Объём сборника нефти:                    "
+    print(f"Объём сборника нефти после перегородки: "
           f"{sep.volume_after_wall():.3f} м³")
-    print(f"Время пребывания нефти в сборнике:       "
+    print(f"Время пребывания нефти в сборнике после перегородки: "
           f"{sep.residence_time_after_wall() / SECONDS_PER_MINUTE:.3f} мин")
-    print(f"Пропускная способность сборника нефти:   "
+    print(f"Пропускная способность сборника нефти после перегородки: "
           f"{sep.capacity_after_wall() * SECONDS_PER_DAY:.3f} м³/сут")
