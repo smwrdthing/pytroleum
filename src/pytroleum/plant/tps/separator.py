@@ -1,6 +1,9 @@
 from pytroleum.plant.tps.utils import (_major_header, _minor_divider,
                                        _TO_MM, PERCENT, SECONDS_PER_MINUTE)
-from pytroleum.plant.tps.inputs import SeparatorParameters, OperationConditions
+from pytroleum.plant.tps.inputs import (SeparatorParameters,
+                                        OperationConditions,
+                                        PhysicalProperties,
+                                        FlowRates)
 import numpy as np
 
 
@@ -8,9 +11,13 @@ class Separator:
     """Расчёт сепаратора"""
 
     def __init__(self, sepparam: SeparatorParameters,
-                 conditions: OperationConditions):
+                 conditions: OperationConditions,
+                 properties: PhysicalProperties,
+                 flows: FlowRates):
         self.sepparam = sepparam
         self.conditions = conditions
+        self.properties = properties
+        self.flows = flows
 
     # --- Сепаратор ---
 
@@ -28,7 +35,7 @@ class Separator:
     def capacity(self):
         """Максимальная производительность аппарата по жидкости с
         учетом коэффициента заполнения"""
-        return (self.volume_separator()*self.sepparam.fill_coeff /
+        return (self.volume_separator() * self.sepparam.fill_coeff /
                 self.residence_time())
 
     # --- Первая секция (Н+В) ---
@@ -65,7 +72,36 @@ class Separator:
         return (self.volume_after_wall() * self.sepparam.fill_coeff_after_wall /
                 self.residence_time_after_wall())
 
-    # ---Скорость движения жидкой фазы и газовой фазы в сечении сепаратора ---
+    # --- Скорость движения жидкой фазы и газовой фазы в сечении сепаратора ---
+
+    def liquid_flow_area(self) -> float:
+        """Площадь сечения для прохода жидкости"""
+        return (np.pi * self.sepparam.inner_diameter ** 2 / 4 *
+                self.sepparam.fill_coeff_first_section)
+
+    def gas_flow_area(self) -> float:
+        """Площадь сечения для прохода газа"""
+        return (np.pi * self.sepparam.inner_diameter ** 2 / 4 - self.liquid_flow_area())
+
+    def water_flow_area(self) -> float:
+        """Площадь сечения для прохода воды"""
+        return self.liquid_flow_area()*self.properties.water_cut
+
+    def oil_flow_area(self) -> float:
+        """Площадь сечения для прохода нефти"""
+        return self.liquid_flow_area()-self.water_flow_area()
+
+    def gas_velocity(self) -> float:
+        """Скорость движения газа"""
+        return self.flows.flow_gas_work()/self.gas_flow_area()
+
+    def oil_velocity(self) -> float:
+        """Скорость движения нефти"""
+        return self.flows.flow_oil()/self.oil_flow_area()
+
+    def water_velocity(self) -> float:
+        """Скорость движения воды"""
+        return self.flows.flow_water()/self.water_flow_area()
 
 
 if __name__ == "__main__":
@@ -88,7 +124,21 @@ if __name__ == "__main__":
         flow_liquid=500 / SECONDS_PER_DAY,
     )
 
-    sep = Separator(sepparam=sepparam, conditions=conditions)
+    properties = PhysicalProperties(
+        gas_density_norm=0.94,
+        oil_density=933,
+        water_density=966,
+        water_cut=0.6,
+        gas_factor=267.9,
+        oil_surface_tension=0.02848,
+        viscosity_oil=3.073e-3,
+        viscosity_water=0.544e-3
+    )
+
+    flows = FlowRates(conditions=conditions, properties=properties)
+
+    sep = Separator(sepparam=sepparam, conditions=conditions,
+                    properties=properties, flows=flows)
 
     _major_header("РАСЧЁТ ПРОПУСКНОЙ СПОСОБНОСТИ СЕПАРАТОРА ПО ЖИДКОСТИ")
 
@@ -137,4 +187,23 @@ if __name__ == "__main__":
     print(f"Пропускная способность: "
           f"{sep.capacity_after_wall() * SECONDS_PER_DAY:.3f} м³/сут")
 
+    _minor_divider()
+    print("РАСЧЕТ СКОРОСТЕЙ ДВИЖЕНИЯ ЖИДКОЙ ФАЗЫ И ГАЗОВОЙ ФАЗЫ В СЕЧЕНИИ СЕПАРАТОРА")
+    _minor_divider()
+    print(f"Площадь сечения для прохода жидкости: "
+          f"{sep.liquid_flow_area():.3f} м²")
+    print(f"Площадь сечения для прохода газа: "
+          f"{sep.gas_flow_area():.3f} м²")
+    print(f"Площадь сечения для прохода воды: "
+          f"{sep.water_flow_area():.3f} м²")
+    print(f"Площадь сечения для прохода нефти: "
+          f"{sep.oil_flow_area():.3f} м²")
+
+    _minor_divider()
+    print(f"Скорость движения газа: "
+          f"{sep.gas_velocity():.4f} м/с")
+    print(f"Скорость движения нефти: "
+          f"{sep.oil_velocity()*_TO_MM:.4f} мм/с")
+    print(f"Скорость движения воды: "
+          f"{sep.water_velocity()*_TO_MM:.4f} мм/с")
     _minor_divider()
