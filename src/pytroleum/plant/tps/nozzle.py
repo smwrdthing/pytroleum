@@ -14,13 +14,9 @@ MIN_LIQUID_VELOCITY = 1  # м/с
 # Таблица с номинальными диаметрами:
 # https://dpva.ru/guide/guideequipment/connections/diameters/pipeoutsidediametercorrespondance/
 
-# NOTE можно сделать массивом, тогда деление на 1000 будет один раз :)
-# NOTE можно так оставить, чтобы не перепечатывать
-NOMINAL_DIAMETERS = [
-    10e-3, 15e-3, 20e-3, 25e-3, 32e-3, 40e-3, 50e-3, 65e-3, 80e-3,
-    90e-3, 100e-3, 125e-3, 150e-3, 200e-3, 225e-3,
-    250e-3, 300e-3, 400e-3, 500e-3, 600e-3, 800e-3, 1000e-3, 1200e-3
-]
+NOMINAL_DIAMETERS = np.array([
+    10, 15, 20, 25, 32, 40, 50, 65, 80, 90, 100, 125, 150,
+    200, 225, 250, 300, 400, 500, 600, 800, 1000, 1200]) * 1e-3
 
 
 class Nozzle(ABC):
@@ -47,15 +43,7 @@ class Nozzle(ABC):
 
     @abstractmethod
     def calculate_diameter(self) -> float:
-        # NOTE pass обычно оставляют для функций, которые ещё не определены, но которые
-        # NOTE должны быть определены потом
-        # NOTE (когда, например, закладываем функциональность)
-        # NOTE
-        # NOTE Ничего неправильного здесь нет, просто кто-то может решить, что тут должно
-        # NOTE что-то появиться потом
-        # NOTE
-        # NOTE вместо pass можно return
-        pass
+        ...
 
     def select_nominal_diameter(self) -> float:
         diameter = self.calculate_diameter()

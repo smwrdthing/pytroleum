@@ -39,11 +39,7 @@ class PhysicalProperties:
 
 
 @dataclass
-class CoalescerNozzle:
-
-    # NOTE Nozzle - насадка? Обычно Nozzle это какой-нибудь осесимметричный канал,
-    # NOTE (как сопло Лаваля, например), немного сбивает с толку
-
+class CoalescerPacking:
     coalescer_top_gap: float     # расстояние между пластинами в верхнем коалесцере, м
     coalescer_bottom_gap: float  # расстояние между пластинами в нижнем коалесцере, м
     angle: float = 45.0          # угол наклона пластин, градусы
