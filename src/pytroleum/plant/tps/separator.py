@@ -146,19 +146,21 @@ class Coalescer:
 
     # ---Для верхнего коалесцера ---
     def droplet_water_sitting_time(self):
-        """"Время осаждения капель в воды зазоре"""
+        """"Время осаждения капель воды в зазоре"""
         return (self.coalescer_nozzle.coalescer_top_gap /
-                (self.sep.velocity_water_settling() * np.cos(np.radians(45))))
+                (self.sep.velocity_water_settling() *
+                 np.cos(np.radians(self.coalescer_nozzle.angle))))
 
     def coalescer_top_channel_length(self):
         """Длина канала верхнего коалесцера"""
-        return self.sep.oil_velocity()*self.droplet_water_sitting_time()
+        return self.sep.oil_velocity() * self.droplet_water_sitting_time()
 
     # ---Для нижнего коалесцера ---
     def droplet_oil_risling_time(self):
         """"Время всплытия капель нефти в зазоре"""
         return (self.coalescer_nozzle.coalescer_bottom_gap /
-                (self.sep.velocity_oil_rising() * np.cos(np.radians(45))))
+                (self.sep.velocity_oil_rising() *
+                 np.cos(np.radians(self.coalescer_nozzle.angle))))
 
     def coalescer_bottom_channel_length(self):
         """Длина канала нижнего коалесцера"""
@@ -309,6 +311,8 @@ if __name__ == "__main__":
     _minor_divider()
     print("ВЕРХНИЙ КОАЛЕСЦЕР")
     _minor_divider()
+    print(f"Угол наклона пластин: "
+          f"{coalescer_nozzle.angle:.0f}°")
     print(f"Зазор между пластинами: "
           f"{coalescer_nozzle.coalescer_top_gap * _TO_MM:.0f} мм")
     print(f"Время осаждения капель воды в зазоре: "
@@ -319,6 +323,8 @@ if __name__ == "__main__":
     _minor_divider()
     print("НИЖНИЙ КОАЛЕСЦЕР")
     _minor_divider()
+    print(f"Угол наклона пластин: "
+          f"{coalescer_nozzle.angle:.0f}°")
     print(f"Зазор между пластинами: "
           f"{coalescer_nozzle.coalescer_bottom_gap * _TO_MM:.0f} мм")
     print(f"Время всплытия капель нефти в зазоре: "

@@ -38,8 +38,9 @@ class PhysicalProperties:
 
 @dataclass
 class CoalescerNozzle:
-    coalescer_top_gap: float  # расстояние между пластинами в верхнем коалесцере
-    coalescer_bottom_gap: float  # расстояние между пластинами в нижнем коалесцере
+    coalescer_top_gap: float     # расстояние между пластинами в верхнем коалесцере, м
+    coalescer_bottom_gap: float  # расстояние между пластинами в нижнем коалесцере, м
+    angle: float = 45.0          # угол наклона пластин, градусы
 
 
 @dataclass
