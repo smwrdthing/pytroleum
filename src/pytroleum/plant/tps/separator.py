@@ -3,7 +3,8 @@ from pytroleum.plant.tps.utils import (_major_header, _minor_divider,
 from pytroleum.plant.tps.inputs import (SeparatorParameters,
                                         OperationConditions,
                                         PhysicalProperties,
-                                        FlowRates, Dropsizes)
+                                        FlowRates, Dropsizes,
+                                        CoalescerNozzle)
 import numpy as np
 from scipy.constants import g
 
@@ -137,6 +138,33 @@ class Separator:
         return self.velocity_oil_rising()*self.water_transit_time()
 
 
+class Coalescer:
+    def __init__(self, coalescer_nozzle: CoalescerNozzle,
+                 sep: Separator) -> None:
+        self.coalescer_nozzle = coalescer_nozzle
+        self.sep = sep
+
+    # ---Для верхнего коалесцера ---
+    def droplet_water_sitting_time(self):
+        """"Время осаждения капель в воды зазоре"""
+        return (self.coalescer_nozzle.coalescer_top_gap /
+                (self.sep.velocity_water_settling() * np.cos(np.radians(45))))
+
+    def coalescer_top_channel_length(self):
+        """Длина канала верхнего коалесцера"""
+        return self.sep.oil_velocity()*self.droplet_water_sitting_time()
+
+    # ---Для нижнего коалесцера ---
+    def droplet_oil_risling_time(self):
+        """"Время всплытия капель нефти в зазоре"""
+        return (self.coalescer_nozzle.coalescer_bottom_gap /
+                (self.sep.velocity_oil_rising() * np.cos(np.radians(45))))
+
+    def coalescer_bottom_channel_length(self):
+        """Длина канала нижнего коалесцера"""
+        return self.sep.water_velocity()*self.droplet_oil_risling_time()
+
+
 if __name__ == "__main__":
     from pytroleum.plant.tps.utils import SECONDS_PER_DAY
 
@@ -176,6 +204,12 @@ if __name__ == "__main__":
 
     sep = Separator(sepparam=sepparam, conditions=conditions,
                     properties=properties, flows=flows, dropsizes=dropsizes)
+
+    coalescer_nozzle = CoalescerNozzle(
+        coalescer_top_gap=15e-3,
+        coalescer_bottom_gap=25e-3,
+    )
+    coalescer = Coalescer(coalescer_nozzle=coalescer_nozzle, sep=sep)
 
     _major_header("РАСЧЁТ ПРОПУСКНОЙ СПОСОБНОСТИ СЕПАРАТОРА ПО ЖИДКОСТИ")
 
@@ -271,4 +305,24 @@ if __name__ == "__main__":
           f"{sep.water_transit_time():.2f} с")
     print(f"Высота подъёма капель нефти: "
           f"{sep.oil_rising_height() * _TO_MM:.2f} мм")
+
+    _minor_divider()
+    print("ВЕРХНИЙ КОАЛЕСЦЕР")
+    _minor_divider()
+    print(f"Зазор между пластинами: "
+          f"{coalescer_nozzle.coalescer_top_gap * _TO_MM:.0f} мм")
+    print(f"Время осаждения капель воды в зазоре: "
+          f"{coalescer.droplet_water_sitting_time() / SECONDS_PER_MINUTE:.2f} мин")
+    print(f"Длина канала: "
+          f"{coalescer.coalescer_top_channel_length():.4f} м")
+
+    _minor_divider()
+    print("НИЖНИЙ КОАЛЕСЦЕР")
+    _minor_divider()
+    print(f"Зазор между пластинами: "
+          f"{coalescer_nozzle.coalescer_bottom_gap * _TO_MM:.0f} мм")
+    print(f"Время всплытия капель нефти в зазоре: "
+          f"{coalescer.droplet_oil_risling_time() / SECONDS_PER_MINUTE:.2f} мин")
+    print(f"Длина канала: "
+          f"{coalescer.coalescer_bottom_channel_length():.4f} м")
     _minor_divider()

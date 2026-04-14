@@ -37,6 +37,12 @@ class PhysicalProperties:
 
 
 @dataclass
+class CoalescerNozzle:
+    coalescer_top_gap: float  # расстояние между пластинами в верхнем коалесцере
+    coalescer_bottom_gap: float  # расстояние между пластинами в нижнем коалесцере
+
+
+@dataclass
 class GeometryCyclone:
     width_inlet_cyclone: float   # м - ширина входа в циклон
     height_inlet_cyclone: float  # м - высота входа в циклон
