@@ -23,9 +23,16 @@ class Separator:
         self.flows = flows
         self.dropsizes = dropsizes
 
+        # NOTE многие методы в этом классе работают как функции доступа, вместо этого
+        # NOTE в python обычно просто предоставляется прямой досутп к атрибутам, не
+        # NOTE помешает перевести такие методы в атрибуты, вычисляемые либо при создании
+        # NOTE объекта в __init__, либо где-то ещё в каком-нибудь контексте
+
     # --- Сепаратор ---
 
     def volume_separator(self) -> float:
+        # NOTE у нас есть геометрический модуль, там есть функции для расчёта объёма,
+        # NOTE можно взять оттуда
         """Номинальный объём сепаратора, м³"""
         return (np.pi * self.sepparam.inner_diameter ** 2 / 4 *
                 self.sepparam.length_cylindrical_part +
@@ -33,6 +40,21 @@ class Separator:
 
     def residence_time(self) -> float:
         """Время пребывания жидкости в сепараторе, с"""
+        # NOTE если volume_separator() возвращает всегда что-то постоянное -
+        # NOTE то вместо метода лучше сделать это в виде атрибута
+        # NOTE self.volume <- полный объём тут
+        # NOTE
+        # NOTE в методах мы обычно хотим реализовать какую-то сложную логику, связанную с
+        # NOTE объектом, если нам нужно получить свойство объекта - его можно просто
+        # NOTE записать как атрибут
+        # NOTE
+        # NOTE В других языках иногда методы используются для безопасного доступа к
+        # NOTE приватным атрибутам (см. "инкапсуляция") - там классы полны методов вроде
+        # NOTE getX и setX, в python настоящей инкапсуляции нет, потому что всё публичное
+        # NOTE поэтому чаще всего атрибуты просто оставляют как есть
+        # NOTE вместо self.getX() просто self.X
+        # NOTE вместо self.setX(new_X) просто self.X = new_X и т.д.
+
         return (self.volume_separator() * self.sepparam.fill_coeff /
                 self.conditions.flow_liquid)
 
@@ -46,6 +68,7 @@ class Separator:
 
     def volume_first_section(self) -> float:
         """Объём первой секции, м³"""
+        # NOTE это тоже можно сделать атрибутом вместо метода
         return (np.pi * self.sepparam.inner_diameter ** 2 / 4 *
                 self.sepparam.length_first_section)
 

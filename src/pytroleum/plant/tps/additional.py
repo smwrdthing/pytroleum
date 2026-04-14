@@ -9,9 +9,12 @@ from pytroleum.plant.tps.inputs import (PhysicalProperties,
 from pytroleum.plant.tps.wire_mesh_demister import WireMeshDemister
 from pytroleum.plant.tps.nozzle import LiquidGasNozzle, GasNozzle
 
+# NOTE возможно тут тоже часть методов получится перевести в атрибуты
+
 
 class Resistance:
     """Расчет сопротивление сепаратора"""
+    # NOTE может методом в классе сепаратора?
 
     def __init__(self, properties: PhysicalProperties,
                  coefficients: Coefficients,

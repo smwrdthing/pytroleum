@@ -14,6 +14,8 @@ MIN_LIQUID_VELOCITY = 1  # м/с
 # Таблица с номинальными диаметрами:
 # https://dpva.ru/guide/guideequipment/connections/diameters/pipeoutsidediametercorrespondance/
 
+# NOTE можно сделать массивом, тогда деление на 1000 будет один раз :)
+# NOTE можно так оставить, чтобы не перепечатывать
 NOMINAL_DIAMETERS = [
     10e-3, 15e-3, 20e-3, 25e-3, 32e-3, 40e-3, 50e-3, 65e-3, 80e-3,
     90e-3, 100e-3, 125e-3, 150e-3, 200e-3, 225e-3,
@@ -45,6 +47,14 @@ class Nozzle(ABC):
 
     @abstractmethod
     def calculate_diameter(self) -> float:
+        # NOTE pass обычно оставляют для функций, которые ещё не определены, но которые
+        # NOTE должны быть определены потом
+        # NOTE (когда, например, закладываем функциональность)
+        # NOTE
+        # NOTE Ничего неправильного здесь нет, просто кто-то может решить, что тут должно
+        # NOTE что-то появиться потом
+        # NOTE
+        # NOTE вместо pass можно return
         pass
 
     def select_nominal_diameter(self) -> float:
@@ -59,6 +69,7 @@ class Nozzle(ABC):
     def nozzle_area(self) -> float:
         """Площадь сечения штуцера по номинальному диаметру, м²"""
         diameter_nominal = self.select_nominal_diameter()
+        # NOTE атрибутом?
         return np.pi * diameter_nominal ** 2 / 4
 
     def actual_speed(self) -> float:
@@ -91,6 +102,8 @@ class LiquidNozzle(Nozzle):
 
     def calculate_diameter(self) -> float:
         return np.sqrt(4 * self.flow_rate / (np.pi * self.recommended_speed))
+
+# NOTE методы calculate_diameter одинаковые у GasNozzle и у LiquidNozzle
 
 
 class OilNozzle(LiquidNozzle):
@@ -137,6 +150,8 @@ class LiquidGasNozzle(Nozzle):
     @property
     def liquid_speed(self) -> float:
         return self._liquid_speed
+
+    # NOTE setter для gas speed?
 
     @liquid_speed.setter
     def liquid_speed(self, value: float):

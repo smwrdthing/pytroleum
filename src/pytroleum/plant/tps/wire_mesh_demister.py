@@ -21,7 +21,7 @@ from pytroleum.plant.tps.utils import (SECONDS_PER_DAY,
 технологического расчета газосепараторов сетчатых)
 """
 
-# Давление в ата (исходные данные из графика)
+# Давление в ата (исходные данные из графика) # NOTE атм* :)
 _PRESSURE_ATA = np.array([
     20, 22.123, 24.554, 23.821, 21.601, 23.149, 25.751, 26.923, 27.749, 30.017,
     28.774, 31.783, 30.930, 29.404, 33.219, 35.067, 34.126, 36.649, 38.196, 40.517,
@@ -66,6 +66,8 @@ _STABILITY_COEFFICIENT_INTERPOLATOR = interpolate.interp1d(
 
 class WireMeshDemister:
     """Расчёт сетчатого каплеуловителя"""
+
+    # NOTE тут тоже много можно в атрибуты перекинуть
 
     def __init__(self, properties: PhysicalProperties,
                  flows: FlowRates,
@@ -150,6 +152,11 @@ class WireMeshDemister:
                  label=(f'Рабочее давление: {current_pressure/PA_TO_MPA:.2f} МПа, '
                         f'k={current_flow_stability_coefficient:.3f}'))
         plt.legend()
+
+        # NOTE тут можно оси настроить, если не нужно - можно закомментить
+        ax = plt.gca()
+        ax.set_xlim((2, 13))
+        ax.set_ylim((0.4, 1.1))
 
         plt.tight_layout()
         plt.show()

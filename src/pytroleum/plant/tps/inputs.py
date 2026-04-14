@@ -25,6 +25,8 @@ class PhysicalProperties:
     viscosity_oil: float        # Вязкость нефти, Па*с
     viscosity_water: float      # Вязкость воды, Па*с
 
+    # NOTE здесь можно использовать то, что мы делали в tdyna
+
     def liquid_density(self) -> float:
         """Плотность жидкости (Н+В) при заданной обводненности"""
         return (self.water_density * self.water_cut +
@@ -38,6 +40,10 @@ class PhysicalProperties:
 
 @dataclass
 class CoalescerNozzle:
+
+    # NOTE Nozzle - насадка? Обычно Nozzle это какой-нибудь осесимметричный канал,
+    # NOTE (как сопло Лаваля, например), немного сбивает с толку
+
     coalescer_top_gap: float     # расстояние между пластинами в верхнем коалесцере, м
     coalescer_bottom_gap: float  # расстояние между пластинами в нижнем коалесцере, м
     angle: float = 45.0          # угол наклона пластин, градусы
@@ -65,12 +71,35 @@ class SeparatorParameters:
 
 @dataclass
 class Dropsizes:
+    # NOTE возможно целесообразнее будет передавать размер капли функциям по месту
+    # NOTE вместо объекта датакласса, т. к. диаметров всего два +
+    # NOTE они независимы друг от друга
     diameter_water_droplet: float  # диаметр капли воды
     diameter_oil_droplet: float  # диаметр капли нефти
 
 
 @dataclass
 class Coefficients:
+
+    # NOTE коэффициенты сопротивления можно атрибутировать объектам, которые
+    # NOTE создают это сопротивление
+    # NOTE
+    # NOTE что-то вроде
+    # NOTE
+    # NOTE class Mesh:
+    # NOTE      def __init__(self):
+    # NOTE          ...
+    # NOTE          self.drag_coeff = 0.44 <- тут константа просто для примера
+    # NOTE          ...
+    # NOTE
+    # NOTE class PipeBranch:
+    # NOTE      def __init__(self):
+    # NOTE          ...
+    # NOTE          self.drag_coefficient = 0.75
+    # NOTE          ...
+    # NOTE
+    # NOTE и т.д.
+
     # Коэффициент учитывающий снижение площади сечения элементами насадки
     area_reduction_coefficient: float
     # Коэффициент сопротивления сетчатого отбойника
@@ -85,6 +114,8 @@ class Coefficients:
 
 @dataclass
 class FlowRates:
+    # NOTE как и в seprartor.Separator тут многое можно реализовать атрибутами вместо
+    # NOTE методов
     conditions: OperationConditions
     properties: PhysicalProperties
 
