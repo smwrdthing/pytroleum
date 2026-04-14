@@ -1,10 +1,11 @@
 from pytroleum.plant.tps.utils import (_major_header, _minor_divider,
-                                       _TO_MM, PERCENT, SECONDS_PER_MINUTE)
+                                       _TO_MM, _TO_MICRON, PERCENT, SECONDS_PER_MINUTE)
 from pytroleum.plant.tps.inputs import (SeparatorParameters,
                                         OperationConditions,
                                         PhysicalProperties,
-                                        FlowRates)
+                                        FlowRates, Dropsizes)
 import numpy as np
+from scipy.constants import g
 
 
 class Separator:
@@ -13,11 +14,13 @@ class Separator:
     def __init__(self, sepparam: SeparatorParameters,
                  conditions: OperationConditions,
                  properties: PhysicalProperties,
-                 flows: FlowRates):
+                 flows: FlowRates,
+                 dropsizes: Dropsizes):
         self.sepparam = sepparam
         self.conditions = conditions
         self.properties = properties
         self.flows = flows
+        self.dropsizes = dropsizes
 
     # --- Сепаратор ---
 
@@ -103,6 +106,36 @@ class Separator:
         """Скорость движения воды"""
         return self.flows.flow_water()/self.water_flow_area()
 
+    # --- Осаждение капель воды ---
+    def velocity_water_settling(self) -> float:
+        """Скорость осаждения капель воды в слое нефти"""
+        return (self.dropsizes.diameter_water_droplet**2 *
+                (self.properties.water_density-self.properties.oil_density)*g /
+                (18*self.properties.viscosity_oil))
+
+    def oil_transit_time(self) -> float:
+        """Время прохождения нефтью расстояния"""
+        return self.sepparam.L_c/self.oil_velocity()
+
+    def water_settling_height(self) -> float:
+        """За это время капли воды опустятся на высоту"""
+        return self.velocity_water_settling()*self.oil_transit_time()
+
+    # ---Всплытие капель нефти ---
+    def velocity_oil_rising(self) -> float:
+        """Скорость подъёма капель нефти в слое воды"""
+        return (self.dropsizes.diameter_oil_droplet**2 *
+                (self.properties.water_density-self.properties.oil_density)*g /
+                (18*self.properties.viscosity_water))
+
+    def water_transit_time(self) -> float:
+        """Время прохождения водой расстояния"""
+        return self.sepparam.L_c/self.water_velocity()
+
+    def oil_rising_height(self) -> float:
+        """За это время капли нефти поднимутся на высоту"""
+        return self.velocity_oil_rising()*self.water_transit_time()
+
 
 if __name__ == "__main__":
     from pytroleum.plant.tps.utils import SECONDS_PER_DAY
@@ -116,6 +149,7 @@ if __name__ == "__main__":
         volume_ell_head=1.294,
         length_first_section=8.2,
         length_section_after_wall=1.3,
+        L_c=4.7
     )
     conditions = OperationConditions(
         pressure_work=4e6,
@@ -137,8 +171,11 @@ if __name__ == "__main__":
 
     flows = FlowRates(conditions=conditions, properties=properties)
 
+    dropsizes = Dropsizes(diameter_water_droplet=100e-6,
+                          diameter_oil_droplet=50e-6)
+
     sep = Separator(sepparam=sepparam, conditions=conditions,
-                    properties=properties, flows=flows)
+                    properties=properties, flows=flows, dropsizes=dropsizes)
 
     _major_header("РАСЧЁТ ПРОПУСКНОЙ СПОСОБНОСТИ СЕПАРАТОРА ПО ЖИДКОСТИ")
 
@@ -206,4 +243,32 @@ if __name__ == "__main__":
           f"{sep.oil_velocity()*_TO_MM:.4f} мм/с")
     print(f"Скорость движения воды: "
           f"{sep.water_velocity()*_TO_MM:.4f} мм/с")
+
+    _minor_divider()
+    print("ОСАЖДЕНИЕ КАПЕЛЬ ВОДЫ В СЛОЕ НЕФТИ")
+    _minor_divider()
+    print(f"Расстояние от распределительной решетки до сливной перегородки: "
+          f"{sepparam.L_c:.1f} м")
+    print(f"Диаметр капли воды: "
+          f"{dropsizes.diameter_water_droplet * _TO_MICRON:.0f} мкм")
+    print(f"Скорость осаждения капель воды: "
+          f"{sep.velocity_water_settling() * _TO_MM:.4f} мм/с")
+    print(f"Время прохождения нефтью расстояния: "
+          f"{sep.oil_transit_time():.2f} с")
+    print(f"Высота осаждения капель воды: "
+          f"{sep.water_settling_height() * _TO_MM:.2f} мм")
+
+    _minor_divider()
+    print("ВСПЛЫТИЕ КАПЕЛЬ НЕФТИ В СЛОЕ ВОДЫ")
+    _minor_divider()
+    print(f"Расстояние от распределительной решетки до сливной перегородки: "
+          f"{sepparam.L_c:.1f} м")
+    print(f"Диаметр капли нефти: "
+          f"{dropsizes.diameter_oil_droplet * _TO_MICRON:.0f} мкм")
+    print(f"Скорость подъёма капель нефти: "
+          f"{sep.velocity_oil_rising() * _TO_MM:.4f} мм/с")
+    print(f"Время прохождения водой расстояния: "
+          f"{sep.water_transit_time():.2f} с")
+    print(f"Высота подъёма капель нефти: "
+          f"{sep.oil_rising_height() * _TO_MM:.2f} мм")
     _minor_divider()

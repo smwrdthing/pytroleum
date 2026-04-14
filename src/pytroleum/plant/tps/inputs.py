@@ -53,6 +53,13 @@ class SeparatorParameters:
     volume_ell_head: float  # внутренний объем эллиптического днища
     length_first_section: float  # длина цилиндрической части первой секции
     length_section_after_wall: float  # длина секции после перегородки
+    L_c: float  # Расстояние от распределительной решетки до сливной перегородки
+
+
+@dataclass
+class Dropsizes:
+    diameter_water_droplet: float  # диаметр капли воды
+    diameter_oil_droplet: float  # диаметр капли нефти
 
 
 @dataclass
