@@ -145,7 +145,7 @@ class Coalescer:
         self.sep = sep
 
     # ---Для верхнего коалесцера ---
-    def droplet_water_sitting_time(self):
+    def droplet_water_settling_time(self):
         """"Время осаждения капель воды в зазоре"""
         return (self.coalescer_nozzle.coalescer_top_gap /
                 (self.sep.velocity_water_settling() *
@@ -153,10 +153,10 @@ class Coalescer:
 
     def coalescer_top_channel_length(self):
         """Длина канала верхнего коалесцера"""
-        return self.sep.oil_velocity() * self.droplet_water_sitting_time()
+        return self.sep.oil_velocity() * self.droplet_water_settling_time()
 
     # ---Для нижнего коалесцера ---
-    def droplet_oil_risling_time(self):
+    def droplet_oil_rising_time(self):
         """"Время всплытия капель нефти в зазоре"""
         return (self.coalescer_nozzle.coalescer_bottom_gap /
                 (self.sep.velocity_oil_rising() *
@@ -164,7 +164,7 @@ class Coalescer:
 
     def coalescer_bottom_channel_length(self):
         """Длина канала нижнего коалесцера"""
-        return self.sep.water_velocity()*self.droplet_oil_risling_time()
+        return self.sep.water_velocity()*self.droplet_oil_rising_time()
 
 
 if __name__ == "__main__":
@@ -316,7 +316,7 @@ if __name__ == "__main__":
     print(f"Зазор между пластинами: "
           f"{coalescer_nozzle.coalescer_top_gap * _TO_MM:.0f} мм")
     print(f"Время осаждения капель воды в зазоре: "
-          f"{coalescer.droplet_water_sitting_time() / SECONDS_PER_MINUTE:.2f} мин")
+          f"{coalescer.droplet_water_settling_time() / SECONDS_PER_MINUTE:.2f} мин")
     print(f"Длина канала: "
           f"{coalescer.coalescer_top_channel_length():.4f} м")
 
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     print(f"Зазор между пластинами: "
           f"{coalescer_nozzle.coalescer_bottom_gap * _TO_MM:.0f} мм")
     print(f"Время всплытия капель нефти в зазоре: "
-          f"{coalescer.droplet_oil_risling_time() / SECONDS_PER_MINUTE:.2f} мин")
+          f"{coalescer.droplet_oil_rising_time() / SECONDS_PER_MINUTE:.2f} мин")
     print(f"Длина канала: "
           f"{coalescer.coalescer_bottom_channel_length():.4f} м")
     _minor_divider()
