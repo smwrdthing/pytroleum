@@ -66,15 +66,6 @@ class SeparatorParameters:
 
 
 @dataclass
-class Dropsizes:
-    # NOTE возможно целесообразнее будет передавать размер капли функциям по месту
-    # NOTE вместо объекта датакласса, т. к. диаметров всего два +
-    # NOTE они независимы друг от друга
-    diameter_water_droplet: float  # диаметр капли воды
-    diameter_oil_droplet: float  # диаметр капли нефти
-
-
-@dataclass
 class Coefficients:
 
     # NOTE коэффициенты сопротивления можно атрибутировать объектам, которые

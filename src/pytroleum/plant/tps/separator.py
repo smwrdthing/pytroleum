@@ -3,7 +3,7 @@ from pytroleum.plant.tps.utils import (_major_header, _minor_divider,
 from pytroleum.plant.tps.inputs import (SeparatorParameters,
                                         OperationConditions,
                                         PhysicalProperties,
-                                        FlowRates, Dropsizes,
+                                        FlowRates,
                                         CoalescerPacking)
 import numpy as np
 from scipy.constants import g
@@ -16,12 +16,14 @@ class Separator:
                  conditions: OperationConditions,
                  properties: PhysicalProperties,
                  flows: FlowRates,
-                 dropsizes: Dropsizes):
+                 diameter_water_droplet: float,
+                 diameter_oil_droplet: float):
         self.sepparam = sepparam
         self.conditions = conditions
         self.properties = properties
         self.flows = flows
-        self.dropsizes = dropsizes
+        self.diameter_water_droplet = diameter_water_droplet
+        self.diameter_oil_droplet = diameter_oil_droplet
 
         # NOTE многие методы в этом классе работают как функции доступа, вместо этого
         # NOTE в python обычно просто предоставляется прямой досутп к атрибутам, не
@@ -133,7 +135,7 @@ class Separator:
     # --- Осаждение капель воды ---
     def velocity_water_settling(self) -> float:
         """Скорость осаждения капель воды в слое нефти"""
-        return (self.dropsizes.diameter_water_droplet**2 *
+        return (self.diameter_water_droplet**2 *
                 (self.properties.water_density-self.properties.oil_density)*g /
                 (18*self.properties.viscosity_oil))
 
@@ -148,7 +150,7 @@ class Separator:
     # ---Всплытие капель нефти ---
     def velocity_oil_rising(self) -> float:
         """Скорость подъёма капель нефти в слое воды"""
-        return (self.dropsizes.diameter_oil_droplet**2 *
+        return (self.diameter_oil_droplet**2 *
                 (self.properties.water_density-self.properties.oil_density)*g /
                 (18*self.properties.viscosity_water))
 
@@ -224,11 +226,13 @@ if __name__ == "__main__":
 
     flows = FlowRates(conditions=conditions, properties=properties)
 
-    dropsizes = Dropsizes(diameter_water_droplet=100e-6,
-                          diameter_oil_droplet=50e-6)
+    diameter_water_droplet = 100e-6
+    diameter_oil_droplet = 50e-6
 
     sep = Separator(sepparam=sepparam, conditions=conditions,
-                    properties=properties, flows=flows, dropsizes=dropsizes)
+                    properties=properties, flows=flows,
+                    diameter_water_droplet=diameter_water_droplet,
+                    diameter_oil_droplet=diameter_oil_droplet)
 
     coalescer_packing = CoalescerPacking(
         coalescer_top_gap=15e-3,
@@ -309,7 +313,7 @@ if __name__ == "__main__":
     print(f"Расстояние от распределительной решетки до сливной перегородки: "
           f"{sepparam.L_c:.1f} м")
     print(f"Диаметр капли воды: "
-          f"{dropsizes.diameter_water_droplet * _TO_MICRON:.0f} мкм")
+          f"{diameter_water_droplet * _TO_MICRON:.0f} мкм")
     print(f"Скорость осаждения капель воды: "
           f"{sep.velocity_water_settling() * _TO_MM:.4f} мм/с")
     print(f"Время прохождения нефтью расстояния: "
@@ -323,7 +327,7 @@ if __name__ == "__main__":
     print(f"Расстояние от распределительной решетки до сливной перегородки: "
           f"{sepparam.L_c:.1f} м")
     print(f"Диаметр капли нефти: "
-          f"{dropsizes.diameter_oil_droplet * _TO_MICRON:.0f} мкм")
+          f"{diameter_oil_droplet * _TO_MICRON:.0f} мкм")
     print(f"Скорость подъёма капель нефти: "
           f"{sep.velocity_oil_rising() * _TO_MM:.4f} мм/с")
     print(f"Время прохождения водой расстояния: "
