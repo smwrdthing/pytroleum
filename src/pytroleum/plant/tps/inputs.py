@@ -4,6 +4,7 @@ from pytroleum.plant.tps.utils import (DEFAULT_PRESSURE,
                                        SECONDS_PER_DAY,
                                        KG_PER_TON,
                                        KELVIN_TO_CELSIUS)
+from pytroleum.meter import volume_cover_elliptic_trunc, volume_section_horiz_ellipses
 
 
 @dataclass
@@ -54,15 +55,29 @@ class GeometryCyclone:
 
 @dataclass
 class SeparatorParameters:
-    inner_diameter: float  # внутренний диаметр
+    inner_diameter: float           # внутренний диаметр
     length_cylindrical_part: float  # длина цилиндрической части сепаратора
-    fill_coeff: float  # коэффициент заполнения сепаратора
+    fill_coeff: float               # коэффициент заполнения сепаратора
     fill_coeff_first_section: float  # коэффициент заполнения первой секции
-    fill_coeff_after_wall: float  # коэффициент заполнения после перегородки
-    volume_ell_head: float  # внутренний объем эллиптического днища
-    length_first_section: float  # длина цилиндрической части первой секции
+    fill_coeff_after_wall: float    # коэффициент заполнения после перегородки
+    length_semiaxis: float          # длина полуоси эллиптического днища, м
+    length_first_section: float     # длина цилиндрической части первой секции
     length_section_after_wall: float  # длина секции после перегородки
-    L_c: float  # Расстояние от распределительной решетки до сливной перегородки
+    L_c: float                      # расстояние от решетки до сливной перегородки
+
+    def __post_init__(self):
+        self.volume_ell_head = volume_cover_elliptic_trunc(
+            self.length_semiaxis,
+            self.inner_diameter,
+            self.inner_diameter
+        )
+        self.volume_separator = volume_section_horiz_ellipses(
+            length_semiaxis_left=self.length_semiaxis,
+            length_cylinder=self.length_cylindrical_part,
+            length_semiaxis_right=self.length_semiaxis,
+            diameter=self.inner_diameter,
+            level=self.inner_diameter
+        )
 
 
 @dataclass

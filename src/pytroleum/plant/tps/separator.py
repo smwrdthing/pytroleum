@@ -5,6 +5,7 @@ from pytroleum.plant.tps.inputs import (SeparatorParameters,
                                         PhysicalProperties,
                                         FlowRates,
                                         CoalescerPacking)
+
 import numpy as np
 from scipy.constants import g
 
@@ -32,38 +33,15 @@ class Separator:
 
     # --- Сепаратор ---
 
-    def volume_separator(self) -> float:
-        # NOTE у нас есть геометрический модуль, там есть функции для расчёта объёма,
-        # NOTE можно взять оттуда
-        """Номинальный объём сепаратора, м³"""
-        return (np.pi * self.design.inner_diameter ** 2 / 4 *
-                self.design.length_cylindrical_part +
-                2 * self.design.volume_ell_head)
-
     def residence_time(self) -> float:
         """Время пребывания жидкости в сепараторе, с"""
-        # NOTE если volume_separator() возвращает всегда что-то постоянное -
-        # NOTE то вместо метода лучше сделать это в виде атрибута
-        # NOTE self.volume <- полный объём тут
-        # NOTE
-        # NOTE в методах мы обычно хотим реализовать какую-то сложную логику, связанную с
-        # NOTE объектом, если нам нужно получить свойство объекта - его можно просто
-        # NOTE записать как атрибут
-        # NOTE
-        # NOTE В других языках иногда методы используются для безопасного доступа к
-        # NOTE приватным атрибутам (см. "инкапсуляция") - там классы полны методов вроде
-        # NOTE getX и setX, в python настоящей инкапсуляции нет, потому что всё публичное
-        # NOTE поэтому чаще всего атрибуты просто оставляют как есть
-        # NOTE вместо self.getX() просто self.X
-        # NOTE вместо self.setX(new_X) просто self.X = new_X и т.д.
-
-        return (self.volume_separator() * self.design.fill_coeff /
+        return (self.design.volume_separator * self.design.fill_coeff /
                 self.conditions.flow_liquid)
 
     def capacity(self):
         """Максимальная производительность аппарата по жидкости с
         учетом коэффициента заполнения"""
-        return (self.volume_separator() * self.design.fill_coeff /
+        return (self.design.volume_separator * self.design.fill_coeff /
                 self.residence_time())
 
     # --- Первая секция (Н+В) ---
@@ -201,7 +179,7 @@ if __name__ == "__main__":
         fill_coeff=0.858,
         fill_coeff_after_wall=0.858,
         fill_coeff_first_section=0.858,
-        volume_ell_head=1.294,
+        length_semiaxis=0.618,
         length_first_section=8.2,
         length_section_after_wall=1.3,
         L_c=4.7
@@ -247,14 +225,14 @@ if __name__ == "__main__":
           f"{design.inner_diameter * _TO_MM:.0f} мм")
     print(f"Длина цилиндрической части сепаратора: "
           f"{design.length_cylindrical_part:.1f} м")
-    print(f"Объём эллиптического днища: "
-          f"{design.volume_ell_head:.3f} м³")
+    print(f"Длина полуоси эллиптического днища: "
+          f"{design.length_semiaxis:.3f} м")
     print(f"Объёмный расход жидкости: "
           f"{conditions.flow_liquid * SECONDS_PER_DAY:.1f} м³/сут")
     print(f"Коэффициент заполнения: "
           f"{design.fill_coeff * PERCENT:.1f} %")
     print(f"Номинальный объём сепаратора: "
-          f"{separator.volume_separator():.3f} м³")
+          f"{design.volume_separator:.3f} м³")
     print(f"Время пребывания жидкости: "
           f"{separator.residence_time() / SECONDS_PER_MINUTE:.2f} мин")
     print(f"Пропускная способность: "
