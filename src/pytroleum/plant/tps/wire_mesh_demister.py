@@ -92,7 +92,7 @@ class WireMeshDemister:
     def area(self) -> float:
         """Площадь живого сечения, м²"""
         return (self.coefficients.area_reduction_coefficient *
-                self.flows.flow_gas_work()) / (self.calculate_critical_velocity())
+                self.flows.flow_gas_work) / (self.calculate_critical_velocity())
 
     def calculate_diameter(self) -> float:
         """Расчётный диаметр, м"""
@@ -115,7 +115,7 @@ class WireMeshDemister:
 
     def actual_velocity(self) -> float:
         """Действительная скорость набегания, м/с"""
-        return self.flows.flow_gas_work() / self.actual_area()
+        return self.flows.flow_gas_work / self.actual_area()
 
     def capacity(self) -> float:
         """Производительность, м³/с"""
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     print(f"Объемный расход газа при н.у.: "
           f"{conditions.flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
     print(f"Объемный расход газа при р.у.: "
-          f"{flows.flow_gas_work() * SECONDS_PER_HOUR:.4f} м³/ч")
+          f"{flows.flow_gas_work * SECONDS_PER_HOUR:.4f} м³/ч")
     print(f"Объемный расход жидкости: "
           f"{conditions.flow_liquid * SECONDS_PER_DAY} м³/сут")
     print(f"Обводнённость: {properties.water_cut * PERCENT} %")

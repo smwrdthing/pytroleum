@@ -101,53 +101,52 @@ class Coefficients:
 
 @dataclass
 class FlowRates:
-    # NOTE как и в seprartor.Separator тут многое можно реализовать атрибутами вместо
-    # NOTE методов
+    """Расходы флюидов, вычисленные из рабочих условий и физических свойств.
+
+    Attributes:
+        flow_oil: Расход нефти, м³/с
+        flow_water: Расход воды, м³/с
+        flow_gas_work: Расход газа при рабочих условиях, м³/с
+        mass_flow_gas: Массовый расход газа, кг/с
+        mass_flow_oil: Массовый расход нефти, кг/с
+        mass_flow_water: Массовый расход воды, кг/с
+        mass_flow_liquid: Массовый расход жидкости (Н+В), кг/с
+        mass_flow_total: Суммарный массовый расход (Г+Н+В), кг/с
+        mass_flow_oil_ton_per_day: Массовый расход нефти, т/сут
+        flow_gas_from_gas_factor: Объемный расход по газу из
+        условия газового фактора, м³/сут
+    """
     conditions: OperationConditions
     properties: PhysicalProperties
 
-    def flow_oil(self) -> float:
-        """ Расход нефти, м³/с """
-        return self.conditions.flow_liquid * (1 - self.properties.water_cut)
+    def __post_init__(self):
 
-    def flow_water(self) -> float:
-        """ Расход воды, м³/с """
-        return self.conditions.flow_liquid * self.properties.water_cut
+        self.flow_oil = (self.conditions.flow_liquid *
+                         (1 - self.properties.water_cut))
 
-    def flow_gas_work(self) -> float:
-        """Расход газа при рабочих условиях"""
-        return (self.conditions.flow_gas_norm*DEFAULT_PRESSURE *
-                self.conditions.temperature_work) / \
-            ((self.conditions.pressure_work+DEFAULT_PRESSURE) *
-             DEFAULT_TEMPERATURE)
+        self.flow_water = self.conditions.flow_liquid * self.properties.water_cut
 
-    def mass_flow_gas(self) -> float:
-        """Массовый расход газа, кг/с"""
-        return self.conditions.flow_gas_norm * self.properties.gas_density_norm
+        self.flow_gas_work = ((self.conditions.flow_gas_norm * DEFAULT_PRESSURE *
+                               self.conditions.temperature_work) /
+                              ((self.conditions.pressure_work + DEFAULT_PRESSURE) *
+                               DEFAULT_TEMPERATURE))
 
-    def mass_flow_oil(self) -> float:
-        """Массовый расход нефти, кг/с"""
-        return self.flow_oil() * self.properties.oil_density
+        self.mass_flow_gas = (self.conditions.flow_gas_norm *
+                              self.properties.gas_density_norm)
 
-    def mass_flow_water(self) -> float:
-        """Массовый расход воды, кг/с"""
-        return self.flow_water() * self.properties.water_density
+        self.mass_flow_oil = self.flow_oil * self.properties.oil_density
 
-    def mass_flow_liquid(self) -> float:
-        """Массовый расход жидкости (нефть + вода) в кг/с"""
-        return self.mass_flow_oil() + self.mass_flow_water()
+        self.mass_flow_water = self.flow_water * self.properties.water_density
 
-    def mass_flow_total(self) -> float:
-        """Суммарный массовый расход (Г+Н+В) в кг/с"""
-        return self.mass_flow_gas() + self.mass_flow_oil() + self.mass_flow_water()
+        self.mass_flow_liquid = self.mass_flow_oil + self.mass_flow_water
 
-    def mass_flow_oil_ton_per_day(self) -> float:
-        """Массовый расход нефти, т/сут"""
-        return self.mass_flow_oil() * SECONDS_PER_DAY / KG_PER_TON
+        self.mass_flow_total = (self.mass_flow_gas + self.mass_flow_oil +
+                                self.mass_flow_water)
 
-    def flow_gas_from_gas_factor(self) -> float:
-        """Объемный расход по газу из условия газового фактора, м³/сут"""
-        return self.properties.gas_factor * self.mass_flow_oil_ton_per_day()
+        self.mass_flow_oil_ton_per_day = self.mass_flow_oil * SECONDS_PER_DAY / KG_PER_TON
+
+        self.flow_gas_from_gas_factor = (self.properties.gas_factor *
+                                         self.mass_flow_oil_ton_per_day)
 
 # ============================================================
 # Пример использования
@@ -198,32 +197,32 @@ if __name__ == "__main__":
 
     _major_header("ОБЪЕМНЫЕ РАСХОДЫ")
     print(f"Объемный расход газа при р.у.: "
-          f"{flows.flow_gas_work() * SECONDS_PER_DAY:.0f} м³/сут")
+          f"{flows.flow_gas_work * SECONDS_PER_DAY:.0f} м³/сут")
     print(f"Объемный расход по нефти: "
-          f"{flows.flow_oil() * SECONDS_PER_DAY:.0f} м³/сут")
+          f"{flows.flow_oil * SECONDS_PER_DAY:.0f} м³/сут")
     print(f"Объемный расход по воде: "
-          f"{flows.flow_water() * SECONDS_PER_DAY:.0f} м³/сут")
+          f"{flows.flow_water * SECONDS_PER_DAY:.0f} м³/сут")
 
     _major_header("МАССОВЫЕ РАСХОДЫ (кг/с)")
-    print(f"Массовый расход газа: {flows.mass_flow_gas():.2f} кг/с")
-    print(f"Массовый расход нефти: {flows.mass_flow_oil():.2f} кг/с")
-    print(f"Массовый расход воды: {flows.mass_flow_water():.2f} кг/с")
+    print(f"Массовый расход газа: {flows.mass_flow_gas:.2f} кг/с")
+    print(f"Массовый расход нефти: {flows.mass_flow_oil:.2f} кг/с")
+    print(f"Массовый расход воды: {flows.mass_flow_water:.2f} кг/с")
     print(f"Массовый расход жидкости (Н+В): "
-          f"{flows.mass_flow_liquid():.2f} кг/с")
+          f"{flows.mass_flow_liquid:.2f} кг/с")
     print(f"Массовый суммарный расход по продукту (Г+Н+В): "
-          f"{flows.mass_flow_total():.2f} кг/с")
+          f"{flows.mass_flow_total:.2f} кг/с")
 
     _major_header("МАССОВЫЕ РАСХОДЫ (т/ч)")
     print(f"Массовый расход газа: "
-          f"{flows.mass_flow_gas() * KG_S_TO_T_H:.2f} т/ч")
+          f"{flows.mass_flow_gas * KG_S_TO_T_H:.2f} т/ч")
     print(f"Массовый расход нефти: "
-          f"{flows.mass_flow_oil() * KG_S_TO_T_H:.2f} т/ч")
+          f"{flows.mass_flow_oil * KG_S_TO_T_H:.2f} т/ч")
     print(f"Массовый расход воды: "
-          f"{flows.mass_flow_water() * KG_S_TO_T_H:.2f} т/ч")
+          f"{flows.mass_flow_water * KG_S_TO_T_H:.2f} т/ч")
     print(f"Массовый расход жидкости (Н+В): "
-          f"{flows.mass_flow_liquid() * KG_S_TO_T_H:.2f} т/ч")
+          f"{flows.mass_flow_liquid * KG_S_TO_T_H:.2f} т/ч")
     print(f"Массовый суммарный расход по продукту (Г+Н+В): "
-          f"{flows.mass_flow_total() * KG_S_TO_T_H:.2f} т/ч")
+          f"{flows.mass_flow_total * KG_S_TO_T_H:.2f} т/ч")
 
     _major_header("ФИЗИЧЕСКИЕ СВОЙСТВА ПРИ РАБОЧИХ УСЛОВИЯХ")
     print(f"Плотность газа в р.у.: "
@@ -231,4 +230,4 @@ if __name__ == "__main__":
     print(f"Плотность жидкости (Н+В) при заданной обводненности: "
           f"{properties.liquid_density():.1f} кг/м³")
     print(f"Производительность по газу из условия газового фактора: "
-          f"{flows.flow_gas_from_gas_factor():.1f} м³/сут")
+          f"{flows.flow_gas_from_gas_factor:.1f} м³/сут")

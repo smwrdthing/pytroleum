@@ -122,15 +122,15 @@ class Separator:
 
     def gas_velocity(self) -> float:
         """Скорость движения газа"""
-        return self.flows.flow_gas_work()/self.gas_flow_area()
+        return self.flows.flow_gas_work/self.gas_flow_area()
 
     def oil_velocity(self) -> float:
         """Скорость движения нефти"""
-        return self.flows.flow_oil()/self.oil_flow_area()
+        return self.flows.flow_oil/self.oil_flow_area()
 
     def water_velocity(self) -> float:
         """Скорость движения воды"""
-        return self.flows.flow_water()/self.water_flow_area()
+        return self.flows.flow_water/self.water_flow_area()
 
     # --- Осаждение капель воды ---
     def velocity_water_settling(self) -> float:

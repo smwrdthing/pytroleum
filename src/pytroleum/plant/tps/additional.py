@@ -65,7 +65,7 @@ class Cyclone:
             self.geometry_cyclone.height_inlet_cyclone
 
     def velocity_gas_in_spiral_channel(self):
-        return self.flows.flow_gas_work()/(self.geometry_cyclone.number_of_cyclones *
+        return self.flows.flow_gas_work / (self.geometry_cyclone.number_of_cyclones *
                                            self.area_spiral_channel())
 
 # ============================================================
@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
     _minor_divider()
     print(f"Расход газа при рабочих условиях: "
-          f"{flows.flow_gas_work() * SECONDS_PER_DAY:.1f} м³/сут")
+          f"{flows.flow_gas_work * SECONDS_PER_DAY:.1f} м³/сут")
     print(f"Площадь сечения спирального канала: "
           f"{cyclone.area_spiral_channel():.4f} м²")
     print(f"Скорость газа в спиральном канале: "
