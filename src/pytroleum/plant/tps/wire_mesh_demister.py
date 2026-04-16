@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 from pytroleum.plant.tps.utils import _major_header, _minor_divider
 from pytroleum.plant.tps.inputs import (PhysicalProperties,
                                         FlowRates,
-                                        OperationConditions,
-                                        Coefficients)
+                                        OperationConditions)
 from pytroleum.plant.tps.utils import (SECONDS_PER_DAY,
                                        SECONDS_PER_HOUR,
                                        PA_TO_MPA,
@@ -70,10 +69,14 @@ class WireMeshDemister:
 
     def __init__(self, properties: PhysicalProperties,
                  flows: FlowRates,
-                 coefficients: Coefficients):
+                 area_reduction_coefficient: float,
+                 mesh_resistance_coefficient: float):
         self.properties = properties
         self.flows = flows
-        self.coefficients = coefficients
+        # Коэффициент учитывающий снижение площади сечения элементами насадки
+        self.area_reduction_coefficient = area_reduction_coefficient
+        # Коэффициент сопротивления сетчатого отбойника
+        self.mesh_resistance_coefficient = mesh_resistance_coefficient
 
     def get_flow_stability_coefficient(self) -> float:
         """Коэффициент устойчивости режимов течения при текущем давлении"""
@@ -91,7 +94,7 @@ class WireMeshDemister:
 
     def area(self) -> float:
         """Площадь живого сечения, м²"""
-        return (self.coefficients.area_reduction_coefficient *
+        return (self.area_reduction_coefficient *
                 self.flows.flow_gas_work) / (self.calculate_critical_velocity())
 
     def calculate_diameter(self) -> float:
@@ -111,7 +114,7 @@ class WireMeshDemister:
     def actual_area(self) -> float:
         """Действительная площадь живого сечения, м²"""
         return (np.pi * self.select_nominal_diameter() ** 2) / \
-            (4 * self.coefficients.area_reduction_coefficient)
+            (4 * self.area_reduction_coefficient)
 
     def actual_velocity(self) -> float:
         """Действительная скорость набегания, м/с"""
@@ -184,14 +187,10 @@ if __name__ == "__main__":
         viscosity_water=0.544e-3
     )
 
-    coefficients = Coefficients(area_reduction_coefficient=1.05,
-                                mesh_resistance_coefficient=70,
-                                inlet_resistance_coefficient=1,
-                                outlet_resistance_coefficient=0.5,
-                                losses_unaccounted=1.2)
-
     flows = FlowRates(conditions=conditions, properties=properties)
-    demister = WireMeshDemister(properties, flows, coefficients)
+    demister = WireMeshDemister(properties, flows,
+                                area_reduction_coefficient=1.05,
+                                mesh_resistance_coefficient=70)
 
     # Вывод результатов
     _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СЕТЧАТОГО КАПЛЕУЛОВИТЕЛЯ")

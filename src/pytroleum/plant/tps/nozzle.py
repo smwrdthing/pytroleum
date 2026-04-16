@@ -63,9 +63,11 @@ class Nozzle:
 class GasNozzle(Nozzle):
     """Расчёт штуцера газа"""
 
-    def __init__(self, flows: FlowRates, speed: float):
+    def __init__(self, flows: FlowRates, speed: float, resistance_coefficient: float):
         super().__init__("Штуцер газа", flows.flow_gas_work, speed,
                          min_speed=MIN_GAS_VELOCITY, max_speed=MAX_GAS_VELOCITY)
+        # Коэффициент сопротивления для выходного патрубка
+        self.resistance_coefficient = resistance_coefficient
 
 
 class LiquidNozzle(Nozzle):
@@ -98,10 +100,13 @@ class WaterNozzle(LiquidNozzle):
 class LiquidGasNozzle(Nozzle):
     """Расчёт штуцера газожидкостной смеси."""
 
-    def __init__(self, flows: FlowRates, gas_speed: float, liquid_speed: float):
+    def __init__(self, flows: FlowRates, gas_speed: float, liquid_speed: float,
+                 resistance_coefficient: float):
         self.name = "Штуцер ГЖС"
         self.flow_rate = flows.flow_gas_work
         self.liquid_flow_rate = flows.conditions.flow_liquid
+        # Коэффициент сопротивления для входного патрубка
+        self.resistance_coefficient = resistance_coefficient
         self.gas_speed = gas_speed
         self.liquid_speed = liquid_speed
 
@@ -164,12 +169,12 @@ if __name__ == "__main__":
     )
     flows = FlowRates(conditions=conditions, properties=properties)
 
-    gasnozzle = GasNozzle(flows=flows, speed=10.0)
+    gasnozzle = GasNozzle(flows=flows, speed=10.0, resistance_coefficient=0.5)
     oil_nozzle = OilNozzle(flows=flows, speed=1.0)
     water_nozzle = WaterNozzle(flows=flows, speed=1.0)
     liquid_nozzle = LiquidNozzle(flows=flows, speed=1.0)
     liquidgasnozzle = LiquidGasNozzle(
-        flows=flows, gas_speed=10.0, liquid_speed=1.0)
+        flows=flows, gas_speed=10.0, liquid_speed=1.0, resistance_coefficient=1.0)
 
     _major_header("РАСЧЕТ ШТУЦЕРОВ")
 

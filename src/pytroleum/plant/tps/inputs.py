@@ -66,40 +66,6 @@ class SeparatorParameters:
 
 
 @dataclass
-class Coefficients:
-
-    # NOTE коэффициенты сопротивления можно атрибутировать объектам, которые
-    # NOTE создают это сопротивление
-    # NOTE
-    # NOTE что-то вроде
-    # NOTE
-    # NOTE class Mesh:
-    # NOTE      def __init__(self):
-    # NOTE          ...
-    # NOTE          self.drag_coeff = 0.44 <- тут константа просто для примера
-    # NOTE          ...
-    # NOTE
-    # NOTE class PipeBranch:
-    # NOTE      def __init__(self):
-    # NOTE          ...
-    # NOTE          self.drag_coefficient = 0.75
-    # NOTE          ...
-    # NOTE
-    # NOTE и т.д.
-
-    # Коэффициент учитывающий снижение площади сечения элементами насадки
-    area_reduction_coefficient: float
-    # Коэффициент сопротивления сетчатого отбойника
-    mesh_resistance_coefficient: float
-    # Коэффициент сопротивления для входного патрубка
-    inlet_resistance_coefficient: float
-    # Коэффициент сопротивления для выходного патрубка
-    outlet_resistance_coefficient: float
-    # Коэффициент неучтенных потерь
-    losses_unaccounted: float
-
-
-@dataclass
 class FlowRates:
     """Расходы флюидов, вычисленные из рабочих условий и физических свойств.
 

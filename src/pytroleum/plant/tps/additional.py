@@ -4,7 +4,6 @@ from pytroleum.plant.tps.utils import (_major_header,
                                        _TO_MM)
 from pytroleum.plant.tps.inputs import (PhysicalProperties,
                                         OperationConditions,
-                                        Coefficients,
                                         FlowRates, GeometryCyclone)
 from pytroleum.plant.tps.wire_mesh_demister import WireMeshDemister
 from pytroleum.plant.tps.nozzle import LiquidGasNozzle, GasNozzle
@@ -17,13 +16,13 @@ class Resistance:
     # NOTE может методом в классе сепаратора?
 
     def __init__(self, properties: PhysicalProperties,
-                 coefficients: Coefficients,
+                 losses_unaccounted: float,
                  demister: WireMeshDemister,
                  conditions: OperationConditions,
                  liquidgasnozzle: LiquidGasNozzle,
                  gasnozzle: GasNozzle):
         self.properties = properties
-        self.coefficients = coefficients
+        self.losses_unaccounted = losses_unaccounted  # Коэффициент неучтенных потерь
         self.demister = demister
         self.conditions = conditions
         self.liquidgasnozzle = liquidgasnozzle
@@ -31,26 +30,26 @@ class Resistance:
 
     def pressure_drop_mesh_demister(self):
         """Падение давления на отбойнике"""
-        return self.coefficients.mesh_resistance_coefficient *\
-            self.properties.gas_density_work(self.conditions) *\
-            self.demister.actual_velocity()**2/2
+        return (self.demister.mesh_resistance_coefficient *
+                self.properties.gas_density_work(self.conditions) *
+                self.demister.actual_velocity()**2 / 2)
 
     def pressure_drop_inlet_nozzle(self):
         """Потери давления на штуцере входа ГЖС"""
-        return self.coefficients.inlet_resistance_coefficient *\
-            self.properties.gas_density_work(self.conditions) *\
-            self.liquidgasnozzle.actual_speed()**2/2
+        return (self.liquidgasnozzle.resistance_coefficient *
+                self.properties.gas_density_work(self.conditions) *
+                self.liquidgasnozzle.actual_speed()**2 / 2)
 
     def pressure_drop_outlet_nozzle(self):
-        """ Потери давления на штуцере газа"""
-        return self.coefficients.outlet_resistance_coefficient *\
-            self.properties.gas_density_work(self.conditions) *\
-            self.gasnozzle.actual_speed()**2/2
+        """Потери давления на штуцере газа"""
+        return (self.gasnozzle.resistance_coefficient *
+                self.properties.gas_density_work(self.conditions) *
+                self.gasnozzle.actual_speed()**2 / 2)
 
     def separator_resistance(self):
-        return self.coefficients.losses_unaccounted*(self.pressure_drop_mesh_demister() +
-                                                     self.pressure_drop_inlet_nozzle() +
-                                                     self.pressure_drop_outlet_nozzle())
+        return self.losses_unaccounted * (self.pressure_drop_mesh_demister() +
+                                          self.pressure_drop_inlet_nozzle() +
+                                          self.pressure_drop_outlet_nozzle())
 
 
 class Cyclone:
@@ -90,23 +89,18 @@ if __name__ == "__main__":
         viscosity_oil=3.073e-3,
         viscosity_water=0.544e-3
     )
-    coefficients = Coefficients(
-        area_reduction_coefficient=1.05,
-        mesh_resistance_coefficient=70,
-        inlet_resistance_coefficient=1,
-        outlet_resistance_coefficient=0.5,
-        losses_unaccounted=1.2
-    )
     flows = FlowRates(conditions=conditions, properties=properties)
-    demister = WireMeshDemister(properties, flows, coefficients)
+    demister = WireMeshDemister(properties, flows,
+                                area_reduction_coefficient=1.05,
+                                mesh_resistance_coefficient=70)
 
-    gasnozzle = GasNozzle(flows=flows, speed=10.0)
+    gasnozzle = GasNozzle(flows=flows, speed=10.0, resistance_coefficient=0.5)
     liquidgasnozzle = LiquidGasNozzle(
-        flows=flows, gas_speed=10.0, liquid_speed=1.0)
+        flows=flows, gas_speed=10.0, liquid_speed=1.0, resistance_coefficient=1.0)
 
     resistance = Resistance(
         properties=properties,
-        coefficients=coefficients,
+        losses_unaccounted=1.2,
         demister=demister,
         conditions=conditions,
         liquidgasnozzle=liquidgasnozzle,
@@ -137,13 +131,13 @@ if __name__ == "__main__":
 
     _minor_divider()
     print(f"Коэффициент сопротивления входного патрубка: "
-          f"{coefficients.inlet_resistance_coefficient}")
+          f"{liquidgasnozzle.resistance_coefficient}")
     print(f"Коэффициент сопротивления выходного патрубка: "
-          f"{coefficients.outlet_resistance_coefficient}")
+          f"{gasnozzle.resistance_coefficient}")
     print(f"Коэффициент сопротивления сетчатого отбойника: "
-          f"{coefficients.mesh_resistance_coefficient}")
+          f"{demister.mesh_resistance_coefficient}")
     print(f"Коэффициент неучтенных потерь: "
-          f"{coefficients.losses_unaccounted}")
+          f"{resistance.losses_unaccounted}")
 
     _minor_divider()
     print(f"Падение давления на отбойнике: "
