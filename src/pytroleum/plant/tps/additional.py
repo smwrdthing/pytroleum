@@ -100,7 +100,7 @@ if __name__ == "__main__":
     flows = FlowRates(conditions=conditions, properties=properties)
     demister = WireMeshDemister(properties, flows, coefficients)
 
-    gasnozzle = GasNozzle(flows=flows, recommended_speed=10.0)
+    gasnozzle = GasNozzle(flows=flows, speed=10.0)
     liquidgasnozzle = LiquidGasNozzle(
         flows=flows, gas_speed=10.0, liquid_speed=1.0)
 

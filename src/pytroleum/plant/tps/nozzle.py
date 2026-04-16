@@ -1,9 +1,7 @@
 import numpy as np
-from abc import ABC, abstractmethod
 from pytroleum.plant.tps.inputs import FlowRates
-from pytroleum.plant.tps.utils import _TO_MM
+from pytroleum.plant.tps.utils import _TO_MM, _TO_M
 
-# Андрей сказал
 MAX_GAS_VELOCITY = 20  # м/с
 MIN_GAS_VELOCITY = 10  # м/с
 
@@ -16,34 +14,33 @@ MIN_LIQUID_VELOCITY = 1  # м/с
 
 NOMINAL_DIAMETERS = np.array([
     10, 15, 20, 25, 32, 40, 50, 65, 80, 90, 100, 125, 150,
-    200, 225, 250, 300, 400, 500, 600, 800, 1000, 1200]) * 1e-3
+    200, 225, 250, 300, 400, 500, 600, 800, 1000, 1200]) * _TO_M
 
 
-class Nozzle(ABC):
+class Nozzle:
     """Расчёт пропускной способности штуцера"""
 
-    MIN_SPEED: float
-    MAX_SPEED: float
-
-    def __init__(self, name: str, flow_rate: float, recommended_speed: float):
+    def __init__(self, name: str, flow_rate: float, speed: float,
+                 min_speed: float, max_speed: float):
         self.name = name
         self.flow_rate = flow_rate
-        self.recommended_speed = recommended_speed
+        self.min_speed = min_speed
+        self.max_speed = max_speed
+        self.speed = speed
 
     @property
-    def recommended_speed(self) -> float:
-        return self._recommended_speed
+    def speed(self) -> float:
+        return self._speed
 
-    @recommended_speed.setter
-    def recommended_speed(self, value: float):
-        if not self.MIN_SPEED <= value <= self.MAX_SPEED:
-            print(f"Предупреждение: рекомендуемая скорость в {self.name} "
-                  f"{value} м/с вне диапазона [{self.MIN_SPEED}, {self.MAX_SPEED}] м/с")
-        self._recommended_speed = value
+    @speed.setter
+    def speed(self, value: float):
+        if not self.min_speed <= value <= self.max_speed:
+            print(f"Предупреждение: скорость в {self.name} "
+                  f"{value} м/с вне диапазона [{self.min_speed}, {self.max_speed}] м/с")
+        self._speed = value
 
-    @abstractmethod
     def calculate_diameter(self) -> float:
-        ...
+        return np.sqrt(4 * self.flow_rate / (np.pi * self.speed))
 
     def select_nominal_diameter(self) -> float:
         diameter = self.calculate_diameter()
@@ -68,85 +65,74 @@ class Nozzle(ABC):
 class GasNozzle(Nozzle):
     """Расчёт штуцера газа"""
 
-    MIN_SPEED = MIN_GAS_VELOCITY
-    MAX_SPEED = MAX_GAS_VELOCITY
-
-    def __init__(self, flows: FlowRates, recommended_speed: float):
-        super().__init__("Штуцер газа", flows.flow_gas_work(), recommended_speed)
-
-    def calculate_diameter(self) -> float:
-        return np.sqrt(4 * self.flow_rate / (np.pi * self.recommended_speed))
+    def __init__(self, flows: FlowRates, speed: float):
+        super().__init__("Штуцер газа", flows.flow_gas_work(), speed,
+                         min_speed=MIN_GAS_VELOCITY, max_speed=MAX_GAS_VELOCITY)
 
 
 class LiquidNozzle(Nozzle):
     """Расчёт штуцера жидкости"""
 
-    MIN_SPEED = MIN_LIQUID_VELOCITY
-    MAX_SPEED = MAX_LIQUID_VELOCITY
-
-    def __init__(self, flows: FlowRates, recommended_speed: float):
-        super().__init__("Штуцер жидкости",
-                         flows.conditions.flow_liquid, recommended_speed)
-
-    def calculate_diameter(self) -> float:
-        return np.sqrt(4 * self.flow_rate / (np.pi * self.recommended_speed))
-
-# NOTE методы calculate_diameter одинаковые у GasNozzle и у LiquidNozzle
+    def __init__(self, flows: FlowRates, speed: float):
+        super().__init__("Штуцер жидкости", flows.conditions.flow_liquid,
+                         speed, min_speed=MIN_LIQUID_VELOCITY,
+                         max_speed=MAX_LIQUID_VELOCITY)
 
 
 class OilNozzle(LiquidNozzle):
     """Расчёт штуцера нефти"""
 
-    def __init__(self, flows: FlowRates, recommended_speed: float):
-        Nozzle.__init__(self, "Штуцер нефти",
-                        flows.flow_oil(), recommended_speed)
+    def __init__(self, flows: FlowRates, speed: float):
+        Nozzle.__init__(self, "Штуцер нефти", flows.flow_oil(),
+                        speed, min_speed=MIN_LIQUID_VELOCITY,
+                        max_speed=MAX_LIQUID_VELOCITY)
 
 
 class WaterNozzle(LiquidNozzle):
     """Расчёт штуцера воды"""
 
-    def __init__(self, flows: FlowRates, recommended_speed: float):
-        Nozzle.__init__(self, "Штуцер воды",
-                        flows.flow_water(), recommended_speed)
+    def __init__(self, flows: FlowRates, speed: float):
+        Nozzle.__init__(self, "Штуцер воды", flows.flow_water(),
+                        speed, min_speed=MIN_LIQUID_VELOCITY,
+                        max_speed=MAX_LIQUID_VELOCITY)
 
 
 class LiquidGasNozzle(Nozzle):
     """Расчёт штуцера газожидкостной смеси."""
 
-    MIN_SPEED = MIN_GAS_VELOCITY
-    MAX_SPEED = MAX_GAS_VELOCITY
-    MIN_LIQUID_SPEED = MIN_LIQUID_VELOCITY
-    MAX_LIQUID_SPEED = MAX_LIQUID_VELOCITY
-
     def __init__(self, flows: FlowRates, gas_speed: float, liquid_speed: float):
-        super().__init__("Штуцер ГЖС", flows.flow_gas_work(), gas_speed)
+        self.name = "Штуцер ГЖС"
+        self.flow_rate = flows.flow_gas_work()
         self.liquid_flow_rate = flows.conditions.flow_liquid
+        self.gas_speed = gas_speed
         self.liquid_speed = liquid_speed
 
     def calculate_diameter(self) -> float:
-        return 1.13 * np.sqrt(self.flow_rate / (1.3 * self.recommended_speed) +
+        return 1.13 * np.sqrt(self.flow_rate / (1.3 * self.gas_speed) +
                               self.liquid_flow_rate / (1.3 * self.liquid_speed))
-
-    def actual_speed(self) -> float:
-        """Фактическая скорость в штуцере, м/с"""
-        return self.flow_rate / self.nozzle_area()
 
     @property
     def gas_speed(self) -> float:
-        return self.recommended_speed
+        return self._gas_speed
+
+    @gas_speed.setter
+    def gas_speed(self, value: float):
+        if not MIN_GAS_VELOCITY <= value <= MAX_GAS_VELOCITY:
+            print(f"Предупреждение: скорость газа в {self.name} "
+                  f"{value} м/с вне диапазона "
+                  f"[{MIN_GAS_VELOCITY}, {MAX_GAS_VELOCITY}] м/с")
+        self._gas_speed = value
 
     @property
     def liquid_speed(self) -> float:
         return self._liquid_speed
 
-    # NOTE setter для gas speed?
-
     @liquid_speed.setter
     def liquid_speed(self, value: float):
-        if not self.MIN_LIQUID_SPEED <= value <= self.MAX_LIQUID_SPEED:
+        if not MIN_LIQUID_VELOCITY <= value <= MAX_LIQUID_VELOCITY:
             print(f"Предупреждение: скорость жидкости в {self.name} "
                   f"{value} м/с вне диапазона "
-                  f"[{self.MIN_LIQUID_SPEED}, {self.MAX_LIQUID_SPEED}] м/с")
+                  f"[{MIN_LIQUID_VELOCITY}, {MAX_LIQUID_VELOCITY}] м/с")
         self._liquid_speed = value
 
 # ============================================================
@@ -180,17 +166,17 @@ if __name__ == "__main__":
     )
     flows = FlowRates(conditions=conditions, properties=properties)
 
-    gasnozzle = GasNozzle(flows=flows, recommended_speed=10.0)
-    oil_nozzle = OilNozzle(flows=flows, recommended_speed=1.0)
-    water_nozzle = WaterNozzle(flows=flows, recommended_speed=1.0)
-    liquid_nozzle = LiquidNozzle(flows=flows, recommended_speed=1.0)
+    gasnozzle = GasNozzle(flows=flows, speed=10.0)
+    oil_nozzle = OilNozzle(flows=flows, speed=1.0)
+    water_nozzle = WaterNozzle(flows=flows, speed=1.0)
+    liquid_nozzle = LiquidNozzle(flows=flows, speed=1.0)
     liquidgasnozzle = LiquidGasNozzle(
         flows=flows, gas_speed=10.0, liquid_speed=1.0)
 
     _major_header("РАСЧЕТ ШТУЦЕРОВ")
 
     _minor_header(gasnozzle.name)
-    print(f"Рекомендуемая скорость: {gasnozzle.recommended_speed:.2f} м/с")
+    print(f"Скорость: {gasnozzle.speed:.2f} м/с")
     print(
         f"Расчетный диаметр: {gasnozzle.calculate_diameter() * _TO_MM:.1f} мм")
     print(
@@ -200,7 +186,7 @@ if __name__ == "__main__":
 
     print()
     _minor_header(oil_nozzle.name)
-    print(f"Рекомендуемая скорость: {oil_nozzle.recommended_speed:.2f} м/с")
+    print(f"Скорость: {oil_nozzle.speed:.2f} м/с")
     print(
         f"Расчетный диаметр:  {oil_nozzle.calculate_diameter() * _TO_MM:.1f} мм")
     print(
@@ -211,7 +197,7 @@ if __name__ == "__main__":
     print()
     _minor_header(water_nozzle.name)
     print(
-        f"Рекомендуемая скорость: {water_nozzle.recommended_speed:.2f} м/с")
+        f"Скорость: {water_nozzle.speed:.2f} м/с")
     print(
         f"Расчетный диаметр: {water_nozzle.calculate_diameter() * _TO_MM:.1f} мм")
     print(
@@ -222,7 +208,7 @@ if __name__ == "__main__":
     print()
     _minor_header(liquid_nozzle.name)
     print(
-        f"Рекомендуемая скорость: {liquid_nozzle.recommended_speed:.2f} м/с")
+        f"Скорость: {liquid_nozzle.speed:.2f} м/с")
     print(
         f"Расчетный диаметр: {liquid_nozzle.calculate_diameter() * _TO_MM:.1f} мм")
     print(
@@ -233,9 +219,9 @@ if __name__ == "__main__":
     print()
     _minor_header(liquidgasnozzle.name)
     print(
-        f"Рекомендуемая скорость газа: {liquidgasnozzle.gas_speed:.2f} м/с")
+        f"Скорость газа: {liquidgasnozzle.gas_speed:.2f} м/с")
     print(
-        f"Рекомендуемая скорость жидкости: {liquidgasnozzle.liquid_speed:.2f} м/с")
+        f"Скорость жидкости: {liquidgasnozzle.liquid_speed:.2f} м/с")
     print(
         f"Расчетный диаметр: {liquidgasnozzle.calculate_diameter() * _TO_MM:.1f} мм")
     print(f"Стандартный диаметр: "
