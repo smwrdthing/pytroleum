@@ -11,6 +11,7 @@ from pytroleum.plant.tps.utils import (SECONDS_PER_DAY,
                                        PA_TO_MPA,
                                        PERCENT,
                                        _TO_MM,
+                                       _TO_M,
                                        KELVIN_TO_CELSIUS)
 
 """
@@ -54,7 +55,7 @@ NOMINAL_DIAMETERS = np.array([400, 500, 600, 650, 700, 800, 900, 1000,
                               3800, 4000, 4500, 5000, 5500, 5600, 6000,
                               6300, 6400, 7000, 7500, 8000, 8500, 9000,
                               9500, 10000, 11000, 12000, 14000, 16000,
-                              18000, 20000]) * 1e-3
+                              18000, 20000]) * _TO_M
 
 _STABILITY_COEFFICIENT_INTERPOLATOR = interpolate.interp1d(
     _PRESSURE_PA,
