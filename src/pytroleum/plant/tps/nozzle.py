@@ -53,9 +53,7 @@ class Nozzle:
 
     def nozzle_area(self) -> float:
         """Площадь сечения штуцера по номинальному диаметру, м²"""
-        diameter_nominal = self.select_nominal_diameter()
-        # NOTE атрибутом?
-        return np.pi * diameter_nominal ** 2 / 4
+        return np.pi * self.select_nominal_diameter() ** 2 / 4
 
     def actual_speed(self) -> float:
         """Фактическая скорость в штуцере, м/с"""
