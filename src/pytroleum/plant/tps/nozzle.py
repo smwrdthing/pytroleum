@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.interpolate import interp1d
 from pytroleum.plant.tps.inputs import FlowRates
 from pytroleum.plant.tps.utils import _TO_MM, _TO_M
 
@@ -59,6 +60,44 @@ class Nozzle:
     def actual_speed(self) -> float:
         """Фактическая скорость в штуцере, м/с"""
         return self.flow_rate / self.nozzle_area()
+
+# NOTE ниже пример как можно переписать Nozzle
+
+
+class NozzleRefactored:
+    # Класс только описывает сам патрубок
+
+    def __init__(self, diameter, resistance_coeff=0.3) -> None:
+
+        self.diameter = diameter
+        self.area = np.pi*diameter**2/4
+
+        self.resistance_coeff = resistance_coeff
+
+        self.nominal_diameter: float
+
+    def flow_velocity(self, volumetric_flow_rate):
+        # diameter - внутренний диаметр патрубка, скорость считаесят именно по нему
+        return volumetric_flow_rate/self.area
+
+
+def design_nozzle(
+        volumetric_flow_rate, target_velocity, resistance_coeff=0.3) -> NozzleRefactored:
+    # Для определения штуцера по рабочим параметрам отдельная функция
+
+    volumetric_flow_rate = np.atleast_1d(volumetric_flow_rate)
+
+    if len(volumetric_flow_rate) == 1:
+        # одно значение, однофазный поток
+        diameter = np.sqrt(4 * volumetric_flow_rate /
+                           (np.pi * target_velocity))
+    else:
+        # длина больше 1 => двухфазный поток
+        diameter = 1.13 * np.sqrt(
+            np.sum(volumetric_flow_rate / (1.3 * target_velocity))
+        )
+
+    return NozzleRefactored(diameter, resistance_coeff)
 
 
 class GasNozzle(Nozzle):

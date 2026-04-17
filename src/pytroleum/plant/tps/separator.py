@@ -52,6 +52,40 @@ class Separator:
         return (np.pi * self.design.inner_diameter ** 2 / 4 *
                 self.design.length_first_section)
 
+    # NOTE вместо
+    # NOTE def volume_first_section(self):
+    # NOTE     ...
+    # NOTE
+    # NOTE __init__(self, design : SeparatorDesign, ...):
+    # NOTE     # на случай, если нам нужны конструктивные параметры после создания объекта
+    # NOTE     self.design = design
+    # NOTE     self.volume_first_section = np.pi*design.inner_diameter**2/4 ...
+    # NOTE
+    # NOTE ещё лучше держать конструктивные параметры в объекте отдельного класса
+    # NOTE то есть объем можно хранить в design, как и все размеры
+    # NOTE тогда design можно передавать функциям и на месте брать нужные значения
+    # NOTE
+    # NOTE Например, нам нужно уметь считать время пребывания, это можно сделать
+    # NOTE в таком виде (вне класса, обычой функцией):
+    # NOTE
+    # NOTE def compute_residence_time(design:SeparatorDesign,
+    # NOTE                            conditions:OperationCondition):
+    # NOTE     volume = design.volume
+    # NOTE     volumetric_flow_rate = conditions.volumetric_flow_rate
+    # NOTE
+    # NOTE     return volume/volumetric_flow_rate
+    # NOTE
+    # NOTE Это dependency injection - мы передаём созданный объект и работаем с ним,
+    # NOTE так мы разделяяем создание объекта и его использование
+    # NOTE
+    # NOTE Можно, конечно, считать и хранить где-то и время пребывания, но оно зависит
+    # NOTE от двух разных вещей - от конструкции и от рабочих параметров, здесь сложнее
+    # NOTE понять, кто должен хранить время пребывания
+    # NOTE (+ оно может меняться, если меняются рабочие условия) - поэтому
+    # NOTE расчёт времени пребывания следует выполнить скорее в виде вызваемой функции
+    # NOTE (или заносить как атрибут в третий класс-калькулятор, если его создание
+    # NOTE оправдано)
+
     def residence_time_first_section(self) -> float:
         """Время пребывания жидкости в первой секции, с"""
         return (self.volume_first_section() * self.design.fill_coeff_first_section /
@@ -65,6 +99,9 @@ class Separator:
     # --- Сборник нефти после перегородки ---
 
     def volume_after_wall(self) -> float:
+        # NOTE лучше быть последовтаельным в названиях, если у нас есть
+        # NOTE volume_first_section, то эта вещь должна называться
+        # NOTE volume_second_section и т.д.
         """Объём сборника нефти после перегородки, м³"""
         return (np.pi * self.design.inner_diameter ** 2 / 4 *
                 self.design.length_section_after_wall +
@@ -78,6 +115,83 @@ class Separator:
         """Пропускная способность сборника нефти после перегородки, м³/с"""
         return (self.volume_after_wall() * self.design.fill_coeff_after_wall /
                 self.residence_time_after_wall())
+
+    # NOTE ещё пример, как можно провести рефакторинг, функцию выше я бы вынес из класса
+    # NOTE следующим образом:
+    # NOTE
+    # NOTE def compute_separator_capacity(design:SeparatorDesign,
+    # NOTE                                conditions:OperationConditions,
+    # NOTE                                fill_coeffs:Iterable[float] = FILL_COEFFS
+    # NOTE ) -> tuple[float, float]:
+    # NOTE
+    # NOTE     # если у нас есть функция, которая вычисляет время пребывания в сепараторе
+    # NOTE     rt = compute_residence_time(design, conditions)
+    # NOTE
+    # NOTE     first_section_capacity = (
+    # NOTE        design.volume[FIRST_SECTION]*fill_coeffs[FIRST_SECTION]/
+    # NOTE        rt[FIRST_SECTION])
+    # NOTE
+    # NOTE     second_section_capacity = (
+    # NOTE        design.volume[FIRST_SECTION]*fill_coeffs[FIRST_SECTION]/
+    # NOTE        rt[FIRST_SECTION])
+    # NOTE
+    # NOTE     return first_section_capacity, second_section_capacity
+    # NOTE
+    # NOTE Комментарии к функции :
+    # NOTE
+    # NOTE Коэффициенты заполнения теперь передаваемые параметры со значением по
+    # NOTE умолчанию, значение по умолчанию выполнено в виде константы того же типа,
+    # NOTE определённой где-то выше в коде - теперь нам не нужно заботиться об атрибутах,
+    # NOTE которые хранят эти значения. Здесь предполагается, что для большого числа
+    # NOTE случаев подойдут типовые значения, если их нужно будет изменить - мы можем
+    # NOTE передать новые значения на месте
+    # NOTE
+    # NOTE ---
+    # NOTE
+    # NOTE Объёмы секций можно держать в списке/кортеже,
+    # NOTE индексы выполнены константами с говорящими именами, благодаря этому
+    # NOTE код читается практически как обычный английский :
+    # NOTE
+    # NOTE легко интерпертировать :
+    # NOTE design.volume[FIRST_SECTION] -> Volume of first section of given design
+    # NOTE
+    # NOTE Идею можно распространить на все размеры/параметры, которые хранятся в design -
+    # NOTE это немного усложняет структуру объекта (надо знать, что атрибуты - контейнеры
+    # NOTE и что где-то лежат константы-индексы, по которым надо обращаться к конкретному
+    # NOTE элементу в контейнере), но при этом в design количество атрибутов сокращается
+    # NOTE в 2 раза (если секций две) - класс становится менее "захламлённым".
+    # NOTE
+    # NOTE В этом случае структурное усложнение очень незначительно и легко
+    # NOTE компенсируется аннотациями типов, автокомплитом и/или документацией,
+    # NOTE а выигрыш большой - в атрибутах/методах объекта легче ориентироваться,
+    # NOTE т.к. их меньше
+    # NOTE
+    # NOTE ---
+    # NOTE
+    # NOTE Вероятнее всего, когда нам нужна пропускная способность - мы хотим
+    # NOTE пропускнуые способности по всем cекциям, поэтому вместо двух функций
+    # NOTE может быть целесообразнее написать одну, которая сразу возвращает
+    # NOTE пропускные способности обеих секций - поэтому функция выше возвращает кортеж
+    # NOTE
+    # NOTE Время пребывания считается внутри функции, т.к. может зависеть от рабочих
+    # NOTE условий, которые для фиксированной конструкии (design) может меняться
+    # NOTE (например, мы хотим провести расчёт на разные рабочие условия) - тащить время
+    # NOTE пребывания как атрибут в этом случае утомительно, нужно помнить об этом и
+    # NOTE следить за его актуальностью
+    # NOTE
+    # NOTE ---
+    # NOTE
+    # NOTE Ещё тут важно отметить, что при таком подходе у нас намечается унифицированная
+    # NOTE сигнатура вызова - мы передаём в compute_separator_capacity design и
+    # NOTE conditions, те же два параметра мы передаём функции, которая считает нам время
+    # NOTE пребывания (compute_residence_time) - это в общем случае скорее хорошо:
+    # NOTE
+    # NOTE Снижается нагрузка на пользователя - фреймворк становится более
+    # NOTE унифицированным, сигнатуры функций становятся схожими, не нужно каждый раз
+    # NOTE разбираться с чем работают разные функции
+    # NOTE
+    # NOTE Легко писать код, который использует эти фунции, легко вносить изменения,
+    # NOTE автоматизировать работу и т.д.
 
     # --- Скорость движения жидкой фазы и газовой фазы в сечении сепаратора ---
 
@@ -110,12 +224,51 @@ class Separator:
         """Скорость движения воды"""
         return self.flows.flow_water/self.water_flow_area()
 
+    # NOTE выше три функции, которые делают одно и то же
+    # NOTE это можно заменить одной функцией
+    # NOTE
+    # NOTE def compute_velocities(design : SeparatorDesign,
+    # NOTE                      conditions : OperationConditions) -> None:
+    # NOTE
+    # NOTE     conditions.velocity[VAPOR] = (conditions.flow_rate[VAPOR]/
+    # NOTE                                   design.flow_area[VAPOR])
+    # NOTE     conditions.velocity[OIL] = ...
+    # NOTE     conditions.velocity[WATER] = ...
+
     # --- Осаждение капель воды ---
     def velocity_water_settling(self) -> float:
         """Скорость осаждения капель воды в слое нефти"""
         return (self.diameter_water_droplet**2 *
                 (self.properties.water_density-self.properties.oil_density)*g /
                 (18*self.properties.viscosity_oil))
+
+    # NOTE расчёт скорости осаждения тоже можно сделать внешней функцией
+    # NOTE
+    # NOTE def compute_settling_velocity(drop_diameter: float,
+    # NOTE                               continuous_phase: EquationOfState,
+    # NOTE                               dispersed_phase: EquationOfState) -> float:
+    # NOTE
+    # NOTE     density_diff = continuous_phase.rhomass() - dispresed_phase.rhomass()
+    # NOTE
+    # NOTE     settling_velocity = gravity*diameter**2*density_diff/(
+    # NOTE                         18*continuous_phase.viscosity())
+    # NOTE
+    # NOTE     return settling_velocity
+    # NOTE
+    # NOTE Тут мы используем интерфейсы к уравнениям состояния непрерывной и
+    # NOTE диспергированной фазы (см. tdyna)
+    # NOTE
+    # NOTE Разность плотностей определяет знак скорости, "положительное" значение
+    # NOTE выбирается один раз, потом знак скорости интерпертируется как "всплытие"
+    # NOTE или "осаждение"
+    # NOTE
+    # NOTE В этом случае плотность непрерывной фазы вычитается из плотсноти
+    # NOTE диспергированной фазы - если непрерывная фаза тяжелее капля всплывает вверх,
+    # NOTE положительная скорость = всплытие (скорость вверх)
+    # NOTE отрицательная скорость = осаждение (скорость вниз)
+    # NOTE
+    # NOTE Эту функцию можно использовать для любых двух фаз, где мы считаем скорость
+    # NOTE по закону Стокса
 
     def oil_transit_time(self) -> float:
         """Время прохождения нефтью расстояния"""
