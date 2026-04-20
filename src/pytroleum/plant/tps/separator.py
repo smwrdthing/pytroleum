@@ -1,19 +1,38 @@
 from pytroleum.plant.tps.utils import (_major_header, _minor_divider,
                                        _TO_MM, _TO_MICRON, PERCENT, SECONDS_PER_MINUTE)
-from pytroleum.plant.tps.inputs import (SeparatorParameters,
+from pytroleum.plant.tps.inputs import (SeparatorDesign,
                                         OperationConditions,
                                         PhysicalProperties,
-                                        FlowRates,
-                                        CoalescerPacking)
+                                        FlowRates)
+from pytroleum.plant.tps.wire_mesh_demister import WireMeshDemister
+from pytroleum.plant.tps.nozzle import Nozzle
 
 import numpy as np
 from scipy.constants import g
+from typing import Iterable
+
+FIRST_SECTION = 0
+SECOND_SECTION = 1
+TOTAL = 2
+FILL_COEFFS = (0.858, 0.858)
+
+VAPOR = 0
+OIL = 1
+WATER = 2
+
+
+def compute_settling_velocity(drop_diameter: float,
+                              continuous_phase_density: float,
+                              continuous_phase_viscosity: float,
+                              dispersed_phase_density: float) -> float:
+    """Скорость осаждения/всплытия капли по закону Стокса, м/с. Положительное значение
+    — капля всплывает (дисперсная фаза легче непрерывной),отрицательное — оседает."""
+    density_diff = continuous_phase_density - dispersed_phase_density
+    return g * drop_diameter**2 * density_diff / (18 * continuous_phase_viscosity)
 
 
 class Separator:
-    """Расчёт сепаратора"""
-
-    def __init__(self, design: SeparatorParameters,
+    def __init__(self, design: SeparatorDesign,
                  conditions: OperationConditions,
                  properties: PhysicalProperties,
                  flows: FlowRates,
@@ -26,304 +45,93 @@ class Separator:
         self.diameter_water_droplet = diameter_water_droplet
         self.diameter_oil_droplet = diameter_oil_droplet
 
-        # NOTE многие методы в этом классе работают как функции доступа, вместо этого
-        # NOTE в python обычно просто предоставляется прямой досутп к атрибутам, не
-        # NOTE помешает перевести такие методы в атрибуты, вычисляемые либо при создании
-        # NOTE объекта в __init__, либо где-то ещё в каком-нибудь контексте
+    def compute_flow_areas(self) -> tuple[float, float, float]:
+        """Площади поперечного сечения для газа, нефти и воды, м²."""
+        section_area = np.pi * self.design.inner_diameter ** 2 / 4
+        liquid_area = section_area * self.design.fill_coeff_first_section
+        water_area = liquid_area * self.flows.properties.water_cut
+        oil_area = liquid_area - water_area
+        gas_area = section_area - liquid_area
+        return gas_area, oil_area, water_area
 
-    # --- Сепаратор ---
+    def compute_velocities(self) -> None:
+        """Вычисляет скорости газа, нефти и воды, м/с."""
+        areas = self.compute_flow_areas()
+        self.flows.velocity[VAPOR] = self.flows.flow_rate[VAPOR] / areas[VAPOR]
+        self.flows.velocity[OIL] = self.flows.flow_rate[OIL] / areas[OIL]
+        self.flows.velocity[WATER] = self.flows.flow_rate[WATER] / areas[WATER]
 
-    def residence_time(self) -> float:
-        """Время пребывания жидкости в сепараторе, с"""
-        return (self.design.volume_separator * self.design.fill_coeff /
-                self.conditions.flow_liquid)
+    def residence_time(self) -> tuple[float, float, float]:
+        """Время пребывания жидкости в секциях сепаратора, с."""
+        rt_first = (self.design.volume[FIRST_SECTION] *
+                    self.design.fill_coeff_first_section / self.conditions.flow_liquid)
+        rt_total = (self.design.volume_separator * self.design.fill_coeff /
+                    self.conditions.flow_liquid)
+        rt_second = rt_total - rt_first
+        return rt_first, rt_second, rt_total
 
-    def capacity(self):
-        """Максимальная производительность аппарата по жидкости с
-        учетом коэффициента заполнения"""
-        return (self.design.volume_separator * self.design.fill_coeff /
-                self.residence_time())
+    def transit_time(self, phase: int) -> float:
+        """Время прохождения фазой расстояния от распределительной
+        решётки до сливной перегородки, с."""
+        return self.design.L_c / self.flows.velocity[phase]
 
-    # --- Первая секция (Н+В) ---
+    def settling_height(self, drop_diameter: float,
+                        continuous_phase_density: float,
+                        continuous_phase_viscosity: float,
+                        dispersed_phase_density: float,
+                        phase: int) -> float:
+        """Высота осаждения/всплытия капель, м."""
+        velocity = compute_settling_velocity(
+            drop_diameter, continuous_phase_density,
+            continuous_phase_viscosity, dispersed_phase_density,
+        )
+        return abs(velocity) * self.transit_time(phase)
 
-    def volume_first_section(self) -> float:
-        """Объём первой секции, м³"""
-        # NOTE это тоже можно сделать атрибутом вместо метода
-        return (np.pi * self.design.inner_diameter ** 2 / 4 *
-                self.design.length_first_section)
+    def capacity(self, fill_coeffs: Iterable[float] = FILL_COEFFS) -> tuple[float, float]:
+        """Пропускная способность сепаратора по жидкости для каждой секции, м³/с."""
+        fill_coeffs = tuple(fill_coeffs)
+        rt = self.residence_time()
+        first_section_capacity = (self.design.volume[FIRST_SECTION] *
+                                  fill_coeffs[FIRST_SECTION] / rt[FIRST_SECTION])
+        second_section_capacity = (self.design.volume[SECOND_SECTION] *
+                                   fill_coeffs[SECOND_SECTION] / rt[SECOND_SECTION])
+        return first_section_capacity, second_section_capacity
 
-    # NOTE вместо
-    # NOTE def volume_first_section(self):
-    # NOTE     ...
-    # NOTE
-    # NOTE __init__(self, design : SeparatorDesign, ...):
-    # NOTE     # на случай, если нам нужны конструктивные параметры после создания объекта
-    # NOTE     self.design = design
-    # NOTE     self.volume_first_section = np.pi*design.inner_diameter**2/4 ...
-    # NOTE
-    # NOTE ещё лучше держать конструктивные параметры в объекте отдельного класса
-    # NOTE то есть объем можно хранить в design, как и все размеры
-    # NOTE тогда design можно передавать функциям и на месте брать нужные значения
-    # NOTE
-    # NOTE Например, нам нужно уметь считать время пребывания, это можно сделать
-    # NOTE в таком виде (вне класса, обычой функцией):
-    # NOTE
-    # NOTE def compute_residence_time(design:SeparatorDesign,
-    # NOTE                            conditions:OperationCondition):
-    # NOTE     volume = design.volume
-    # NOTE     volumetric_flow_rate = conditions.volumetric_flow_rate
-    # NOTE
-    # NOTE     return volume/volumetric_flow_rate
-    # NOTE
-    # NOTE Это dependency injection - мы передаём созданный объект и работаем с ним,
-    # NOTE так мы разделяяем создание объекта и его использование
-    # NOTE
-    # NOTE Можно, конечно, считать и хранить где-то и время пребывания, но оно зависит
-    # NOTE от двух разных вещей - от конструкции и от рабочих параметров, здесь сложнее
-    # NOTE понять, кто должен хранить время пребывания
-    # NOTE (+ оно может меняться, если меняются рабочие условия) - поэтому
-    # NOTE расчёт времени пребывания следует выполнить скорее в виде вызваемой функции
-    # NOTE (или заносить как атрибут в третий класс-калькулятор, если его создание
-    # NOTE оправдано)
+    def resistance(self, losses_unaccounted: float,
+                   demister: WireMeshDemister,
+                   liquidgasnozzle: Nozzle,
+                   gasnozzle: Nozzle) -> tuple[float, float, float, float]:
+        """Сопротивления сепаратора, Па."""
 
-    def residence_time_first_section(self) -> float:
-        """Время пребывания жидкости в первой секции, с"""
-        return (self.volume_first_section() * self.design.fill_coeff_first_section /
-                self.conditions.flow_liquid)
+        assert liquidgasnozzle.resistance_coeff is not None
+        assert gasnozzle.resistance_coeff is not None
+        gas_density = self.properties.gas_density_work(self.conditions)
 
-    def capacity_first_section(self) -> float:
-        """Пропускная способность первой секции, м³/с"""
-        return (self.volume_first_section() * self.design.fill_coeff_first_section /
-                self.residence_time_first_section())
+        pressure_drop_mesh_demister = (
+            demister.mesh_resistance_coefficient * gas_density *
+            demister.actual_velocity() ** 2 / 2)
 
-    # --- Сборник нефти после перегородки ---
+        pressure_drop_inlet_nozzle = (
+            liquidgasnozzle.resistance_coeff * gas_density *
+            liquidgasnozzle.flow_velocity(self.flows.flow_gas_work) ** 2 / 2)
 
-    def volume_second_section(self) -> float:
-        """Объём сборника нефти после перегородки, м³"""
-        return (np.pi * self.design.inner_diameter ** 2 / 4 *
-                self.design.length_second_section +
-                self.design.volume_ell_head)
+        pressure_drop_outlet_nozzle = (
+            gasnozzle.resistance_coeff * gas_density *
+            gasnozzle.flow_velocity(self.flows.flow_gas_work) ** 2 / 2)
 
-    def residence_time_second_section(self) -> float:
-        """Время пребывания нефти в сборнике после перегородки, с"""
-        return self.residence_time() - self.residence_time_first_section()
+        pressure_drop_total = losses_unaccounted * (pressure_drop_mesh_demister +
+                                                    pressure_drop_inlet_nozzle +
+                                                    pressure_drop_outlet_nozzle)
 
-    def capacity_second_section(self) -> float:
-        """Пропускная способность сборника нефти после перегородки, м³/с"""
-        return (self.volume_second_section() * self.design.fill_coeff_second_section /
-                self.residence_time_second_section())
-
-    # NOTE ещё пример, как можно провести рефакторинг, функцию выше я бы вынес из класса
-    # NOTE следующим образом:
-    # NOTE
-    # NOTE def compute_separator_capacity(design:SeparatorDesign,
-    # NOTE                                conditions:OperationConditions,
-    # NOTE                                fill_coeffs:Iterable[float] = FILL_COEFFS
-    # NOTE ) -> tuple[float, float]:
-    # NOTE
-    # NOTE     # если у нас есть функция, которая вычисляет время пребывания в сепараторе
-    # NOTE     rt = compute_residence_time(design, conditions)
-    # NOTE
-    # NOTE     first_section_capacity = (
-    # NOTE        design.volume[FIRST_SECTION]*fill_coeffs[FIRST_SECTION]/
-    # NOTE        rt[FIRST_SECTION])
-    # NOTE
-    # NOTE     second_section_capacity = (
-    # NOTE        design.volume[FIRST_SECTION]*fill_coeffs[FIRST_SECTION]/
-    # NOTE        rt[FIRST_SECTION])
-    # NOTE
-    # NOTE     return first_section_capacity, second_section_capacity
-    # NOTE
-    # NOTE Комментарии к функции :
-    # NOTE
-    # NOTE Коэффициенты заполнения теперь передаваемые параметры со значением по
-    # NOTE умолчанию, значение по умолчанию выполнено в виде константы того же типа,
-    # NOTE определённой где-то выше в коде - теперь нам не нужно заботиться об атрибутах,
-    # NOTE которые хранят эти значения. Здесь предполагается, что для большого числа
-    # NOTE случаев подойдут типовые значения, если их нужно будет изменить - мы можем
-    # NOTE передать новые значения на месте
-    # NOTE
-    # NOTE ---
-    # NOTE
-    # NOTE Объёмы секций можно держать в списке/кортеже,
-    # NOTE индексы выполнены константами с говорящими именами, благодаря этому
-    # NOTE код читается практически как обычный английский :
-    # NOTE
-    # NOTE легко интерпертировать :
-    # NOTE design.volume[FIRST_SECTION] -> Volume of first section of given design
-    # NOTE
-    # NOTE Идею можно распространить на все размеры/параметры, которые хранятся в design -
-    # NOTE это немного усложняет структуру объекта (надо знать, что атрибуты - контейнеры
-    # NOTE и что где-то лежат константы-индексы, по которым надо обращаться к конкретному
-    # NOTE элементу в контейнере), но при этом в design количество атрибутов сокращается
-    # NOTE в 2 раза (если секций две) - класс становится менее "захламлённым".
-    # NOTE
-    # NOTE В этом случае структурное усложнение очень незначительно и легко
-    # NOTE компенсируется аннотациями типов, автокомплитом и/или документацией,
-    # NOTE а выигрыш большой - в атрибутах/методах объекта легче ориентироваться,
-    # NOTE т.к. их меньше
-    # NOTE
-    # NOTE ---
-    # NOTE
-    # NOTE Вероятнее всего, когда нам нужна пропускная способность - мы хотим
-    # NOTE пропускнуые способности по всем cекциям, поэтому вместо двух функций
-    # NOTE может быть целесообразнее написать одну, которая сразу возвращает
-    # NOTE пропускные способности обеих секций - поэтому функция выше возвращает кортеж
-    # NOTE
-    # NOTE Время пребывания считается внутри функции, т.к. может зависеть от рабочих
-    # NOTE условий, которые для фиксированной конструкии (design) может меняться
-    # NOTE (например, мы хотим провести расчёт на разные рабочие условия) - тащить время
-    # NOTE пребывания как атрибут в этом случае утомительно, нужно помнить об этом и
-    # NOTE следить за его актуальностью
-    # NOTE
-    # NOTE ---
-    # NOTE
-    # NOTE Ещё тут важно отметить, что при таком подходе у нас намечается унифицированная
-    # NOTE сигнатура вызова - мы передаём в compute_separator_capacity design и
-    # NOTE conditions, те же два параметра мы передаём функции, которая считает нам время
-    # NOTE пребывания (compute_residence_time) - это в общем случае скорее хорошо:
-    # NOTE
-    # NOTE Снижается нагрузка на пользователя - фреймворк становится более
-    # NOTE унифицированным, сигнатуры функций становятся схожими, не нужно каждый раз
-    # NOTE разбираться с чем работают разные функции
-    # NOTE
-    # NOTE Легко писать код, который использует эти фунции, легко вносить изменения,
-    # NOTE автоматизировать работу и т.д.
-
-    # --- Скорость движения жидкой фазы и газовой фазы в сечении сепаратора ---
-
-    def liquid_flow_area(self) -> float:
-        """Площадь сечения для прохода жидкости"""
-        return (np.pi * self.design.inner_diameter ** 2 / 4 *
-                self.design.fill_coeff_first_section)
-
-    def gas_flow_area(self) -> float:
-        """Площадь сечения для прохода газа"""
-        return (np.pi * self.design.inner_diameter ** 2 / 4 - self.liquid_flow_area())
-
-    def water_flow_area(self) -> float:
-        """Площадь сечения для прохода воды"""
-        return self.liquid_flow_area()*self.properties.water_cut
-
-    def oil_flow_area(self) -> float:
-        """Площадь сечения для прохода нефти"""
-        return self.liquid_flow_area()-self.water_flow_area()
-
-    def gas_velocity(self) -> float:
-        """Скорость движения газа"""
-        return self.flows.flow_gas_work/self.gas_flow_area()
-
-    def oil_velocity(self) -> float:
-        """Скорость движения нефти"""
-        return self.flows.flow_oil/self.oil_flow_area()
-
-    def water_velocity(self) -> float:
-        """Скорость движения воды"""
-        return self.flows.flow_water/self.water_flow_area()
-
-    # NOTE выше три функции, которые делают одно и то же
-    # NOTE это можно заменить одной функцией
-    # NOTE
-    # NOTE def compute_velocities(design : SeparatorDesign,
-    # NOTE                      conditions : OperationConditions) -> None:
-    # NOTE
-    # NOTE     conditions.velocity[VAPOR] = (conditions.flow_rate[VAPOR]/
-    # NOTE                                   design.flow_area[VAPOR])
-    # NOTE     conditions.velocity[OIL] = ...
-    # NOTE     conditions.velocity[WATER] = ...
-
-    # --- Осаждение капель воды ---
-    def velocity_water_settling(self) -> float:
-        """Скорость осаждения капель воды в слое нефти"""
-        return (self.diameter_water_droplet**2 *
-                (self.properties.water_density-self.properties.oil_density)*g /
-                (18*self.properties.viscosity_oil))
-
-    # NOTE расчёт скорости осаждения тоже можно сделать внешней функцией
-    # NOTE
-    # NOTE def compute_settling_velocity(drop_diameter: float,
-    # NOTE                               continuous_phase: EquationOfState,
-    # NOTE                               dispersed_phase: EquationOfState) -> float:
-    # NOTE
-    # NOTE     density_diff = continuous_phase.rhomass() - dispresed_phase.rhomass()
-    # NOTE
-    # NOTE     settling_velocity = gravity*diameter**2*density_diff/(
-    # NOTE                         18*continuous_phase.viscosity())
-    # NOTE
-    # NOTE     return settling_velocity
-    # NOTE
-    # NOTE Тут мы используем интерфейсы к уравнениям состояния непрерывной и
-    # NOTE диспергированной фазы (см. tdyna)
-    # NOTE
-    # NOTE Разность плотностей определяет знак скорости, "положительное" значение
-    # NOTE выбирается один раз, потом знак скорости интерпертируется как "всплытие"
-    # NOTE или "осаждение"
-    # NOTE
-    # NOTE В этом случае плотность непрерывной фазы вычитается из плотсноти
-    # NOTE диспергированной фазы - если непрерывная фаза тяжелее капля всплывает вверх,
-    # NOTE положительная скорость = всплытие (скорость вверх)
-    # NOTE отрицательная скорость = осаждение (скорость вниз)
-    # NOTE
-    # NOTE Эту функцию можно использовать для любых двух фаз, где мы считаем скорость
-    # NOTE по закону Стокса
-
-    def oil_transit_time(self) -> float:
-        """Время прохождения нефтью расстояния"""
-        return self.design.L_c/self.oil_velocity()
-
-    def water_settling_height(self) -> float:
-        """За это время капли воды опустятся на высоту"""
-        return self.velocity_water_settling()*self.oil_transit_time()
-
-    # ---Всплытие капель нефти ---
-    def velocity_oil_rising(self) -> float:
-        """Скорость подъёма капель нефти в слое воды"""
-        return (self.diameter_oil_droplet**2 *
-                (self.properties.water_density-self.properties.oil_density)*g /
-                (18*self.properties.viscosity_water))
-
-    def water_transit_time(self) -> float:
-        """Время прохождения водой расстояния"""
-        return self.design.L_c/self.water_velocity()
-
-    def oil_rising_height(self) -> float:
-        """За это время капли нефти поднимутся на высоту"""
-        return self.velocity_oil_rising()*self.water_transit_time()
-
-
-class Coalescer:
-    def __init__(self, coalescer_packing: CoalescerPacking,
-                 separator: Separator) -> None:
-        self.coalescer_packing = coalescer_packing
-        self.separator = separator
-
-    # ---Для верхнего коалесцера ---
-    def droplet_water_settling_time(self):
-        """"Время осаждения капель воды в зазоре"""
-        return (self.coalescer_packing.coalescer_top_gap /
-                (self.separator.velocity_water_settling() *
-                 np.cos(np.radians(self.coalescer_packing.angle))))
-
-    def coalescer_top_channel_length(self):
-        """Длина канала верхнего коалесцера"""
-        return self.separator.oil_velocity() * self.droplet_water_settling_time()
-
-    # ---Для нижнего коалесцера ---
-    def droplet_oil_rising_time(self):
-        """"Время всплытия капель нефти в зазоре"""
-        return (self.coalescer_packing.coalescer_bottom_gap /
-                (self.separator.velocity_oil_rising() *
-                 np.cos(np.radians(self.coalescer_packing.angle))))
-
-    def coalescer_bottom_channel_length(self):
-        """Длина канала нижнего коалесцера"""
-        return self.separator.water_velocity()*self.droplet_oil_rising_time()
+        return (pressure_drop_mesh_demister, pressure_drop_inlet_nozzle,
+                pressure_drop_outlet_nozzle, pressure_drop_total)
 
 
 if __name__ == "__main__":
     from pytroleum.plant.tps.utils import SECONDS_PER_DAY
+    from pytroleum.plant.tps.nozzle import design_gas_nozzle, design_liquid_gas_nozzle
 
-    design = SeparatorParameters(
+    design = SeparatorDesign(
         inner_diameter=2.0,
         length_cylindrical_part=9.5,
         fill_coeff=0.858,
@@ -362,12 +170,17 @@ if __name__ == "__main__":
                           diameter_water_droplet=diameter_water_droplet,
                           diameter_oil_droplet=diameter_oil_droplet)
 
-    coalescer_packing = CoalescerPacking(
-        coalescer_top_gap=15e-3,
-        coalescer_bottom_gap=25e-3,
-    )
-    coalescer = Coalescer(
-        coalescer_packing=coalescer_packing, separator=separator)
+    demister = WireMeshDemister(properties, flows,
+                                area_reduction_coefficient=1.05,
+                                mesh_resistance_coefficient=70)
+    gasnozzle = design_gas_nozzle(flows=flows,
+                                  speed=10.0,
+                                  resistance_coeff=0.5)
+    liquidgasnozzle = design_liquid_gas_nozzle(flows=flows,
+                                               gas_speed=10.0,
+                                               liquid_speed=1.0,
+                                               resistance_coeff=1.0)
+    losses_unaccounted = 1.2
 
     _major_header("РАСЧЁТ ПРОПУСКНОЙ СПОСОБНОСТИ СЕПАРАТОРА ПО ЖИДКОСТИ")
 
@@ -383,10 +196,15 @@ if __name__ == "__main__":
           f"{design.fill_coeff * PERCENT:.1f} %")
     print(f"Номинальный объём сепаратора: "
           f"{design.volume_separator:.3f} м³")
+
+    separator.compute_velocities()
+    rt = separator.residence_time()
+    capacities = separator.capacity()
+
     print(f"Время пребывания жидкости: "
-          f"{separator.residence_time() / SECONDS_PER_MINUTE:.2f} мин")
+          f"{rt[TOTAL] / SECONDS_PER_MINUTE:.2f} мин")
     print(f"Пропускная способность: "
-          f"{separator.capacity() * SECONDS_PER_DAY:.2f} м³/сут")
+          f"{conditions.flow_liquid * SECONDS_PER_DAY:.2f} м³/сут")
 
     _minor_divider()
     print("ПЕРВАЯ СЕКЦИЯ (НЕФТЬ + ВОДА)")
@@ -395,12 +213,13 @@ if __name__ == "__main__":
           f"{design.length_first_section:.1f} м")
     print(f"Коэффициент заполнения: "
           f"{design.fill_coeff_first_section * PERCENT:.1f} %")
+
     print(f"Объём первой секции: "
-          f"{separator.volume_first_section():.3f} м³")
+          f"{design.volume[FIRST_SECTION]:.3f} м³")
     print(f"Время пребывания (Н+В): "
-          f"{separator.residence_time_first_section() / SECONDS_PER_MINUTE:.3f} мин")
+          f"{rt[FIRST_SECTION] / SECONDS_PER_MINUTE:.3f} мин")
     print(f"Пропускная способность: "
-          f"{separator.capacity_first_section() * SECONDS_PER_DAY:.2f} м³/сут")
+          f"{capacities[FIRST_SECTION] * SECONDS_PER_DAY:.2f} м³/сут")
 
     _minor_divider()
     print("СБОРНИК НЕФТИ (ПОСЛЕ ПЕРЕГОРОДКИ)")
@@ -410,31 +229,28 @@ if __name__ == "__main__":
     print(f"Коэффициент заполнения: "
           f"{design.fill_coeff_second_section * PERCENT:.1f} %")
     print(f"Объём секции после перегородки: "
-          f"{separator.volume_second_section():.3f} м³")
+          f"{design.volume[SECOND_SECTION]:.3f} м³")
     print(f"Время пребывания: "
-          f"{separator.residence_time_second_section() / SECONDS_PER_MINUTE:.3f} мин")
+          f"{rt[SECOND_SECTION] / SECONDS_PER_MINUTE:.3f} мин")
     print(f"Пропускная способность: "
-          f"{separator.capacity_second_section() * SECONDS_PER_DAY:.3f} м³/сут")
+          f"{capacities[SECOND_SECTION] * SECONDS_PER_DAY:.3f} м³/сут")
 
     _minor_divider()
     print("РАСЧЕТ СКОРОСТЕЙ ДВИЖЕНИЯ ЖИДКОЙ ФАЗЫ И ГАЗОВОЙ ФАЗЫ В СЕЧЕНИИ СЕПАРАТОРА")
     _minor_divider()
-    print(f"Площадь сечения для прохода жидкости: "
-          f"{separator.liquid_flow_area():.3f} м²")
-    print(f"Площадь сечения для прохода газа: "
-          f"{separator.gas_flow_area():.3f} м²")
-    print(f"Площадь сечения для прохода воды: "
-          f"{separator.water_flow_area():.3f} м²")
-    print(f"Площадь сечения для прохода нефти: "
-          f"{separator.oil_flow_area():.3f} м²")
+
+    areas = separator.compute_flow_areas()
+
+    print(
+        f"Площадь сечения для прохода жидкости: {areas[OIL] + areas[WATER]:.3f} м²")
+    print(f"Площадь сечения для прохода газа: {areas[VAPOR]:.3f} м²")
+    print(f"Площадь сечения для прохода воды: {areas[WATER]:.3f} м²")
+    print(f"Площадь сечения для прохода нефти: {areas[OIL]:.3f} м²")
 
     _minor_divider()
-    print(f"Скорость движения газа: "
-          f"{separator.gas_velocity():.4f} м/с")
-    print(f"Скорость движения нефти: "
-          f"{separator.oil_velocity()*_TO_MM:.4f} мм/с")
-    print(f"Скорость движения воды: "
-          f"{separator.water_velocity()*_TO_MM:.4f} мм/с")
+    print(f"Скорость движения газа: {flows.velocity[VAPOR]:.4f} м/с")
+    print(f"Скорость движения нефти: {flows.velocity[OIL] * _TO_MM:.4f} мм/с")
+    print(f"Скорость движения воды: {flows.velocity[WATER] * _TO_MM:.4f} мм/с")
 
     _minor_divider()
     print("ОСАЖДЕНИЕ КАПЕЛЬ ВОДЫ В СЛОЕ НЕФТИ")
@@ -444,11 +260,16 @@ if __name__ == "__main__":
     print(f"Диаметр капли воды: "
           f"{diameter_water_droplet * _TO_MICRON:.0f} мкм")
     print(f"Скорость осаждения капель воды: "
-          f"{separator.velocity_water_settling() * _TO_MM:.4f} мм/с")
+          f"{abs(compute_settling_velocity(diameter_water_droplet, properties.oil_density,
+                                           properties.viscosity_oil,
+                                           properties.water_density)) * _TO_MM:.4f} мм/с")
     print(f"Время прохождения нефтью расстояния: "
-          f"{separator.oil_transit_time():.2f} с")
+          f"{separator.transit_time(OIL):.2f} с")
     print(f"Высота осаждения капель воды: "
-          f"{separator.water_settling_height() * _TO_MM:.2f} мм")
+          f"{separator.settling_height(diameter_water_droplet,
+                                       properties.oil_density,
+                                       properties.viscosity_oil,
+                                       properties.water_density, OIL) * _TO_MM:.2f} мм")
 
     _minor_divider()
     print("ВСПЛЫТИЕ КАПЕЛЬ НЕФТИ В СЛОЕ ВОДЫ")
@@ -458,33 +279,56 @@ if __name__ == "__main__":
     print(f"Диаметр капли нефти: "
           f"{diameter_oil_droplet * _TO_MICRON:.0f} мкм")
     print(f"Скорость подъёма капель нефти: "
-          f"{separator.velocity_oil_rising() * _TO_MM:.4f} мм/с")
+          f"{compute_settling_velocity(diameter_oil_droplet, properties.water_density,
+                                       properties.viscosity_water,
+                                       properties.oil_density) * _TO_MM:.4f} мм/с")
     print(f"Время прохождения водой расстояния: "
-          f"{separator.water_transit_time():.2f} с")
+          f"{separator.transit_time(WATER):.2f} с")
     print(f"Высота подъёма капель нефти: "
-          f"{separator.oil_rising_height() * _TO_MM:.2f} мм")
+          f"{separator.settling_height(diameter_oil_droplet,
+                                       properties.water_density,
+                                       properties.viscosity_water,
+                                       properties.oil_density, WATER) * _TO_MM:.2f} мм")
+
+    _major_header("РАСЧЁТ СОПРОТИВЛЕНИЯ СЕПАРАТОРА")
 
     _minor_divider()
-    print("ВЕРХНИЙ КОАЛЕСЦЕР")
-    _minor_divider()
-    print(f"Угол наклона пластин: "
-          f"{coalescer_packing.angle:.0f}°")
-    print(f"Зазор между пластинами: "
-          f"{coalescer_packing.coalescer_top_gap * _TO_MM:.0f} мм")
-    print(f"Время осаждения капель воды в зазоре: "
-          f"{coalescer.droplet_water_settling_time() / SECONDS_PER_MINUTE:.2f} мин")
-    print(f"Длина канала: "
-          f"{coalescer.coalescer_top_channel_length():.4f} м")
+    print(f"Плотность газа при рабочих условиях: "
+          f"{properties.gas_density_work(conditions):.3f} кг/м³")
 
     _minor_divider()
-    print("НИЖНИЙ КОАЛЕСЦЕР")
+    print(f"Диаметр штуцера входа ГЖС: "
+          f"{liquidgasnozzle.nominal_diameter * _TO_MM:.0f} мм")
+    print(f"Диаметр штуцера выхода газа: "
+          f"{gasnozzle.nominal_diameter * _TO_MM:.0f} мм")
+
     _minor_divider()
-    print(f"Угол наклона пластин: "
-          f"{coalescer_packing.angle:.0f}°")
-    print(f"Зазор между пластинами: "
-          f"{coalescer_packing.coalescer_bottom_gap * _TO_MM:.0f} мм")
-    print(f"Время всплытия капель нефти в зазоре: "
-          f"{coalescer.droplet_oil_rising_time() / SECONDS_PER_MINUTE:.2f} мин")
-    print(f"Длина канала: "
-          f"{coalescer.coalescer_bottom_channel_length():.4f} м")
+    print(f"Скорость во входном штуцере ГЖС: "
+          f"{liquidgasnozzle.flow_velocity(flows.flow_gas_work):.3f} м/с")
+    print(f"Скорость в выходном штуцере газа: "
+          f"{gasnozzle.flow_velocity(flows.flow_gas_work):.3f} м/с")
+
+    _minor_divider()
+    print(f"Коэффициент сопротивления входного патрубка: "
+          f"{liquidgasnozzle.resistance_coeff}")
+    print(f"Коэффициент сопротивления выходного патрубка: "
+          f"{gasnozzle.resistance_coeff}")
+    print(f"Коэффициент сопротивления сетчатого отбойника: "
+          f"{demister.mesh_resistance_coefficient}")
+    print(f"Коэффициент неучтенных потерь: {losses_unaccounted}")
+
+    (pressure_drop_mesh_demister, pressure_drop_inlet_nozzle,
+     pressure_drop_outlet_nozzle, pressure_drop_total) = separator.resistance(
+        losses_unaccounted, demister, liquidgasnozzle, gasnozzle)
+
+    _minor_divider()
+    print(
+        f"Падение давления на отбойнике: {pressure_drop_mesh_demister:.3f} Па")
+    print(
+        f"Потери давления на штуцере входа: {pressure_drop_inlet_nozzle:.3f} Па")
+    print(
+        f"Потери давления на штуцере выхода: {pressure_drop_outlet_nozzle:.3f} Па")
+
+    _minor_divider()
+    print(f"Сопротивление сепаратора: {pressure_drop_total:.3f} Па")
     _minor_divider()

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import numpy as np
 from pytroleum.plant.tps.utils import (DEFAULT_PRESSURE,
                                        DEFAULT_TEMPERATURE,
                                        SECONDS_PER_DAY,
@@ -52,9 +53,12 @@ class GeometryCyclone:
     height_inlet_cyclone: float  # м - высота входа в циклон
     number_of_cyclones: float    # Количество циклонов
 
+    def __post_init__(self):
+        self.area_spiral_channel = self.width_inlet_cyclone * self.height_inlet_cyclone
+
 
 @dataclass
-class SeparatorParameters:
+class SeparatorDesign:
     inner_diameter: float           # внутренний диаметр
     length_cylindrical_part: float  # длина цилиндрической части сепаратора
     fill_coeff: float               # коэффициент заполнения сепаратора
@@ -77,6 +81,11 @@ class SeparatorParameters:
             length_semiaxis_right=self.length_semiaxis,
             diameter=self.inner_diameter,
             level=self.inner_diameter
+        )
+        section_area = np.pi * self.inner_diameter ** 2 / 4
+        self.volume = (
+            section_area * self.length_first_section,
+            section_area * self.length_second_section + self.volume_ell_head,
         )
 
 
@@ -128,6 +137,10 @@ class FlowRates:
 
         self.flow_gas_from_gas_factor = (self.properties.gas_factor *
                                          self.mass_flow_oil_ton_per_day)
+
+        self.flow_rate = (self.flow_gas_work, self.flow_oil, self.flow_water)
+        self.velocity: list[float] = [0.0, 0.0, 0.0]
+
 
 # ============================================================
 # Пример использования
