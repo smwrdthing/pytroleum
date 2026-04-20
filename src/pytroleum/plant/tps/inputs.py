@@ -59,10 +59,10 @@ class SeparatorParameters:
     length_cylindrical_part: float  # длина цилиндрической части сепаратора
     fill_coeff: float               # коэффициент заполнения сепаратора
     fill_coeff_first_section: float  # коэффициент заполнения первой секции
-    fill_coeff_after_wall: float    # коэффициент заполнения после перегородки
+    fill_coeff_second_section: float    # коэффициент заполнения после перегородки
     length_semiaxis: float          # длина полуоси эллиптического днища, м
     length_first_section: float     # длина цилиндрической части первой секции
-    length_section_after_wall: float  # длина секции после перегородки
+    length_second_section: float  # длина секции после перегородки
     L_c: float                      # расстояние от решетки до сливной перегородки
 
     def __post_init__(self):

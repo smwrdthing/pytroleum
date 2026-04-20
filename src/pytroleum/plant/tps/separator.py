@@ -98,23 +98,20 @@ class Separator:
 
     # --- Сборник нефти после перегородки ---
 
-    def volume_after_wall(self) -> float:
-        # NOTE лучше быть последовтаельным в названиях, если у нас есть
-        # NOTE volume_first_section, то эта вещь должна называться
-        # NOTE volume_second_section и т.д.
+    def volume_second_section(self) -> float:
         """Объём сборника нефти после перегородки, м³"""
         return (np.pi * self.design.inner_diameter ** 2 / 4 *
-                self.design.length_section_after_wall +
+                self.design.length_second_section +
                 self.design.volume_ell_head)
 
-    def residence_time_after_wall(self) -> float:
+    def residence_time_second_section(self) -> float:
         """Время пребывания нефти в сборнике после перегородки, с"""
         return self.residence_time() - self.residence_time_first_section()
 
-    def capacity_after_wall(self) -> float:
+    def capacity_second_section(self) -> float:
         """Пропускная способность сборника нефти после перегородки, м³/с"""
-        return (self.volume_after_wall() * self.design.fill_coeff_after_wall /
-                self.residence_time_after_wall())
+        return (self.volume_second_section() * self.design.fill_coeff_second_section /
+                self.residence_time_second_section())
 
     # NOTE ещё пример, как можно провести рефакторинг, функцию выше я бы вынес из класса
     # NOTE следующим образом:
@@ -330,11 +327,11 @@ if __name__ == "__main__":
         inner_diameter=2.0,
         length_cylindrical_part=9.5,
         fill_coeff=0.858,
-        fill_coeff_after_wall=0.858,
+        fill_coeff_second_section=0.858,
         fill_coeff_first_section=0.858,
         length_semiaxis=0.618,
         length_first_section=8.2,
-        length_section_after_wall=1.3,
+        length_second_section=1.3,
         L_c=4.7
     )
     conditions = OperationConditions(
@@ -409,15 +406,15 @@ if __name__ == "__main__":
     print("СБОРНИК НЕФТИ (ПОСЛЕ ПЕРЕГОРОДКИ)")
     _minor_divider()
     print(f"Длина секции после перегородки: "
-          f"{design.length_section_after_wall:.1f} м")
+          f"{design.length_second_section:.1f} м")
     print(f"Коэффициент заполнения: "
-          f"{design.fill_coeff_after_wall * PERCENT:.1f} %")
+          f"{design.fill_coeff_second_section * PERCENT:.1f} %")
     print(f"Объём секции после перегородки: "
-          f"{separator.volume_after_wall():.3f} м³")
+          f"{separator.volume_second_section():.3f} м³")
     print(f"Время пребывания: "
-          f"{separator.residence_time_after_wall() / SECONDS_PER_MINUTE:.3f} мин")
+          f"{separator.residence_time_second_section() / SECONDS_PER_MINUTE:.3f} мин")
     print(f"Пропускная способность: "
-          f"{separator.capacity_after_wall() * SECONDS_PER_DAY:.3f} м³/сут")
+          f"{separator.capacity_second_section() * SECONDS_PER_DAY:.3f} м³/сут")
 
     _minor_divider()
     print("РАСЧЕТ СКОРОСТЕЙ ДВИЖЕНИЯ ЖИДКОЙ ФАЗЫ И ГАЗОВОЙ ФАЗЫ В СЕЧЕНИИ СЕПАРАТОРА")
