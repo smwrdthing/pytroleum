@@ -51,7 +51,7 @@ class Cyclone:
         self.flows = flows
         self.geometry_cyclone = geometry_cyclone
 
-    def vapor_velocity(self) -> float:
+    def vapor_velocity(self, number_of_cyclones: int) -> float:
         """Скорость газа в спиральном канале, м/с.
 
         uг_сп = Qг_ру / (n * F_кан)
@@ -59,8 +59,7 @@ class Cyclone:
         где Qг_ру — расход газа при р.у., n — число циклонов,
         F_кан — площадь сечения спирального канала одного циклона.
         """
-
-        return self.flows.flow_gas_work / (self.geometry_cyclone.number_of_cyclones *
+        return self.flows.flow_gas_work / (number_of_cyclones *
                                            self.geometry_cyclone.area_spiral_channel)
 
 # ============================================================
@@ -105,8 +104,9 @@ if __name__ == "__main__":
         coalescer_bottom_gap=25e-3,
     )
 
+    number_of_cyclones = 4
     geometry_cyclone = GeometryCyclone(width_inlet_cyclone=47.5e-3,
-                                       height_inlet_cyclone=75e-3, number_of_cyclones=4)
+                                       height_inlet_cyclone=75e-3)
 
     separator = Separator(design=design, conditions=conditions,
                           properties=properties, flows=flows,
@@ -161,7 +161,7 @@ if __name__ == "__main__":
         f"Ширина входа в циклон: {geometry_cyclone.width_inlet_cyclone * _TO_MM:.1f} мм")
     print(
         f"Высота входа в циклон: {geometry_cyclone.height_inlet_cyclone * _TO_MM:.1f} мм")
-    print(f"Количество циклонов: {geometry_cyclone.number_of_cyclones}")
+    print(f"Количество циклонов: {number_of_cyclones}")
 
     _minor_divider()
     print(f"Расход газа при рабочих условиях: "
@@ -169,4 +169,4 @@ if __name__ == "__main__":
     print(f"Площадь сечения спирального канала: "
           f"{geometry_cyclone.area_spiral_channel:.4f} м²")
     print(f"Скорость газа в спиральном канале: "
-          f"{cyclone.vapor_velocity():.3f} м/с")
+          f"{cyclone.vapor_velocity(number_of_cyclones):.3f} м/с")
