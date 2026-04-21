@@ -79,10 +79,10 @@ class SeparatorDesign:
             diameter=self.inner_diameter,
             level=self.inner_diameter
         )
-        section_area = np.pi * self.inner_diameter ** 2 / 4
+        self.section_area = np.pi * self.inner_diameter ** 2 / 4
         self.volume = (
-            section_area * self.length_first_section,
-            section_area * self.length_second_section + self.volume_ell_head,
+            self.section_area * self.length_first_section,
+            self.section_area * self.length_second_section + self.volume_ell_head,
         )
 
 

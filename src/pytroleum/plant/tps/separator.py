@@ -7,7 +7,6 @@ from pytroleum.plant.tps.inputs import (SeparatorDesign,
 from pytroleum.plant.tps.wire_mesh_demister import WireMeshDemister
 from pytroleum.plant.tps.nozzle import Nozzle
 
-import numpy as np
 from scipy.constants import g
 from typing import Iterable
 
@@ -47,11 +46,10 @@ class Separator:
 
     def compute_flow_areas(self) -> tuple[float, float, float]:
         """Площади поперечного сечения для газа, нефти и воды, м²."""
-        section_area = np.pi * self.design.inner_diameter ** 2 / 4
-        liquid_area = section_area * FILL_COEFFS[FIRST_SECTION]
+        liquid_area = self.design.section_area * FILL_COEFFS[FIRST_SECTION]
         water_area = liquid_area * self.flows.properties.water_cut
         oil_area = liquid_area - water_area
-        gas_area = section_area - liquid_area
+        gas_area = self.design.section_area - liquid_area
         return gas_area, oil_area, water_area
 
     def compute_velocities(self) -> None:
