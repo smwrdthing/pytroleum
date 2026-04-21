@@ -15,6 +15,9 @@ class OperationConditions:
     flow_gas_norm: float        # м³/с - объемный расход газа при н.у.
     flow_liquid: float          # м³/с - объемный расход жидкости
 
+    # NOTE _work постфиксы избыточны, т.к. они не добавляют контекста
+    # NOTE и просто удлинняют идентификатор
+
 
 @dataclass
 class PhysicalProperties:
@@ -64,6 +67,10 @@ class GeometryCyclone:
     height_inlet_cyclone: float  # м - высота входа в циклон
     number_of_cyclones: float    # Количество циклонов
 
+    # NOTE количество циклонов - не часть информации о геометрии циклона
+    # NOTE в классе лучше описывать одну единицу оборудования, если расчёт требует
+    # NOTE количества - его можно передавать явно как параметр функции по месту
+
     def __post_init__(self):
         """Площадь сечения спирального канала одного циклона, м².
 
@@ -82,6 +89,9 @@ class SeparatorDesign:
     length_first_section: float     # длина цилиндрической части первой секции
     length_second_section: float    # длина секции после перегородки
     L_c: float                      # расстояние от решетки до сливной перегородки
+
+    # NOTE L_c лучше переименовать во что-то более явное
+    # NOTE length_to_baffle, например
 
     def __post_init__(self):
         """Производные геометрические характеристики сепаратора.
@@ -123,6 +133,9 @@ class FlowRates:
     conditions: OperationConditions
     properties: PhysicalProperties
 
+    # NOTE расходы жидкостей - часть данных о рабочем режиме, их можно перенести
+    # NOTE в OperationCondtions
+
     def __post_init__(self):
         self.flow_oil = (self.conditions.flow_liquid *
                          (1 - self.properties.water_cut))
@@ -154,11 +167,21 @@ class FlowRates:
         self.flow_rate = (self.flow_gas_work, self.flow_oil, self.flow_water)
         self.velocity: list[float] = [0.0, 0.0, 0.0]
 
+        # NOTE расходы по фазам в контейнеры, индексация по константам
+        # NOTE
+        # NOTE self.mass_flow_rate[VAPOR] <- для газовой фазы
+        # NOTE self.mass_flow_rate[WATER] <- для воды
+        # NOTE self.mass_flow_rate[OIL] <- для нефти
+        # NOTE
+        # NOTE меньше атрибутов в классе => удобнее использовать
+        # NOTE
+        # NOTE Так, например, можно уйти от хранения суммарного расхода
+        # NOTE и просто пользоваться np.sum() где нужно (или даже просто sum())
+
 
 # ============================================================
 # Пример использования
 # ============================================================
-
 
 if __name__ == "__main__":
     from pytroleum.plant.tps.utils import (PA_TO_MPA,

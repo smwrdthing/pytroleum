@@ -45,9 +45,19 @@ class Separator:
                  diameter_water_droplet: float,
                  diameter_oil_droplet: float):
         self.design = design
+
+        # NOTE conditions - кандидат на dependency injection
         self.conditions = conditions
+        # NOTE вместо хранения атрибута в Separator можно передавать conditions
+        # NOTE методам этого класса как параметр
+
+        # NOTE с properties во многом такая же история
         self.properties = properties
-        self.flows = flows
+
+        self.flows = flows  # NOTE информацию о расходах можно держать в conditions
+
+        # NOTE эти вещи тоже лучше передавать методу как параметры, размеры капель -
+        # NOTE не свойство сепаратора
         self.diameter_water_droplet = diameter_water_droplet
         self.diameter_oil_droplet = diameter_oil_droplet
 
@@ -149,6 +159,37 @@ class Separator:
         Суммарное: ΔP_общ = k_неуч * (ΔP_отб + ΔP_вх + ΔP_вых),
         где k_неуч — коэффициент неучтённых потерь.
         """
+
+        # NOTE demister, liquidgasnozzle, gasnozzle в этом случае, наборот, можно записать
+        # NOTE в атрибут-контенере класса Separator, например
+        # NOTE
+        # NOTE def __init__(self, ..., appliances : list[...], ...):
+        # NOTE     ...
+        # NOTE     self.devices = [] # <- список с дополнительным оборудованием внутри
+        # NOTE     ...
+        # NOTE
+        # NOTE ...
+        # NOTE
+        # NOTE def resistance(self, conditions, ...):
+        # NOTE     ...
+        # NOTE     resistance_coeff = 0;
+        # NOTE     for device in self.devices:
+        # NOTE          if device.resistance_coeff is not None:
+        # NOTE              resistance_coeff += device.resistance_coeff(condition)
+        # NOTE     ...
+        # NOTE     self.resistance_coeff = resistance_coeff
+        # NOTE     или можно :
+        # NOTE     return resistance_coeff
+        # NOTE
+        # NOTE Это позволит в дальнейшем добавлять новые элементы внутреннего устройства,
+        # NOTE которые могут оказывать сопротивление потоку, всё, что им будет нужно -
+        # NOTE атрибут-флаг .is_flow_obstacle, который показывает создаёт ли элемент
+        # NOTE сопротивление и .resistance_coeff, котрый в общем случае может зависеть
+        # NOTE от расхода (который можно держать в conditions)
+        # NOTE
+        # NOTE Тут в качестве примера я складываю коэффициенты сопротивления, на практике
+        # NOTE правило для определения полного коэффициента сопротивления может быть
+        # NOTE более сложным, сложение просто для примера
 
         assert liquidgasnozzle.resistance_coeff is not None
         assert gasnozzle.resistance_coeff is not None

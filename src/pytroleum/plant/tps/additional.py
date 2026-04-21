@@ -9,6 +9,9 @@ from pytroleum.plant.tps.separator import compute_settling_velocity, Separator, 
 
 import numpy as np
 
+# NOTE модклю нужно более говорящее имя, appliances, facilities, devices, что-то в таком
+# NOTE духе
+
 
 class Coalescer:
     def __init__(self, coalescer_packing: CoalescerPacking,
@@ -41,6 +44,15 @@ class Coalescer:
 
         где u_ф — скорость фазы в канале, t_к — время осаждения/всплытия капли.
         """
+
+        # NOTE здесь лучше дать более точное имя
+        # NOTE compute_channel_length
+        # NOTE required_channel_length
+        # NOTE channel_length_for
+        # NOTE required_length_for <- будет хорошо читаться
+        # NOTE
+        # NOTE coalescer.required_length_for(phase_velocity, settling_time)
+
         return phase_velocity * settling_time
 
 
@@ -58,6 +70,9 @@ class Cyclone:
         где Qг_ру — расход газа при р.у., n — число циклонов,
         F_кан — площадь сечения спирального канала одного циклона.
         """
+
+        # NOTE тут можно полаконичнее, просто vapor_velocity(), например
+
         return self.flows.flow_gas_work / (self.geometry_cyclone.number_of_cyclones *
                                            self.geometry_cyclone.area_spiral_channel)
 

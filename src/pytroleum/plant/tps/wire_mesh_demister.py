@@ -15,6 +15,7 @@ from pytroleum.plant.tps.utils import (SECONDS_PER_DAY,
                                        _TO_M,
                                        KELVIN_TO_CELSIUS)
 
+# NOTE текст ниже лучше сделать комментарием, либо расписать докстринг подробнее
 """
 Данные взяты из рис.5 График зависимости коэффициента устойчивости
 режимов течения газожидкостной смеси от давления для вертикальной
@@ -127,6 +128,9 @@ class WireMeshDemister:
 
         actual_velocity = self.flows.flow_gas_work / actual_area
         capacity = critical_velocity * actual_area
+
+        # NOTE можно объединить в объект и возвращать его
+        # NOTE return design # <- всё тут
         return diameter, actual_area, actual_velocity, capacity
 
 
