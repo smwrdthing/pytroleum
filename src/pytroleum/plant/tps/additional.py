@@ -34,7 +34,7 @@ class Coalescer:
 
 
 class Cyclone:
-    """ Расчет скорости газа в сепарационном элементе (спиральный канал)"""
+    """ Расчет скорости газа в спиральном канале"""
 
     def __init__(self, flows: FlowRates, geometry_cyclone: GeometryCyclone):
         self.flows = flows
