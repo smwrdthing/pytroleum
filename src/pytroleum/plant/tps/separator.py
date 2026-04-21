@@ -1,4 +1,4 @@
-from pytroleum.plant.tps.utils import (_major_header, _minor_divider,
+from pytroleum.plant.tps.utils import (_major_header, _minor_header, _minor_divider,
                                        _TO_MM, _TO_MICRON, PERCENT, SECONDS_PER_MINUTE)
 from pytroleum.plant.tps.inputs import (SeparatorDesign,
                                         OperationConditions,
@@ -14,7 +14,7 @@ from typing import Iterable
 FIRST_SECTION = 0
 SECOND_SECTION = 1
 TOTAL = 2
-FILL_COEFFS = (0.858, 0.858)
+FILL_COEFFS = (0.858, 0.858, 0.858)  # (первая секция, вторая секция, суммарный)
 
 VAPOR = 0
 OIL = 1
@@ -48,7 +48,7 @@ class Separator:
     def compute_flow_areas(self) -> tuple[float, float, float]:
         """Площади поперечного сечения для газа, нефти и воды, м²."""
         section_area = np.pi * self.design.inner_diameter ** 2 / 4
-        liquid_area = section_area * self.design.fill_coeff_first_section
+        liquid_area = section_area * FILL_COEFFS[FIRST_SECTION]
         water_area = liquid_area * self.flows.properties.water_cut
         oil_area = liquid_area - water_area
         gas_area = section_area - liquid_area
@@ -64,8 +64,8 @@ class Separator:
     def residence_time(self) -> tuple[float, float, float]:
         """Время пребывания жидкости в секциях сепаратора, с."""
         rt_first = (self.design.volume[FIRST_SECTION] *
-                    self.design.fill_coeff_first_section / self.conditions.flow_liquid)
-        rt_total = (self.design.volume_separator * self.design.fill_coeff /
+                    FILL_COEFFS[FIRST_SECTION] / self.conditions.flow_liquid)
+        rt_total = (self.design.volume_separator * FILL_COEFFS[TOTAL] /
                     self.conditions.flow_liquid)
         rt_second = rt_total - rt_first
         return rt_first, rt_second, rt_total
@@ -134,9 +134,6 @@ if __name__ == "__main__":
     design = SeparatorDesign(
         inner_diameter=2.0,
         length_cylindrical_part=9.5,
-        fill_coeff=0.858,
-        fill_coeff_second_section=0.858,
-        fill_coeff_first_section=0.858,
         length_semiaxis=0.618,
         length_first_section=8.2,
         length_second_section=1.3,
@@ -193,7 +190,7 @@ if __name__ == "__main__":
     print(f"Объёмный расход жидкости: "
           f"{conditions.flow_liquid * SECONDS_PER_DAY:.1f} м³/сут")
     print(f"Коэффициент заполнения: "
-          f"{design.fill_coeff * PERCENT:.1f} %")
+          f"{FILL_COEFFS[TOTAL] * PERCENT:.1f} %")
     print(f"Номинальный объём сепаратора: "
           f"{design.volume_separator:.3f} м³")
 
@@ -206,13 +203,11 @@ if __name__ == "__main__":
     print(f"Пропускная способность: "
           f"{conditions.flow_liquid * SECONDS_PER_DAY:.2f} м³/сут")
 
-    _minor_divider()
-    print("ПЕРВАЯ СЕКЦИЯ (НЕФТЬ + ВОДА)")
-    _minor_divider()
+    _minor_header("ПЕРВАЯ СЕКЦИЯ (НЕФТЬ + ВОДА)")
     print(f"Длина первой секции: "
           f"{design.length_first_section:.1f} м")
     print(f"Коэффициент заполнения: "
-          f"{design.fill_coeff_first_section * PERCENT:.1f} %")
+          f"{FILL_COEFFS[FIRST_SECTION] * PERCENT:.1f} %")
 
     print(f"Объём первой секции: "
           f"{design.volume[FIRST_SECTION]:.3f} м³")
@@ -221,13 +216,11 @@ if __name__ == "__main__":
     print(f"Пропускная способность: "
           f"{capacities[FIRST_SECTION] * SECONDS_PER_DAY:.2f} м³/сут")
 
-    _minor_divider()
-    print("СБОРНИК НЕФТИ (ПОСЛЕ ПЕРЕГОРОДКИ)")
-    _minor_divider()
+    _minor_header("СБОРНИК НЕФТИ (ПОСЛЕ ПЕРЕГОРОДКИ)")
     print(f"Длина секции после перегородки: "
           f"{design.length_second_section:.1f} м")
     print(f"Коэффициент заполнения: "
-          f"{design.fill_coeff_second_section * PERCENT:.1f} %")
+          f"{FILL_COEFFS[SECOND_SECTION] * PERCENT:.1f} %")
     print(f"Объём секции после перегородки: "
           f"{design.volume[SECOND_SECTION]:.3f} м³")
     print(f"Время пребывания: "
@@ -235,9 +228,7 @@ if __name__ == "__main__":
     print(f"Пропускная способность: "
           f"{capacities[SECOND_SECTION] * SECONDS_PER_DAY:.3f} м³/сут")
 
-    _minor_divider()
-    print("РАСЧЕТ СКОРОСТЕЙ ДВИЖЕНИЯ ЖИДКОЙ ФАЗЫ И ГАЗОВОЙ ФАЗЫ В СЕЧЕНИИ СЕПАРАТОРА")
-    _minor_divider()
+    _minor_header("РАСЧЕТ СКОРОСТЕЙ ДВИЖЕНИЯ ЖИДКОЙ ФАЗЫ И ГАЗОВОЙ ФАЗЫ В СЕЧЕНИИ СЕПАРАТОРА")
 
     areas = separator.compute_flow_areas()
 
@@ -252,9 +243,7 @@ if __name__ == "__main__":
     print(f"Скорость движения нефти: {flows.velocity[OIL] * _TO_MM:.4f} мм/с")
     print(f"Скорость движения воды: {flows.velocity[WATER] * _TO_MM:.4f} мм/с")
 
-    _minor_divider()
-    print("ОСАЖДЕНИЕ КАПЕЛЬ ВОДЫ В СЛОЕ НЕФТИ")
-    _minor_divider()
+    _minor_header("ОСАЖДЕНИЕ КАПЕЛЬ ВОДЫ В СЛОЕ НЕФТИ")
     print(f"Расстояние от распределительной решетки до сливной перегородки: "
           f"{design.L_c:.1f} м")
     print(f"Диаметр капли воды: "
@@ -271,9 +260,7 @@ if __name__ == "__main__":
                                        properties.viscosity_oil,
                                        properties.water_density, OIL) * _TO_MM:.2f} мм")
 
-    _minor_divider()
-    print("ВСПЛЫТИЕ КАПЕЛЬ НЕФТИ В СЛОЕ ВОДЫ")
-    _minor_divider()
+    _minor_header("ВСПЛЫТИЕ КАПЕЛЬ НЕФТИ В СЛОЕ ВОДЫ")
     print(f"Расстояние от распределительной решетки до сливной перегородки: "
           f"{design.L_c:.1f} м")
     print(f"Диаметр капли нефти: "

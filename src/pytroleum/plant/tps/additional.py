@@ -1,5 +1,4 @@
-from pytroleum.plant.tps.utils import (_major_header,
-                                       _minor_divider,
+from pytroleum.plant.tps.utils import (_major_header, _minor_header, _minor_divider,
                                        SECONDS_PER_DAY,
                                        _TO_MM)
 from pytroleum.plant.tps.inputs import (PhysicalProperties,
@@ -75,9 +74,6 @@ if __name__ == "__main__":
     design = SeparatorDesign(
         inner_diameter=2.0,
         length_cylindrical_part=9.5,
-        fill_coeff=0.858,
-        fill_coeff_second_section=0.858,
-        fill_coeff_first_section=0.858,
         length_semiaxis=0.618,
         length_first_section=8.2,
         length_second_section=1.3,
@@ -105,9 +101,7 @@ if __name__ == "__main__":
 
     _major_header("РАСЧЁТ КОАЛЕСЦЕРА")
 
-    _minor_divider()
-    print("ВЕРХНИЙ КОАЛЕСЦЕР")
-    _minor_divider()
+    _minor_header("ВЕРХНИЙ КОАЛЕСЦЕР")
     print(f"Угол наклона пластин: {coalescer_packing.angle:.0f}°")
     print(
         f"Зазор между пластинами: {coalescer_packing.coalescer_top_gap * _TO_MM:.0f} мм")
@@ -123,9 +117,7 @@ if __name__ == "__main__":
     print(
         f"Длина канала: {coalescer.channel_length(flows.velocity[OIL], t_top):.4f} м")
 
-    _minor_divider()
-    print("НИЖНИЙ КОАЛЕСЦЕР")
-    _minor_divider()
+    _minor_header("НИЖНИЙ КОАЛЕСЦЕР")
     print(f"Угол наклона пластин: {coalescer_packing.angle:.0f}°")
     print(f"Зазор между пластинами: "
           f"{coalescer_packing.coalescer_bottom_gap * _TO_MM:.0f} мм")
@@ -142,12 +134,10 @@ if __name__ == "__main__":
     print(f"Длина канала: "
           f"{coalescer.channel_length(flows.velocity[WATER], t_bottom):.4f} мм")
 
-    _minor_divider()
-
     _major_header(
         "РАСЧЁТ СКОРОСТИ ГАЗА В СЕПАРАЦИОННОМ ЭЛЕМЕНТЕ (СПИРАЛЬНЫЙ КАНАЛ)")
 
-    _minor_divider()
+    _minor_header("ГЕОМЕТРИЯ ЦИКЛОНА")
     print(
         f"Ширина входа в циклон: {geometry_cyclone.width_inlet_cyclone * _TO_MM:.1f} мм")
     print(
