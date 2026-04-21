@@ -61,11 +61,9 @@ def design_nozzle(volumetric_flow_rate, target_velocity,
     target_velocity = np.atleast_1d(target_velocity)
 
     if len(volumetric_flow_rate) == 1:
-        # одно значение, однофазный поток
         diameter = np.sqrt(4 * volumetric_flow_rate[0] /
                            (np.pi * target_velocity[0]))
     else:
-        # длина больше 1 => двухфазный поток
         diameter = 1.13 * np.sqrt(
             np.sum(volumetric_flow_rate / (1.3 * target_velocity))
         )

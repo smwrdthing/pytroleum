@@ -80,10 +80,7 @@ class SeparatorDesign:
     length_semiaxis: float          # длина полуоси эллиптического днища, м
     length_first_section: float     # длина цилиндрической части первой секции
     length_second_section: float    # длина секции после перегородки
-    L_c: float                      # расстояние от решетки до сливной перегородки
-
-    # NOTE L_c лучше переименовать во что-то более явное
-    # NOTE length_to_baffle, например
+    length_to_baffle: float  # расстояние от решетки до сливной перегородки
 
     def __post_init__(self):
         """Производные геометрические характеристики сепаратора.

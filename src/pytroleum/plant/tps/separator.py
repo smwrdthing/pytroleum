@@ -111,7 +111,7 @@ class Separator:
 
         где L_c — расстояние от решётки до перегородки, u_ф — скорость фазы.
         """
-        return self.design.L_c / self.flows.velocity[phase]
+        return self.design.length_to_baffle / self.flows.velocity[phase]
 
     def settling_height(self, drop_diameter: float,
                         continuous_phase_density: float,
@@ -226,7 +226,7 @@ if __name__ == "__main__":
         length_semiaxis=0.618,
         length_first_section=8.2,
         length_second_section=1.3,
-        L_c=4.7
+        length_to_baffle=4.7
     )
     conditions = OperationConditions(
         pressure=4e6,
@@ -335,7 +335,7 @@ if __name__ == "__main__":
 
     _minor_header("ОСАЖДЕНИЕ КАПЕЛЬ ВОДЫ В СЛОЕ НЕФТИ")
     print(f"Расстояние от распределительной решетки до сливной перегородки: "
-          f"{design.L_c:.1f} м")
+          f"{design.length_to_baffle:.1f} м")
     print(f"Диаметр капли воды: "
           f"{diameter_water_droplet * _TO_MICRON:.0f} мкм")
     print(f"Скорость осаждения капель воды: "
@@ -352,7 +352,7 @@ if __name__ == "__main__":
 
     _minor_header("ВСПЛЫТИЕ КАПЕЛЬ НЕФТИ В СЛОЕ ВОДЫ")
     print(f"Расстояние от распределительной решетки до сливной перегородки: "
-          f"{design.L_c:.1f} м")
+          f"{design.length_to_baffle:.1f} м")
     print(f"Диаметр капли нефти:"
           f"{diameter_oil_droplet * _TO_MICRON:.0f} мкм")
     print(f"Скорость подъёма капель нефти: "

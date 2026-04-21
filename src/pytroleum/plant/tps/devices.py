@@ -95,7 +95,7 @@ if __name__ == "__main__":
         length_semiaxis=0.618,
         length_first_section=8.2,
         length_second_section=1.3,
-        L_c=4.7
+        length_to_baffle=4.7
     )
     diameter_water_droplet = 100e-6
     diameter_oil_droplet = 50e-6
