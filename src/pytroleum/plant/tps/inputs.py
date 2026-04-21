@@ -10,13 +10,10 @@ from pytroleum.meter import volume_cover_elliptic_trunc, volume_section_horiz_el
 
 @dataclass
 class OperationConditions:
-    pressure_work: float        # Па - рабочее давление
-    temperature_work: float     # К - рабочая температура
+    pressure: float        # Па - рабочее давление
+    temperature: float     # К - рабочая температура
     flow_gas_norm: float        # м³/с - объемный расход газа при н.у.
     flow_liquid: float          # м³/с - объемный расход жидкости
-
-    # NOTE _work постфиксы избыточны, т.к. они не добавляют контекста
-    # NOTE и просто удлинняют идентификатор
 
 
 @dataclass
@@ -50,8 +47,8 @@ class PhysicalProperties:
         где ρ_ну — плотность газа при н.у., P_ру, T_ру — рабочие давление и температура,
         P_ну, T_ну — давление и температура при нормальных условиях.
         """
-        return self.gas_density_norm * (conditions.pressure_work / DEFAULT_PRESSURE) * \
-            (DEFAULT_TEMPERATURE / conditions.temperature_work)
+        return self.gas_density_norm * (conditions.pressure / DEFAULT_PRESSURE) * \
+            (DEFAULT_TEMPERATURE / conditions.temperature)
 
 
 @dataclass
@@ -143,8 +140,8 @@ class FlowRates:
         self.flow_water = self.conditions.flow_liquid * self.properties.water_cut
 
         self.flow_gas_work = ((self.conditions.flow_gas_norm * DEFAULT_PRESSURE *
-                               self.conditions.temperature_work) /
-                              ((self.conditions.pressure_work + DEFAULT_PRESSURE) *
+                               self.conditions.temperature) /
+                              ((self.conditions.pressure + DEFAULT_PRESSURE) *
                                DEFAULT_TEMPERATURE))
 
         self.mass_flow_gas = (self.conditions.flow_gas_norm *
@@ -190,8 +187,8 @@ if __name__ == "__main__":
                                            _major_header)
 
     conditions = OperationConditions(
-        pressure_work=4e6,
-        temperature_work=353,
+        pressure=4e6,
+        temperature=353,
         flow_gas_norm=300000 / SECONDS_PER_DAY,
         flow_liquid=500 / SECONDS_PER_DAY,
     )
@@ -210,9 +207,9 @@ if __name__ == "__main__":
     _major_header("УСЛОВИЯ РАБОТЫ")
     print(f"Давление при н.у.: {DEFAULT_PRESSURE / PA_TO_MPA:.1f} МПа")
     print(f"Температура при н.у.: {DEFAULT_TEMPERATURE} К")
-    print(f"Рабочее давление: {conditions.pressure_work / PA_TO_MPA:.1f} МПа")
-    print(f"Рабочая температура: {conditions.temperature_work} К "
-          f"({conditions.temperature_work - KELVIN_TO_CELSIUS} °C)")
+    print(f"Рабочее давление: {conditions.pressure / PA_TO_MPA:.1f} МПа")
+    print(f"Рабочая температура: {conditions.temperature} К "
+          f"({conditions.temperature - KELVIN_TO_CELSIUS} °C)")
     print(f"Объемный расход газа при н.у.: "
           f"{conditions.flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
     print(f"Объемный расход жидкости: "

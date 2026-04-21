@@ -9,9 +9,6 @@ from pytroleum.plant.tps.separator import compute_settling_velocity, Separator, 
 
 import numpy as np
 
-# NOTE модклю нужно более говорящее имя, appliances, facilities, devices, что-то в таком
-# NOTE духе
-
 
 class Coalescer:
     def __init__(self, coalescer_packing: CoalescerPacking,
@@ -37,21 +34,13 @@ class Coalescer:
         return (plate_spacing / (abs(velocity) *
                                  np.cos(np.radians(self.coalescer_packing.angle))))
 
-    def channel_length(self, phase_velocity: float, settling_time: float) -> float:
+    def required_length_for(self, phase_velocity: float, settling_time: float) -> float:
         """Длина канала коалесцера, м.
 
         L_кан = u_ф * t_к
 
         где u_ф — скорость фазы в канале, t_к — время осаждения/всплытия капли.
         """
-
-        # NOTE здесь лучше дать более точное имя
-        # NOTE compute_channel_length
-        # NOTE required_channel_length
-        # NOTE channel_length_for
-        # NOTE required_length_for <- будет хорошо читаться
-        # NOTE
-        # NOTE coalescer.required_length_for(phase_velocity, settling_time)
 
         return phase_velocity * settling_time
 
@@ -62,7 +51,7 @@ class Cyclone:
         self.flows = flows
         self.geometry_cyclone = geometry_cyclone
 
-    def velocity_gas_in_spiral_channel(self) -> float:
+    def vapor_velocity(self) -> float:
         """Скорость газа в спиральном канале, м/с.
 
         uг_сп = Qг_ру / (n * F_кан)
@@ -70,8 +59,6 @@ class Cyclone:
         где Qг_ру — расход газа при р.у., n — число циклонов,
         F_кан — площадь сечения спирального канала одного циклона.
         """
-
-        # NOTE тут можно полаконичнее, просто vapor_velocity(), например
 
         return self.flows.flow_gas_work / (self.geometry_cyclone.number_of_cyclones *
                                            self.geometry_cyclone.area_spiral_channel)
@@ -86,8 +73,8 @@ if __name__ == "__main__":
     from pytroleum.plant.tps.utils import SECONDS_PER_MINUTE
 
     conditions = OperationConditions(
-        pressure_work=4e6,
-        temperature_work=353,
+        pressure=4e6,
+        temperature=353,
         flow_gas_norm=300000 / SECONDS_PER_DAY,
         flow_liquid=500 / SECONDS_PER_DAY,
     )
@@ -147,7 +134,7 @@ if __name__ == "__main__":
     print(
         f"Время осаждения капель воды в зазоре: {t_top / SECONDS_PER_MINUTE:.2f} мин")
     print(
-        f"Длина канала: {coalescer.channel_length(flows.velocity[OIL], t_top):.4f} м")
+        f"Длина канала:{coalescer.required_length_for(flows.velocity[OIL], t_top):.4f} м")
 
     _minor_header("НИЖНИЙ КОАЛЕСЦЕР")
     print(f"Угол наклона пластин: {coalescer_packing.angle:.0f}°")
@@ -164,7 +151,7 @@ if __name__ == "__main__":
     print(
         f"Время всплытия капель нефти в зазоре: {t_bottom / SECONDS_PER_MINUTE:.2f} мин")
     print(f"Длина канала: "
-          f"{coalescer.channel_length(flows.velocity[WATER], t_bottom):.4f} мм")
+          f"{coalescer.required_length_for(flows.velocity[WATER], t_bottom):.4f} мм")
 
     _major_header(
         "РАСЧЁТ СКОРОСТИ ГАЗА В СЕПАРАЦИОННОМ ЭЛЕМЕНТЕ (СПИРАЛЬНЫЙ КАНАЛ)")
@@ -182,4 +169,4 @@ if __name__ == "__main__":
     print(f"Площадь сечения спирального канала: "
           f"{geometry_cyclone.area_spiral_channel:.4f} м²")
     print(f"Скорость газа в спиральном канале: "
-          f"{cyclone.velocity_gas_in_spiral_channel():.3f} м/с")
+          f"{cyclone.vapor_velocity():.3f} м/с")

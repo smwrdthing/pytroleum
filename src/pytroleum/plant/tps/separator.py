@@ -229,8 +229,8 @@ if __name__ == "__main__":
         L_c=4.7
     )
     conditions = OperationConditions(
-        pressure_work=4e6,
-        temperature_work=353,
+        pressure=4e6,
+        temperature=353,
         flow_gas_norm=300000 / SECONDS_PER_DAY,
         flow_liquid=500 / SECONDS_PER_DAY,
     )

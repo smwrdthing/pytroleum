@@ -80,7 +80,7 @@ def calculate_critical_velocity(properties: PhysicalProperties,
     σ_н — поверхностное натяжение нефти,
     ρ_ж, ρ_г_ру — плотности жидкости и газа при р.у.
     """
-    k = get_flow_stability_coefficient(conditions.pressure_work)
+    k = get_flow_stability_coefficient(conditions.pressure)
     gas_density = properties.gas_density_work(conditions)
     return k * np.sqrt(np.sqrt((g * properties.oil_surface_tension *
                                 (properties.liquid_density() - gas_density)) /
@@ -142,8 +142,8 @@ class WireMeshDemister:
 if __name__ == "__main__":
 
     conditions = OperationConditions(
-        pressure_work=4e6,
-        temperature_work=353,                  # К
+        pressure=4e6,
+        temperature=353,                  # К
         flow_gas_norm=300000 / SECONDS_PER_DAY,  # м³/с
         flow_liquid=500 / SECONDS_PER_DAY,      # м³/с
     )
@@ -184,9 +184,9 @@ if __name__ == "__main__":
     plt.legend()
 
     # Текущая точка
-    current_pressure = conditions.pressure_work
+    current_pressure = conditions.pressure
     current_flow_stability_coefficient = get_flow_stability_coefficient(
-        conditions.pressure_work)
+        conditions.pressure)
     plt.plot(current_pressure / PA_TO_MPA, current_flow_stability_coefficient,
              'ro', markersize=8,
              label=(f'Рабочее давление: {current_pressure/PA_TO_MPA:.2f} МПа, '
@@ -202,9 +202,9 @@ if __name__ == "__main__":
 
     # Вывод результатов
     _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СЕТЧАТОГО КАПЛЕУЛОВИТЕЛЯ")
-    print(f"Рабочее давление: {conditions.pressure_work/PA_TO_MPA} МПа")
-    print(f"Рабочая температура: {conditions.temperature_work} К "
-          f"({conditions.temperature_work - KELVIN_TO_CELSIUS} °C)")
+    print(f"Рабочее давление: {conditions.pressure/PA_TO_MPA} МПа")
+    print(f"Рабочая температура: {conditions.temperature} К "
+          f"({conditions.temperature - KELVIN_TO_CELSIUS} °C)")
 
     _minor_divider()
     print(f"Объемный расход газа при н.у.: "
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     print(f"Плотность жидкости (Н+В) при заданной обводненности: "
           f"{properties.liquid_density():.2f} кг/м³")
     print(
-        f"Коэффициент k: {get_flow_stability_coefficient(conditions.pressure_work):.2f}")
+        f"Коэффициент k: {get_flow_stability_coefficient(conditions.pressure):.2f}")
     print(f"Критическая скорость: "
           f"{calculate_critical_velocity(properties, conditions):.3f} м/с")
 
