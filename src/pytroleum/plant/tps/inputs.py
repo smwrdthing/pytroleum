@@ -54,6 +54,7 @@ class GeometryCyclone:
     number_of_cyclones: float    # Количество циклонов
 
     def __post_init__(self):
+        """Площадь сечения спирального канала, м2"""
         self.area_spiral_channel = self.width_inlet_cyclone * self.height_inlet_cyclone
 
 
@@ -63,7 +64,7 @@ class SeparatorDesign:
     length_cylindrical_part: float  # длина цилиндрической части сепаратора
     length_semiaxis: float          # длина полуоси эллиптического днища, м
     length_first_section: float     # длина цилиндрической части первой секции
-    length_second_section: float  # длина секции после перегородки
+    length_second_section: float    # длина секции после перегородки
     L_c: float                      # расстояние от решетки до сливной перегородки
 
     def __post_init__(self):
