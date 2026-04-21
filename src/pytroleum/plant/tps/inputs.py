@@ -21,7 +21,7 @@ class PhysicalProperties:
     gas_density_norm: float     # кг/м³ - плотность газа при н.у.
     oil_density: float          # кг/м³ - плотность нефти
     water_density: float        # кг/м³ - плотность воды
-    water_cut: float            # Обводненность
+    water_cut: float            # Обводненность, д.ед.
     gas_factor: float           # Газовый фактор, м³/т
     oil_surface_tension: float  # Поверхностное натяжение нефти, Н/м
     viscosity_oil: float        # Вязкость нефти, Па*с

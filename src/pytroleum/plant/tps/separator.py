@@ -264,7 +264,7 @@ if __name__ == "__main__":
     _minor_header("ВСПЛЫТИЕ КАПЕЛЬ НЕФТИ В СЛОЕ ВОДЫ")
     print(f"Расстояние от распределительной решетки до сливной перегородки: "
           f"{design.L_c:.1f} м")
-    print(f"Диаметр капли нефти: "
+    print(f"Диаметр капли нефти:"
           f"{diameter_oil_droplet * _TO_MICRON:.0f} мкм")
     print(f"Скорость подъёма капель нефти: "
           f"{compute_settling_velocity(diameter_oil_droplet, properties.water_density,

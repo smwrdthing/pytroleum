@@ -20,7 +20,7 @@ class Coalescer:
                               continuous_phase_density: float,
                               continuous_phase_viscosity: float,
                               dispersed_phase_density: float) -> float:
-        """Время осаждения/всплытия капли в зазоре, с."""
+        """Время осаждения/всплытия капли в зазоре, с"""
         velocity = compute_settling_velocity(
             drop_diameter, continuous_phase_density,
             continuous_phase_viscosity, dispersed_phase_density,

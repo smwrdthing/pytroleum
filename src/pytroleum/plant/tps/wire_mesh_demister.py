@@ -95,7 +95,7 @@ class WireMeshDemister:
 
     def compute(self) -> tuple[float, float, float, float]:
         """Расчётный диаметр (м), действительная площадь (м²),
-        скорость набегания (м/с), производительность (м³/с)."""
+        скорость набегания (м/с), производительность (м³/с)"""
         critical_velocity = calculate_critical_velocity(
             self.properties, self.flows.conditions)
 

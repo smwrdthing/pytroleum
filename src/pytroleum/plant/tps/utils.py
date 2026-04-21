@@ -17,7 +17,7 @@ KELVIN_TO_CELSIUS = 273
 
 
 def select_nominal_diameter(diameter: float, nominal_diameters) -> float:
-    """Выбор ближайшего большего номинального диаметра, м."""
+    """Выбор ближайшего большего номинального диаметра, м"""
     for d_nom in sorted(nominal_diameters):
         if d_nom >= diameter:
             return d_nom

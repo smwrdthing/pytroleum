@@ -157,7 +157,7 @@ if __name__ == "__main__":
     print()
     _minor_header("Штуцер нефти")
     print(f"Скорость: {liquid_speed:.2f} м/с")
-    print(f"Расчетный диаметр:  {oil_nozzle.diameter * _TO_MM:.1f} мм")
+    print(f"Расчетный диаметр: {oil_nozzle.diameter * _TO_MM:.1f} мм")
     print(
         f"Стандартный диаметр: {oil_nozzle.nominal_diameter * _TO_MM:.0f} мм")
     print(f"Площадь сечения штуцера: {oil_nozzle.nominal_area:.4f} м²")
