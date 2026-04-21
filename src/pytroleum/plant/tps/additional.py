@@ -20,7 +20,13 @@ class Coalescer:
                               continuous_phase_density: float,
                               continuous_phase_viscosity: float,
                               dispersed_phase_density: float) -> float:
-        """Время осаждения/всплытия капли в зазоре, с"""
+        """Время осаждения/всплытия капли в зазоре между пластинами, с.
+
+        t_к = h / (|v_ст| * cos(α))
+
+        где h — расстояние между пластинами, v_ст — скорость Стокса,
+        α — угол наклона пластин.
+        """
         velocity = compute_settling_velocity(
             drop_diameter, continuous_phase_density,
             continuous_phase_viscosity, dispersed_phase_density,
@@ -29,18 +35,29 @@ class Coalescer:
                                  np.cos(np.radians(self.coalescer_packing.angle))))
 
     def channel_length(self, phase_velocity: float, settling_time: float) -> float:
-        """Длина канала коалесцера, м."""
+        """Длина канала коалесцера, м.
+
+        L_кан = u_ф * t_к
+
+        где u_ф — скорость фазы в канале, t_к — время осаждения/всплытия капли.
+        """
         return phase_velocity * settling_time
 
 
 class Cyclone:
-    """ Расчет скорости газа в спиральном канале"""
 
     def __init__(self, flows: FlowRates, geometry_cyclone: GeometryCyclone):
         self.flows = flows
         self.geometry_cyclone = geometry_cyclone
 
-    def velocity_gas_in_spiral_channel(self):
+    def velocity_gas_in_spiral_channel(self) -> float:
+        """Скорость газа в спиральном канале, м/с.
+
+        uг_сп = Qг_ру / (n * F_кан)
+
+        где Qг_ру — расход газа при р.у., n — число циклонов,
+        F_кан — площадь сечения спирального канала одного циклона.
+        """
         return self.flows.flow_gas_work / (self.geometry_cyclone.number_of_cyclones *
                                            self.geometry_cyclone.area_spiral_channel)
 

@@ -30,12 +30,23 @@ class PhysicalProperties:
     # NOTE здесь можно использовать то, что мы делали в tdyna
 
     def liquid_density(self) -> float:
-        """Плотность жидкости (Н+В) при заданной обводненности"""
+        """Плотность жидкости (Н+В) при заданной обводнённости, кг/м³.
+
+        ρ_ж = ρ_в * w + ρ_н * (1 - w)
+
+        где ρ_в, ρ_н — плотности воды и нефти, w — обводнённость (д.ед.).
+        """
         return (self.water_density * self.water_cut +
                 self.oil_density * (1 - self.water_cut))
 
     def gas_density_work(self, conditions: OperationConditions) -> float:
-        """Плотность газа в рабочих условиях"""
+        """Плотность газа при рабочих условиях, кг/м³.
+
+        ρг_ру = ρг_ну * (P_ру / P_ну) * (T_ну / T_ру)
+
+        где ρ_ну — плотность газа при н.у., P_ру, T_ру — рабочие давление и температура,
+        P_ну, T_ну — давление и температура при нормальных условиях.
+        """
         return self.gas_density_norm * (conditions.pressure_work / DEFAULT_PRESSURE) * \
             (DEFAULT_TEMPERATURE / conditions.temperature_work)
 
@@ -54,7 +65,12 @@ class GeometryCyclone:
     number_of_cyclones: float    # Количество циклонов
 
     def __post_init__(self):
-        """Площадь сечения спирального канала, м2"""
+        """Площадь сечения спирального канала одного циклона, м².
+
+        F_кан = b * h
+
+        где b — ширина входа, h — высота входа в циклон.
+        """
         self.area_spiral_channel = self.width_inlet_cyclone * self.height_inlet_cyclone
 
 
@@ -68,6 +84,13 @@ class SeparatorDesign:
     L_c: float                      # расстояние от решетки до сливной перегородки
 
     def __post_init__(self):
+        """Производные геометрические характеристики сепаратора.
+
+        F_сеч = π * D² / 4  — площадь поперечного сечения, м².
+        V_сек_1 = F_сеч * L_1  — объём первой секции, м³.
+        V_сек_2 = F_сеч * L_2 + V_эллипт  — объём второй секции
+        (с эллиптическим днищем), м³.
+        """
         self.volume_ell_head = volume_cover_elliptic_trunc(
             self.length_semiaxis,
             self.inner_diameter,
@@ -108,7 +131,14 @@ class FlowRates:
     properties: PhysicalProperties
 
     def __post_init__(self):
+        """Вычисление объёмных и массовых расходов флюидов.
 
+        Q_н = Q_ж * (1 - w),  Q_в = Q_ж * w  — объёмные расходы нефти и воды.
+
+        Q_г_ру = Q_г_ну * P_ну * T_ру / ((P_ру + P_ну) * T_ну)  — расход газа при р.у.
+
+        G_г = Q_г_ну * ρ_г_ну,  G_н = Q_н * ρ_н,  G_в = Q_в * ρ_в  — массовые расходы.
+        """
         self.flow_oil = (self.conditions.flow_liquid *
                          (1 - self.properties.water_cut))
 

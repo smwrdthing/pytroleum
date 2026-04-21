@@ -37,13 +37,25 @@ class Nozzle:
         self.nominal_area = np.pi * self.nominal_diameter ** 2 / 4
 
     def flow_velocity(self, volumetric_flow_rate: float) -> float:
-        """Скорость потока в штуцере по номинальному диаметру, м/с"""
+        """Скорость потока в штуцере по номинальному диаметру, м/с.
+
+        u_шт = Q / F_ном,  F_ном = π * D_ном² / 4
+
+        где Q — объёмный расход фазы, D_ном — принятый номинальный диаметр.
+        """
         return volumetric_flow_rate / self.nominal_area
 
 
 def design_nozzle(volumetric_flow_rate, target_velocity,
                   resistance_coeff: float | None = None) -> Nozzle:
-    """Для определения штуцера по рабочим параметрам отдельная функция"""
+    """Расчётный диаметр штуцера по заданному расходу и скорости.
+
+    Однофазный:  D_расч = √(4 * Q / (π * u_зад))
+
+    Двухфазный (ГЖС):  D_расч = 1.13 * √(Σ Q_i / (1.3 * u_зад_i))
+
+    где Q_i — объёмные расходы фаз, u_зад_i — заданные скорости фаз.
+    """
 
     volumetric_flow_rate = np.atleast_1d(volumetric_flow_rate)
     target_velocity = np.atleast_1d(target_velocity)

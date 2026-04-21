@@ -25,8 +25,14 @@ def compute_settling_velocity(drop_diameter: float,
                               continuous_phase_density: float,
                               continuous_phase_viscosity: float,
                               dispersed_phase_density: float) -> float:
-    """Скорость осаждения/всплытия капли по закону Стокса, м/с. Положительное значение
-    — капля всплывает (дисперсная фаза легче непрерывной),отрицательное — оседает."""
+    """Скорость осаждения/всплытия капли по закону Стокса, м/с.
+
+    v_ст = g * d_к² * (ρ_нф - ρ_дф) / (18 * μ_нф)
+
+    где d_к — диаметр капли, ρ_нф, ρ_дф — плотности непрерывной и дисперсной фаз,
+    μ_нф — динамическая вязкость непрерывной фазы.
+    Положительное значение — капля всплывает, отрицательное — оседает.
+    """
     density_diff = continuous_phase_density - dispersed_phase_density
     return g * drop_diameter**2 * density_diff / (18 * continuous_phase_viscosity)
 
@@ -46,7 +52,13 @@ class Separator:
         self.diameter_oil_droplet = diameter_oil_droplet
 
     def compute_flow_areas(self) -> tuple[float, float, float]:
-        """Площади поперечного сечения для газа, нефти и воды, м²."""
+        """Площади поперечного сечения для газа, нефти и воды, м².
+
+        F_ж = F_сеч * к_зап,  F_в = F_ж * w,  F_н = F_ж - F_в,  F_г = F_сеч - F_ж
+
+        где F_сеч — площадь поперечного сечения аппарата, к_зап — коэффициент
+        заполнения, w — обводнённость.
+        """
         liquid_area = self.design.section_area * FILL_COEFFS[FIRST_SECTION]
         water_area = liquid_area * self.flows.properties.water_cut
         oil_area = liquid_area - water_area
@@ -54,14 +66,26 @@ class Separator:
         return gas_area, oil_area, water_area
 
     def compute_velocities(self) -> None:
-        """Вычисляет скорости газа, нефти и воды, м/с."""
+        """Скорости движения фаз в поперечном сечении сепаратора, м/с.
+
+        u_г = Q_г_ру / F_г,  u_н = Q_н / F_н,  u_в = Q_в / F_в
+
+        где Q_г_ру, Q_н, Q_в — объёмные расходы газа (при р.у.), нефти и воды,
+        F_г, F_н, F_в — площади сечения для каждой фазы.
+        """
         areas = self.compute_flow_areas()
         self.flows.velocity[VAPOR] = self.flows.flow_rate[VAPOR] / areas[VAPOR]
         self.flows.velocity[OIL] = self.flows.flow_rate[OIL] / areas[OIL]
         self.flows.velocity[WATER] = self.flows.flow_rate[WATER] / areas[WATER]
 
     def residence_time(self) -> tuple[float, float, float]:
-        """Время пребывания жидкости в секциях сепаратора, с."""
+        """Время пребывания жидкости в секциях сепаратора, с.
+
+        τ_пр = V_сек * к_зап / Q_ж
+
+        где V_сек — объём секции, к_зап — коэффициент заполнения, Q_ж — расход жидкости.
+        Суммарное: τ_общ = τ_пр_1 + τ_пр_2.
+        """
         rt_first = (self.design.volume[FIRST_SECTION] *
                     FILL_COEFFS[FIRST_SECTION] / self.conditions.flow_liquid)
         rt_total = (self.design.volume_separator * FILL_COEFFS[TOTAL] /
@@ -71,7 +95,12 @@ class Separator:
 
     def transit_time(self, phase: int) -> float:
         """Время прохождения фазой расстояния от распределительной
-        решётки до сливной перегородки, с."""
+        решётки до сливной перегородки, с.
+
+        t_тр = L_c / u_ф
+
+        где L_c — расстояние от решётки до перегородки, u_ф — скорость фазы.
+        """
         return self.design.L_c / self.flows.velocity[phase]
 
     def settling_height(self, drop_diameter: float,
@@ -79,7 +108,13 @@ class Separator:
                         continuous_phase_viscosity: float,
                         dispersed_phase_density: float,
                         phase: int) -> float:
-        """Высота осаждения/всплытия капель, м."""
+        """Высота осаждения/всплытия капель за время прохождения L_c, м.
+
+        h_ос = |v_ст| * t_тр
+
+        где v_ст — скорость Стокса, t_тр — Время прохождения фазой расстояния
+        от распределительной решётки до сливной перегородки
+        """
         velocity = compute_settling_velocity(
             drop_diameter, continuous_phase_density,
             continuous_phase_viscosity, dispersed_phase_density,
@@ -87,7 +122,12 @@ class Separator:
         return abs(velocity) * self.transit_time(phase)
 
     def capacity(self, fill_coeffs: Iterable[float] = FILL_COEFFS) -> tuple[float, float]:
-        """Пропускная способность сепаратора по жидкости для каждой секции, м³/с."""
+        """Пропускная способность сепаратора по жидкости для каждой секции, м³/с.
+
+        Q_доп = V_сек * к_зап / τ_пр
+
+        где V_сек — объём секции, к_зап — коэффициент заполнения, τ_пр — время пребывания.
+        """
         fill_coeffs = tuple(fill_coeffs)
         rt = self.residence_time()
         first_section_capacity = (self.design.volume[FIRST_SECTION] *
@@ -100,7 +140,15 @@ class Separator:
                    demister: WireMeshDemister,
                    liquidgasnozzle: Nozzle,
                    gasnozzle: Nozzle) -> tuple[float, float, float, float]:
-        """Сопротивления сепаратора, Па."""
+        """Сопротивления сепаратора, Па.
+
+        ΔP_i = ξ_i * ρ_г_ру * u_г_i² / 2
+
+        где ξ_i — коэффициент сопротивления элемента,
+        ρ_г_ру — плотность газа при р.у., u_г_i — скорость газа в элементе i.
+        Суммарное: ΔP_общ = k_неуч * (ΔP_отб + ΔP_вх + ΔP_вых),
+        где k_неуч — коэффициент неучтённых потерь.
+        """
 
         assert liquidgasnozzle.resistance_coeff is not None
         assert gasnozzle.resistance_coeff is not None

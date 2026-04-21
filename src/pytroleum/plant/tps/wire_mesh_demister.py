@@ -65,13 +65,20 @@ _STABILITY_COEFFICIENT_INTERPOLATOR = interpolate.interp1d(
 
 
 def get_flow_stability_coefficient(pressure: float) -> float:
-    """Коэффициент устойчивости режимов течения при заданном давлении"""
+    """Коэффициент устойчивости режимов течения при заданном давлении."""
     return _STABILITY_COEFFICIENT_INTERPOLATOR(pressure)
 
 
 def calculate_critical_velocity(properties: PhysicalProperties,
                                 conditions: OperationConditions) -> float:
-    """Критическая скорость газа, м/с"""
+    """Критическая скорость газа для сетчатого каплеуловителя, м/с.
+
+    v_кр = k_уст * √(√(g * σ_н * (ρ_ж - ρ_г_ру) / ρ_г_ру²))
+
+    где k_уст — коэффициент устойчивости (из графика РД 0352-92-85),
+    σ_н — поверхностное натяжение нефти,
+    ρ_ж, ρ_г_ру — плотности жидкости и газа при р.у.
+    """
     k = get_flow_stability_coefficient(conditions.pressure_work)
     gas_density = properties.gas_density_work(conditions)
     return k * np.sqrt(np.sqrt((g * properties.oil_surface_tension *
@@ -94,8 +101,19 @@ class WireMeshDemister:
         self.mesh_resistance_coefficient = mesh_resistance_coefficient
 
     def compute(self) -> tuple[float, float, float, float]:
-        """Расчётный диаметр (м), действительная площадь (м²),
-        скорость набегания (м/с), производительность (м³/с)"""
+        """Расчёт геометрических параметров и производительности каплеуловителя.
+
+        F_расч = k_пл * Q_г_ру / v_кр      — расчётная площадь живого сечения
+        D_расч = √(4 * F_расч / π)          — расчётный диаметр
+
+        F_факт = π * D_ном² / (4 * k_пл)   — действительная площадь живого сечения
+        u_нб   = Q_г_ру / F_факт            — скорость набегания газа
+        Q_доп  = v_кр * F_факт              — производительность каплеуловителя
+
+        где k_пл  — коэффициент снижения живого сечения элементами насадки,
+            D_ном — ближайший больший номинальный диаметр,
+            v_кр  — критическая скорость газа.
+        """
         critical_velocity = calculate_critical_velocity(
             self.properties, self.flows.conditions)
 
