@@ -2,7 +2,8 @@ import numpy as np
 from scipy import interpolate
 from scipy.constants import g
 import matplotlib.pyplot as plt
-from pytroleum.plant.tps.utils import _major_header, _minor_divider
+from pytroleum.plant.tps.utils import (_major_header, _minor_divider,
+                                       select_nominal_diameter)
 from pytroleum.plant.tps.inputs import (PhysicalProperties,
                                         FlowRates,
                                         OperationConditions)
@@ -63,10 +64,23 @@ _STABILITY_COEFFICIENT_INTERPOLATOR = interpolate.interp1d(
     kind='cubic')
 
 
+def get_flow_stability_coefficient(pressure: float) -> float:
+    """Коэффициент устойчивости режимов течения при заданном давлении"""
+    return _STABILITY_COEFFICIENT_INTERPOLATOR(pressure)
+
+
+def calculate_critical_velocity(properties: PhysicalProperties,
+                                conditions: OperationConditions) -> float:
+    """Критическая скорость газа, м/с"""
+    k = get_flow_stability_coefficient(conditions.pressure_work)
+    gas_density = properties.gas_density_work(conditions)
+    return k * np.sqrt(np.sqrt((g * properties.oil_surface_tension *
+                                (properties.liquid_density() - gas_density)) /
+                               gas_density ** 2))
+
+
 class WireMeshDemister:
     """Расчёт сетчатого каплеуловителя"""
-
-    # NOTE тут тоже много можно в атрибуты перекинуть
 
     def __init__(self, properties: PhysicalProperties,
                  flows: FlowRates,
@@ -79,89 +93,24 @@ class WireMeshDemister:
         # Коэффициент сопротивления сетчатого отбойника
         self.mesh_resistance_coefficient = mesh_resistance_coefficient
 
-    def get_flow_stability_coefficient(self) -> float:
-        """Коэффициент устойчивости режимов течения при текущем давлении"""
-        pressure = self.flows.conditions.pressure_work
-        return _STABILITY_COEFFICIENT_INTERPOLATOR(pressure)
+    def compute(self) -> tuple[float, float, float, float]:
+        """Расчётный диаметр (м), действительная площадь (м²),
+        скорость набегания (м/с), производительность (м³/с)."""
+        critical_velocity = calculate_critical_velocity(
+            self.properties, self.flows.conditions)
 
-    def calculate_critical_velocity(self) -> float:
-        """Критическая скорость, м/с"""
-        return self.get_flow_stability_coefficient() * np.sqrt(
-            np.sqrt((g * self.properties.oil_surface_tension *
-                    (self.properties.liquid_density() -
-                     self.properties.gas_density_work(self.flows.conditions))) /
-                    self.properties.gas_density_work(self.flows.conditions)**2)
-        )
+        area = (self.area_reduction_coefficient *
+                self.flows.flow_gas_work / critical_velocity)
+        diameter = np.sqrt(4 * area / np.pi)
 
-    def area(self) -> float:
-        """Площадь живого сечения, м²"""
-        return (self.area_reduction_coefficient *
-                self.flows.flow_gas_work) / (self.calculate_critical_velocity())
+        nominal_diameter = select_nominal_diameter(diameter, NOMINAL_DIAMETERS)
+        actual_area = (np.pi * nominal_diameter ** 2 /
+                       (4 * self.area_reduction_coefficient))
 
-    def calculate_diameter(self) -> float:
-        """Расчётный диаметр, м"""
-        return np.sqrt((4 * self.area()) / np.pi)
+        actual_velocity = self.flows.flow_gas_work / actual_area
+        capacity = critical_velocity * actual_area
+        return diameter, actual_area, actual_velocity, capacity
 
-    def select_nominal_diameter(self) -> float:
-        """Выбор ближайшего большего диаметра, м"""
-        diameter = self.calculate_diameter()
-        for d_nom in sorted(NOMINAL_DIAMETERS):
-            if d_nom >= diameter:
-                return d_nom
-        raise ValueError(
-            f"Расчётный диаметр {diameter * _TO_MM:.1f} мм "
-            f"больше {max(NOMINAL_DIAMETERS) * _TO_MM:.0f} мм")
-
-    def actual_area(self) -> float:
-        """Действительная площадь живого сечения, м²"""
-        return (np.pi * self.select_nominal_diameter() ** 2) / \
-            (4 * self.area_reduction_coefficient)
-
-    def actual_velocity(self) -> float:
-        """Действительная скорость набегания, м/с"""
-        return self.flows.flow_gas_work / self.actual_area()
-
-    def capacity(self) -> float:
-        """Производительность, м³/с"""
-        return self.calculate_critical_velocity() * self.actual_area()
-
-    def plot_stability_coefficient(self):
-        """Построение графика зависимости коэффициента устойчивости от давления"""
-
-        plt.figure(figsize=(10, 6))
-        plt.plot(_PRESSURE_PA / PA_TO_MPA, _FLOW_STABILITY_COEFFICIENT,
-                 'o', markersize=4, label='Данные по графику')
-
-        # Кривая интерполяции
-        pressure_smooth = np.linspace(_PRESSURE_PA.min(),
-                                      _PRESSURE_PA.max(), 200)
-        flow_stability_coefficient_smooth = _STABILITY_COEFFICIENT_INTERPOLATOR(
-            pressure_smooth)
-
-        plt.plot(pressure_smooth / PA_TO_MPA, flow_stability_coefficient_smooth, '--',
-                 alpha=0.7, label='Интерполяция')
-        plt.xlabel('Давление, МПа', fontsize=12)
-        plt.ylabel('Коэффициент устойчивости', fontsize=12)
-        plt.title('Коэффициент устойчивости режимов течения от давления')
-        plt.grid(True, alpha=0.3)
-        plt.ylim(0.4, 1.1)
-        plt.legend()
-
-        # Текущая точка
-        current_pressure = self.flows.conditions.pressure_work
-        current_flow_stability_coefficient = self.get_flow_stability_coefficient()
-        plt.plot(current_pressure / PA_TO_MPA, current_flow_stability_coefficient,
-                 'ro', markersize=8,
-                 label=(f'Рабочее давление: {current_pressure/PA_TO_MPA:.2f} МПа, '
-                        f'k={current_flow_stability_coefficient:.3f}'))
-        plt.legend()
-
-        # ax = plt.gca()
-        # ax.set_xlim((2, 13))
-        # ax.set_ylim((0.4, 1.1))
-
-        plt.tight_layout()
-        plt.show()
 
 # ============================================================
 # Пример использования
@@ -193,6 +142,42 @@ if __name__ == "__main__":
                                 area_reduction_coefficient=1.05,
                                 mesh_resistance_coefficient=70)
 
+    plt.figure(figsize=(10, 6))
+    plt.plot(_PRESSURE_PA / PA_TO_MPA, _FLOW_STABILITY_COEFFICIENT,
+             'o', markersize=4, label='Данные по графику')
+
+    # Кривая интерполяции
+    pressure_smooth = np.linspace(_PRESSURE_PA.min(),
+                                  _PRESSURE_PA.max(), 200)
+    flow_stability_coefficient_smooth = _STABILITY_COEFFICIENT_INTERPOLATOR(
+        pressure_smooth)
+
+    plt.plot(pressure_smooth / PA_TO_MPA, flow_stability_coefficient_smooth, '--',
+             alpha=0.7, label='Интерполяция')
+    plt.xlabel('Давление, МПа', fontsize=12)
+    plt.ylabel('Коэффициент устойчивости', fontsize=12)
+    plt.title('Коэффициент устойчивости режимов течения от давления')
+    plt.grid(True, alpha=0.3)
+    plt.ylim(0.4, 1.1)
+    plt.legend()
+
+    # Текущая точка
+    current_pressure = conditions.pressure_work
+    current_flow_stability_coefficient = get_flow_stability_coefficient(
+        conditions.pressure_work)
+    plt.plot(current_pressure / PA_TO_MPA, current_flow_stability_coefficient,
+             'ro', markersize=8,
+             label=(f'Рабочее давление: {current_pressure/PA_TO_MPA:.2f} МПа, '
+                    f'k={current_flow_stability_coefficient:.3f}'))
+    plt.legend()
+
+    # ax = plt.gca()
+    # ax.set_xlim((2, 13))
+    # ax.set_ylim((0.4, 1.1))
+
+    plt.tight_layout()
+    plt.show()
+
     # Вывод результатов
     _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СЕТЧАТОГО КАПЛЕУЛОВИТЕЛЯ")
     print(f"Рабочее давление: {conditions.pressure_work/PA_TO_MPA} МПа")
@@ -213,19 +198,16 @@ if __name__ == "__main__":
           f"{properties.gas_density_work(conditions):.3f} кг/м³")
     print(f"Плотность жидкости (Н+В) при заданной обводненности: "
           f"{properties.liquid_density():.2f} кг/м³")
-    print(f"Коэффициент k: {demister.get_flow_stability_coefficient():.2f}")
     print(
-        f"Критическая скорость: {demister.calculate_critical_velocity():.3f} м/с")
+        f"Коэффициент k: {get_flow_stability_coefficient(conditions.pressure_work):.2f}")
+    print(f"Критическая скорость: "
+          f"{calculate_critical_velocity(properties, conditions):.3f} м/с")
 
     _minor_divider()
-    print(f"Площадь живого сечения: {demister.area():.4f} м²")
-    print(f"Диаметр: {demister.calculate_diameter() * _TO_MM:.1f} мм")
-    print(
-        f"Принятый диаметр: {demister.select_nominal_diameter() * _TO_MM:.0f} мм")
-    print(
-        f"Действительная площадь живого сечения: {demister.actual_area():.4f} м²")
-    print(
-        f"Действительная скорость набегания: {demister.actual_velocity():.3f} м/с")
-    print(f"Производительность: {demister.capacity():.4f} м³/с")
-
-    demister.plot_stability_coefficient()
+    diameter, actual_area, actual_velocity, capacity = demister.compute()
+    nominal_d = select_nominal_diameter(diameter, NOMINAL_DIAMETERS)
+    print(f"Диаметр: {diameter * _TO_MM:.1f} мм")
+    print(f"Принятый диаметр: {nominal_d * _TO_MM:.0f} мм")
+    print(f"Действительная площадь живого сечения: {actual_area:.4f} м²")
+    print(f"Действительная скорость набегания: {actual_velocity:.3f} м/с")
+    print(f"Производительность: {capacity:.4f} м³/с")

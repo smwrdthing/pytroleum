@@ -15,8 +15,19 @@ _TO_M = 1e-3
 _TO_MICRON = 1_000_000
 KELVIN_TO_CELSIUS = 273
 
+
+def select_nominal_diameter(diameter: float, nominal_diameters) -> float:
+    """Выбор ближайшего большего номинального диаметра, м."""
+    for d_nom in sorted(nominal_diameters):
+        if d_nom >= diameter:
+            return d_nom
+    raise ValueError(
+        f"Расчётный диаметр {diameter * _TO_MM:.1f} мм "
+        f"больше {max(nominal_diameters) * _TO_MM:.0f} мм")
+
 # ============================================================
 # Функции форматирования консольного вывода результатов расчёта
+
 
 _DIVIDER_LENGTH = 75
 _MINOR_DIVIDER = '-' * _DIVIDER_LENGTH

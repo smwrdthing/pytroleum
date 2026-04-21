@@ -13,7 +13,8 @@ from typing import Iterable
 FIRST_SECTION = 0
 SECOND_SECTION = 1
 TOTAL = 2
-FILL_COEFFS = (0.858, 0.858, 0.858)  # (первая секция, вторая секция, суммарный)
+# (первая секция, вторая секция, суммарный)
+FILL_COEFFS = (0.858, 0.858, 0.858)
 
 VAPOR = 0
 OIL = 1
@@ -104,10 +105,11 @@ class Separator:
         assert liquidgasnozzle.resistance_coeff is not None
         assert gasnozzle.resistance_coeff is not None
         gas_density = self.properties.gas_density_work(self.conditions)
+        _, _, actual_velocity, _ = demister.compute()
 
         pressure_drop_mesh_demister = (
             demister.mesh_resistance_coefficient * gas_density *
-            demister.actual_velocity() ** 2 / 2)
+            actual_velocity ** 2 / 2)
 
         pressure_drop_inlet_nozzle = (
             liquidgasnozzle.resistance_coeff * gas_density *
@@ -226,7 +228,8 @@ if __name__ == "__main__":
     print(f"Пропускная способность: "
           f"{capacities[SECOND_SECTION] * SECONDS_PER_DAY:.3f} м³/сут")
 
-    _minor_header("РАСЧЕТ СКОРОСТЕЙ ДВИЖЕНИЯ ЖИДКОЙ ФАЗЫ И ГАЗОВОЙ ФАЗЫ В СЕЧЕНИИ СЕПАРАТОРА")
+    _minor_header(
+        "РАСЧЕТ СКОРОСТЕЙ ДВИЖЕНИЯ ЖИДКОЙ ФАЗЫ И ГАЗОВОЙ ФАЗЫ В СЕЧЕНИИ СЕПАРАТОРА")
 
     areas = separator.compute_flow_areas()
 
