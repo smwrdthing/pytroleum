@@ -218,7 +218,7 @@ class Separator:
 
 if __name__ == "__main__":
     from pytroleum.plant.tps.utils import SECONDS_PER_DAY
-    from pytroleum.plant.tps.nozzle import design_gas_nozzle, design_liquid_gas_nozzle
+    from pytroleum.plant.tps.nozzle import design_nozzle, design_two_phase_nozzle
 
     design = SeparatorDesign(
         inner_diameter=2.0,
@@ -259,13 +259,14 @@ if __name__ == "__main__":
     demister = WireMeshDemister(properties, flows,
                                 area_reduction_coefficient=1.05,
                                 mesh_resistance_coefficient=70)
-    gasnozzle = design_gas_nozzle(flows=flows,
-                                  speed=10.0,
-                                  resistance_coeff=0.5)
-    liquidgasnozzle = design_liquid_gas_nozzle(flows=flows,
-                                               gas_speed=10.0,
-                                               liquid_speed=1.0,
-                                               resistance_coeff=1.0)
+    gas_speed = 10.0
+    liquid_speed = 1.0
+    gasnozzle = design_nozzle(
+        flows.flow_gas_work, gas_speed, resistance_coeff=0.5)
+    liquidgasnozzle = design_two_phase_nozzle(flows=flows,
+                                              gas_speed=gas_speed,
+                                              liquid_speed=liquid_speed,
+                                              resistance_coeff=1.0)
     losses_unaccounted = 1.2
 
     _major_header("РАСЧЁТ ПРОПУСКНОЙ СПОСОБНОСТИ СЕПАРАТОРА ПО ЖИДКОСТИ")
