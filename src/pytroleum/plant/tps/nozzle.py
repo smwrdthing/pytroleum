@@ -1,6 +1,6 @@
 import numpy as np
 from pytroleum.plant.tps.inputs import FlowRates
-from pytroleum.plant.tps.utils import _TO_MM, _TO_M, select_nominal_diameter
+from pytroleum.plant.tps.utils import _TO_MM, _TO_M
 
 MAX_GAS_VELOCITY = 20  # м/с
 MIN_GAS_VELOCITY = 10  # м/с
@@ -15,6 +15,16 @@ MIN_LIQUID_VELOCITY = 1  # м/с
 NOMINAL_DIAMETERS = np.array([
     10, 15, 20, 25, 32, 40, 50, 65, 80, 90, 100, 125, 150,
     200, 225, 250, 300, 400, 500, 600, 800, 1000, 1200]) * _TO_M
+
+
+def select_nominal_diameter(diameter: float, nominal_diameters) -> float:
+    """Выбор ближайшего большего номинального диаметра, м."""
+    for d_nom in sorted(nominal_diameters):
+        if d_nom >= diameter:
+            return d_nom
+    raise ValueError(
+        f"Расчётный диаметр {diameter * _TO_MM:.1f} мм "
+        f"больше {max(nominal_diameters) * _TO_MM:.0f} мм")
 
 
 def _validate_velocity(name: str, velocity: float,

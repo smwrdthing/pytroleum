@@ -2,8 +2,8 @@ import numpy as np
 from scipy import interpolate
 from scipy.constants import g
 import matplotlib.pyplot as plt
-from pytroleum.plant.tps.utils import (_major_header, _minor_divider,
-                                       select_nominal_diameter)
+from pytroleum.plant.tps.utils import _major_header, _minor_divider
+from pytroleum.plant.tps.nozzle import select_nominal_diameter
 from pytroleum.plant.tps.inputs import (PhysicalProperties,
                                         FlowRates,
                                         OperationConditions)
