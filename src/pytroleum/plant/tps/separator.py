@@ -39,27 +39,9 @@ def compute_settling_velocity(drop_diameter: float,
 
 class Separator:
     def __init__(self, design: SeparatorDesign,
-                 conditions: OperationConditions,
-                 properties: PhysicalProperties,
-                 flows: FlowRates,
-                 diameter_water_droplet: float,
-                 diameter_oil_droplet: float):
+                 flows: FlowRates):
         self.design = design
-
-        # NOTE conditions - кандидат на dependency injection
-        self.conditions = conditions
-        # NOTE вместо хранения атрибута в Separator можно передавать conditions
-        # NOTE методам этого класса как параметр
-
-        # NOTE с properties во многом такая же история
-        self.properties = properties
-
         self.flows = flows  # NOTE информацию о расходах можно держать в conditions
-
-        # NOTE эти вещи тоже лучше передавать методу как параметры, размеры капель -
-        # NOTE не свойство сепаратора
-        self.diameter_water_droplet = diameter_water_droplet
-        self.diameter_oil_droplet = diameter_oil_droplet
 
     def compute_flow_areas(self) -> tuple[float, float, float]:
         """Площади поперечного сечения для газа, нефти и воды, м².
@@ -88,7 +70,8 @@ class Separator:
         self.flows.velocity[OIL] = self.flows.flow_rate[OIL] / areas[OIL]
         self.flows.velocity[WATER] = self.flows.flow_rate[WATER] / areas[WATER]
 
-    def residence_time(self) -> tuple[float, float, float]:
+    def residence_time(self,
+                       conditions: OperationConditions) -> tuple[float, float, float]:
         """Время пребывания жидкости в секциях сепаратора, с.
 
         τ_пр = V_сек * к_зап / Q_ж
@@ -97,9 +80,9 @@ class Separator:
         Суммарное: τ_общ = τ_пр_1 + τ_пр_2.
         """
         rt_first = (self.design.volume[FIRST_SECTION] *
-                    FILL_COEFFS[FIRST_SECTION] / self.conditions.flow_liquid)
+                    FILL_COEFFS[FIRST_SECTION] / conditions.flow_liquid)
         rt_total = (self.design.volume_separator * FILL_COEFFS[TOTAL] /
-                    self.conditions.flow_liquid)
+                    conditions.flow_liquid)
         rt_second = rt_total - rt_first
         return rt_first, rt_second, rt_total
 
@@ -131,7 +114,8 @@ class Separator:
         )
         return abs(velocity) * self.transit_time(phase)
 
-    def capacity(self, fill_coeffs: Iterable[float] = FILL_COEFFS) -> tuple[float, float]:
+    def capacity(self, conditions: OperationConditions,
+                 fill_coeffs: Iterable[float] = FILL_COEFFS) -> tuple[float, float]:
         """Пропускная способность сепаратора по жидкости для каждой секции, м³/с.
 
         Q_доп = V_сек * к_зап / τ_пр
@@ -139,14 +123,16 @@ class Separator:
         где V_сек — объём секции, к_зап — коэффициент заполнения, τ_пр — время пребывания.
         """
         fill_coeffs = tuple(fill_coeffs)
-        rt = self.residence_time()
+        rt = self.residence_time(conditions)
         first_section_capacity = (self.design.volume[FIRST_SECTION] *
                                   fill_coeffs[FIRST_SECTION] / rt[FIRST_SECTION])
         second_section_capacity = (self.design.volume[SECOND_SECTION] *
                                    fill_coeffs[SECOND_SECTION] / rt[SECOND_SECTION])
         return first_section_capacity, second_section_capacity
 
-    def resistance(self, losses_unaccounted: float,
+    def resistance(self, conditions: OperationConditions,
+                   properties: PhysicalProperties,
+                   losses_unaccounted: float,
                    demister: WireMeshDemister,
                    liquidgasnozzle: Nozzle,
                    gasnozzle: Nozzle) -> tuple[float, float, float, float]:
@@ -193,7 +179,7 @@ class Separator:
 
         assert liquidgasnozzle.resistance_coeff is not None
         assert gasnozzle.resistance_coeff is not None
-        gas_density = self.properties.gas_density_work(self.conditions)
+        gas_density = properties.gas_density_work(conditions)
         _, _, actual_velocity, _ = demister.compute()
 
         pressure_drop_mesh_demister = (
@@ -251,10 +237,7 @@ if __name__ == "__main__":
     diameter_water_droplet = 100e-6
     diameter_oil_droplet = 50e-6
 
-    separator = Separator(design=design, conditions=conditions,
-                          properties=properties, flows=flows,
-                          diameter_water_droplet=diameter_water_droplet,
-                          diameter_oil_droplet=diameter_oil_droplet)
+    separator = Separator(design=design, flows=flows)
 
     demister = WireMeshDemister(properties, flows,
                                 area_reduction_coefficient=1.05,
@@ -285,8 +268,8 @@ if __name__ == "__main__":
           f"{design.volume_separator:.3f} м³")
 
     separator.compute_velocities()
-    rt = separator.residence_time()
-    capacities = separator.capacity()
+    rt = separator.residence_time(conditions)
+    capacities = separator.capacity(conditions)
 
     print(f"Время пребывания жидкости: "
           f"{rt[TOTAL] / SECONDS_PER_MINUTE:.2f} мин")
@@ -397,7 +380,7 @@ if __name__ == "__main__":
 
     (pressure_drop_mesh_demister, pressure_drop_inlet_nozzle,
      pressure_drop_outlet_nozzle, pressure_drop_total) = separator.resistance(
-        losses_unaccounted, demister, liquidgasnozzle, gasnozzle)
+        conditions, properties, losses_unaccounted, demister, liquidgasnozzle, gasnozzle)
 
     _minor_divider()
     print(

@@ -108,10 +108,7 @@ if __name__ == "__main__":
     geometry_cyclone = GeometryCyclone(width_inlet_cyclone=47.5e-3,
                                        height_inlet_cyclone=75e-3)
 
-    separator = Separator(design=design, conditions=conditions,
-                          properties=properties, flows=flows,
-                          diameter_water_droplet=diameter_water_droplet,
-                          diameter_oil_droplet=diameter_oil_droplet)
+    separator = Separator(design=design, flows=flows)
     separator.compute_velocities()
 
     coalescer = Coalescer(
