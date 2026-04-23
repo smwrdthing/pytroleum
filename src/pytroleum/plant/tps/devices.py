@@ -99,10 +99,8 @@ if __name__ == "__main__":
     )
     diameter_water_droplet = 100e-6
     diameter_oil_droplet = 50e-6
-    coalescer_packing = CoalescerPacking(
-        coalescer_top_gap=15e-3,
-        coalescer_bottom_gap=25e-3,
-    )
+    coalescer_packing = CoalescerPacking(coalescer_top_gap=15e-3,
+                                         coalescer_bottom_gap=25e-3)
 
     number_of_cyclones = 4
     geometry_cyclone = GeometryCyclone(width_inlet_cyclone=47.5e-3,

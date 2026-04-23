@@ -37,11 +37,10 @@ def _validate_velocity(name: str, velocity: float,
 class Nozzle:
     """Класс описывает патрубок"""
 
-    def __init__(self, diameter: float, resistance_coeff: float | None = None) -> None:
+    def __init__(self, diameter: float) -> None:
         self.diameter = diameter
         self.area = np.pi * diameter ** 2 / 4
 
-        self.resistance_coeff = resistance_coeff
         self.nominal_diameter = select_nominal_diameter(
             diameter, NOMINAL_DIAMETERS)
         self.nominal_area = np.pi * self.nominal_diameter ** 2 / 4
@@ -56,8 +55,7 @@ class Nozzle:
         return volumetric_flow_rate / self.nominal_area
 
 
-def design_nozzle(volumetric_flow_rate, target_velocity,
-                  resistance_coeff: float | None = None) -> Nozzle:
+def design_nozzle(volumetric_flow_rate, target_velocity) -> Nozzle:
     """Расчётный диаметр штуцера по заданному расходу и скорости.
 
     Однофазный:  D_расч = √(4 * Q / (π * u_зад))
@@ -78,12 +76,11 @@ def design_nozzle(volumetric_flow_rate, target_velocity,
             np.sum(volumetric_flow_rate / (1.3 * target_velocity))
         )
 
-    return Nozzle(diameter, resistance_coeff)
+    return Nozzle(diameter)
 
 
 def design_two_phase_nozzle(flows: FlowRates, gas_speed: float,
-                            liquid_speed: float,
-                            resistance_coeff: float) -> Nozzle:
+                            liquid_speed: float) -> Nozzle:
     """Штуцер для двухфазного потока (ГЖС)."""
     _validate_velocity("Штуцер ГЖС (газ)", gas_speed,
                        MIN_GAS_VELOCITY, MAX_GAS_VELOCITY)
@@ -91,9 +88,7 @@ def design_two_phase_nozzle(flows: FlowRates, gas_speed: float,
                        MIN_LIQUID_VELOCITY, MAX_LIQUID_VELOCITY)
     return design_nozzle(
         [flows.flow_gas_work, flows.conditions.flow_liquid],
-        [gas_speed, liquid_speed],
-        resistance_coeff,
-    )
+        [gas_speed, liquid_speed])
 
 # ============================================================
 # Пример использования
@@ -129,15 +124,13 @@ if __name__ == "__main__":
     gas_speed = 10.0
     liquid_speed = 1.0
 
-    gasnozzle = design_nozzle(
-        flows.flow_gas_work, gas_speed, resistance_coeff=0.5)
+    gasnozzle = design_nozzle(flows.flow_gas_work, gas_speed)
     oil_nozzle = design_nozzle(flows.flow_oil, liquid_speed)
     water_nozzle = design_nozzle(flows.flow_water, liquid_speed)
     liquid_nozzle = design_nozzle(flows.conditions.flow_liquid, liquid_speed)
     liquidgasnozzle = design_two_phase_nozzle(flows=flows,
                                               gas_speed=gas_speed,
-                                              liquid_speed=liquid_speed,
-                                              resistance_coeff=1.0)
+                                              liquid_speed=liquid_speed)
 
     _major_header("РАСЧЕТ ШТУЦЕРОВ")
 

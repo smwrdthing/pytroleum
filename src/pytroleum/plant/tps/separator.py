@@ -4,11 +4,6 @@ from pytroleum.plant.tps.inputs import (SeparatorDesign,
                                         OperationConditions,
                                         PhysicalProperties,
                                         FlowRates)
-from pytroleum.plant.tps.wire_mesh_demister import (WireMeshDemister,
-                                                    design_demister,
-                                                    MESH_RESISTANCE_COEFF)
-from pytroleum.plant.tps.nozzle import Nozzle
-
 from scipy.constants import g
 from typing import Iterable
 
@@ -132,80 +127,9 @@ class Separator:
                                    fill_coeffs[SECOND_SECTION] / rt[SECOND_SECTION])
         return first_section_capacity, second_section_capacity
 
-    def resistance(self, conditions: OperationConditions,
-                   properties: PhysicalProperties,
-                   losses_unaccounted: float,
-                   demister: WireMeshDemister,
-                   liquidgasnozzle: Nozzle,
-                   gasnozzle: Nozzle) -> tuple[float, float, float, float]:
-        """Сопротивления сепаратора, Па.
-
-        ΔP_i = ξ_i * ρ_г_ру * u_г_i² / 2
-
-        где ξ_i — коэффициент сопротивления элемента,
-        ρ_г_ру — плотность газа при р.у., u_г_i — скорость газа в элементе i.
-        Суммарное: ΔP_общ = k_неуч * (ΔP_отб + ΔP_вх + ΔP_вых),
-        где k_неуч — коэффициент неучтённых потерь.
-        """
-
-        # NOTE demister, liquidgasnozzle, gasnozzle в этом случае, наборот, можно записать
-        # NOTE в атрибут-контенере класса Separator, например
-        # NOTE
-        # NOTE def __init__(self, ..., appliances : list[...], ...):
-        # NOTE     ...
-        # NOTE     self.devices = [] # <- список с дополнительным оборудованием внутри
-        # NOTE     ...
-        # NOTE
-        # NOTE ...
-        # NOTE
-        # NOTE def resistance(self, conditions, ...):
-        # NOTE     ...
-        # NOTE     resistance_coeff = 0;
-        # NOTE     for device in self.devices:
-        # NOTE          if device.resistance_coeff is not None:
-        # NOTE              resistance_coeff += device.resistance_coeff(condition)
-        # NOTE     ...
-        # NOTE     self.resistance_coeff = resistance_coeff
-        # NOTE     или можно :
-        # NOTE     return resistance_coeff
-        # NOTE
-        # NOTE Это позволит в дальнейшем добавлять новые элементы внутреннего устройства,
-        # NOTE которые могут оказывать сопротивление потоку, всё, что им будет нужно -
-        # NOTE атрибут-флаг .is_flow_obstacle, который показывает создаёт ли элемент
-        # NOTE сопротивление и .resistance_coeff, котрый в общем случае может зависеть
-        # NOTE от расхода (который можно держать в conditions)
-        # NOTE
-        # NOTE Тут в качестве примера я складываю коэффициенты сопротивления, на практике
-        # NOTE правило для определения полного коэффициента сопротивления может быть
-        # NOTE более сложным, сложение просто для примера
-
-        assert liquidgasnozzle.resistance_coeff is not None
-        assert gasnozzle.resistance_coeff is not None
-        gas_density = properties.gas_density_work(conditions)
-
-        pressure_drop_mesh_demister = (
-            MESH_RESISTANCE_COEFF * gas_density *
-            demister.actual_velocity ** 2 / 2)
-
-        pressure_drop_inlet_nozzle = (
-            liquidgasnozzle.resistance_coeff * gas_density *
-            liquidgasnozzle.flow_velocity(self.flows.flow_gas_work) ** 2 / 2)
-
-        pressure_drop_outlet_nozzle = (
-            gasnozzle.resistance_coeff * gas_density *
-            gasnozzle.flow_velocity(self.flows.flow_gas_work) ** 2 / 2)
-
-        pressure_drop_total = losses_unaccounted * (pressure_drop_mesh_demister +
-                                                    pressure_drop_inlet_nozzle +
-                                                    pressure_drop_outlet_nozzle)
-
-        return (pressure_drop_mesh_demister, pressure_drop_inlet_nozzle,
-                pressure_drop_outlet_nozzle, pressure_drop_total)
-
 
 if __name__ == "__main__":
     from pytroleum.plant.tps.utils import SECONDS_PER_DAY
-    from pytroleum.plant.tps.nozzle import design_nozzle, design_two_phase_nozzle
 
     design = SeparatorDesign(
         inner_diameter=2.0,
@@ -239,17 +163,6 @@ if __name__ == "__main__":
     diameter_oil_droplet = 50e-6
 
     separator = Separator(design=design, flows=flows)
-
-    wire_mesh_demister = design_demister(properties, flows)
-    gas_speed = 10.0
-    liquid_speed = 1.0
-    gasnozzle = design_nozzle(
-        flows.flow_gas_work, gas_speed, resistance_coeff=0.5)
-    liquidgasnozzle = design_two_phase_nozzle(flows=flows,
-                                              gas_speed=gas_speed,
-                                              liquid_speed=liquid_speed,
-                                              resistance_coeff=1.0)
-    losses_unaccounted = 1.2
 
     _major_header("РАСЧЁТ ПРОПУСКНОЙ СПОСОБНОСТИ СЕПАРАТОРА ПО ЖИДКОСТИ")
 
@@ -349,47 +262,3 @@ if __name__ == "__main__":
                                        properties.water_density,
                                        properties.viscosity_water,
                                        properties.oil_density, WATER) * _TO_MM:.2f} мм")
-
-    _major_header("РАСЧЁТ СОПРОТИВЛЕНИЯ СЕПАРАТОРА")
-
-    _minor_divider()
-    print(f"Плотность газа при рабочих условиях: "
-          f"{properties.gas_density_work(conditions):.3f} кг/м³")
-
-    _minor_divider()
-    print(f"Диаметр штуцера входа ГЖС: "
-          f"{liquidgasnozzle.nominal_diameter * _TO_MM:.0f} мм")
-    print(f"Диаметр штуцера выхода газа: "
-          f"{gasnozzle.nominal_diameter * _TO_MM:.0f} мм")
-
-    _minor_divider()
-    print(f"Скорость во входном штуцере ГЖС: "
-          f"{liquidgasnozzle.flow_velocity(flows.flow_gas_work):.3f} м/с")
-    print(f"Скорость в выходном штуцере газа: "
-          f"{gasnozzle.flow_velocity(flows.flow_gas_work):.3f} м/с")
-
-    _minor_divider()
-    print(f"Коэффициент сопротивления входного патрубка: "
-          f"{liquidgasnozzle.resistance_coeff}")
-    print(f"Коэффициент сопротивления выходного патрубка: "
-          f"{gasnozzle.resistance_coeff}")
-    print(f"Коэффициент сопротивления сетчатого отбойника: "
-          f"{MESH_RESISTANCE_COEFF}")
-    print(f"Коэффициент неучтенных потерь: {losses_unaccounted}")
-
-    (pressure_drop_mesh_demister, pressure_drop_inlet_nozzle,
-     pressure_drop_outlet_nozzle, pressure_drop_total) = separator.resistance(
-        conditions, properties, losses_unaccounted,
-        wire_mesh_demister, liquidgasnozzle, gasnozzle)
-
-    _minor_divider()
-    print(
-        f"Падение давления на отбойнике: {pressure_drop_mesh_demister:.3f} Па")
-    print(
-        f"Потери давления на штуцере входа: {pressure_drop_inlet_nozzle:.3f} Па")
-    print(
-        f"Потери давления на штуцере выхода: {pressure_drop_outlet_nozzle:.3f} Па")
-
-    _minor_divider()
-    print(f"Сопротивление сепаратора: {pressure_drop_total:.3f} Па")
-    _minor_divider()

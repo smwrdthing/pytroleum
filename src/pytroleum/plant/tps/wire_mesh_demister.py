@@ -88,8 +88,6 @@ def calculate_critical_velocity(properties: PhysicalProperties,
 
 # Коэффициент учитывающий снижение площади сечения элементами насадки
 AREA_REDUCTION_COEFF = 1.05
-# Коэффициент сопротивления сетчатого отбойника
-MESH_RESISTANCE_COEFF = 70
 
 
 @dataclass
