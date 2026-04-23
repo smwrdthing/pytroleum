@@ -1,4 +1,5 @@
 import numpy as np
+from dataclasses import dataclass
 from scipy import interpolate
 from scipy.constants import g
 import matplotlib.pyplot as plt
@@ -85,51 +86,61 @@ def calculate_critical_velocity(properties: PhysicalProperties,
                                gas_density ** 2))
 
 
+# Коэффициент учитывающий снижение площади сечения элементами насадки
+AREA_REDUCTION_COEFF = 1.05
+# Коэффициент сопротивления сетчатого отбойника
+MESH_RESISTANCE_COEFF = 70
+
+
+@dataclass
 class WireMeshDemister:
-    """Расчёт сетчатого каплеуловителя"""
+    """Результаты расчёта сетчатого каплеуловителя."""
+    area: float
+    diameter: float
+    nominal_diameter: float
+    actual_area: float
+    actual_velocity: float
+    capacity: float
 
-    def __init__(self, properties: PhysicalProperties,
-                 flows: FlowRates,
-                 area_reduction_coefficient: float,
-                 mesh_resistance_coefficient: float):
-        self.properties = properties
-        self.flows = flows
-        # Коэффициент учитывающий снижение площади сечения элементами насадки
-        self.area_reduction_coefficient = area_reduction_coefficient
-        # Коэффициент сопротивления сетчатого отбойника
-        self.mesh_resistance_coefficient = mesh_resistance_coefficient
 
-    def compute(self) -> tuple[float, float, float, float]:
-        """Расчёт геометрических параметров и производительности каплеуловителя.
+def design_demister(properties: PhysicalProperties,
+                    flows: FlowRates,
+                    area_reduction_coeff=AREA_REDUCTION_COEFF
+                    ) -> WireMeshDemister:
+    """Расчёт геометрических параметров и производительности каплеуловителя.
 
-        F_расч = k_пл * Q_г_ру / v_кр      — расчётная площадь живого сечения
-        D_расч = √(4 * F_расч / π)          — расчётный диаметр
+    F_расч = k_пл * Q_г_ру / v_кр — расчётная площадь живого сечения, м²
+    D_расч = √(4 * F_расч / π) — расчётный диаметр, м
 
-        F_факт = π * D_ном² / (4 * k_пл)   — действительная площадь живого сечения
-        u_нб   = Q_г_ру / F_факт            — скорость набегания газа
-        Q_доп  = v_кр * F_факт              — производительность каплеуловителя
+    F_факт = π * D_ном² / (4 * k_пл) — действительная площадь живого сечения, м²
+    u_нб   = Q_г_ру / F_факт  — скорость набегания газа, м/с
+    Q_доп  = v_кр * F_факт — производительность каплеуловителя, м³/с
 
-        где k_пл  — коэффициент снижения живого сечения элементами насадки,
-            D_ном — ближайший больший номинальный диаметр,
-            v_кр  — критическая скорость газа.
-        """
-        critical_velocity = calculate_critical_velocity(
-            self.properties, self.flows.conditions)
+    где k_пл  — коэффициент снижения живого сечения элементами насадки
+        D_ном — ближайший больший номинальный диаметр, м
+        v_кр  — критическая скорость газа, м/с
+    """
+    critical_velocity = calculate_critical_velocity(
+        properties, flows.conditions)
 
-        area = (self.area_reduction_coefficient *
-                self.flows.flow_gas_work / critical_velocity)
-        diameter = np.sqrt(4 * area / np.pi)
+    area = area_reduction_coeff * flows.flow_gas_work / critical_velocity
+    diameter = np.sqrt(4 * area / np.pi)
 
-        nominal_diameter = select_nominal_diameter(diameter, NOMINAL_DIAMETERS)
-        actual_area = (np.pi * nominal_diameter ** 2 /
-                       (4 * self.area_reduction_coefficient))
+    nominal_diameter = select_nominal_diameter(diameter, NOMINAL_DIAMETERS)
+    actual_area = (np.pi * nominal_diameter ** 2 /
+                   (4 * area_reduction_coeff))
 
-        actual_velocity = self.flows.flow_gas_work / actual_area
-        capacity = critical_velocity * actual_area
+    actual_velocity = flows.flow_gas_work / actual_area
+    capacity = critical_velocity * actual_area
 
-        # NOTE можно объединить в объект и возвращать его
-        # NOTE return design # <- всё тут
-        return diameter, actual_area, actual_velocity, capacity
+    return WireMeshDemister(
+        area=area,
+        diameter=diameter,
+        nominal_diameter=nominal_diameter,
+        actual_area=actual_area,
+        actual_velocity=actual_velocity,
+        capacity=capacity,
+    )
 
 
 # ============================================================
@@ -158,9 +169,6 @@ if __name__ == "__main__":
     )
 
     flows = FlowRates(conditions=conditions, properties=properties)
-    demister = WireMeshDemister(properties, flows,
-                                area_reduction_coefficient=1.05,
-                                mesh_resistance_coefficient=70)
 
     plt.figure(figsize=(10, 6))
     plt.plot(_PRESSURE_PA / PA_TO_MPA, _FLOW_STABILITY_COEFFICIENT,
@@ -224,10 +232,12 @@ if __name__ == "__main__":
           f"{calculate_critical_velocity(properties, conditions):.3f} м/с")
 
     _minor_divider()
-    diameter, actual_area, actual_velocity, capacity = demister.compute()
-    nominal_d = select_nominal_diameter(diameter, NOMINAL_DIAMETERS)
-    print(f"Диаметр: {diameter * _TO_MM:.1f} мм")
-    print(f"Принятый диаметр: {nominal_d * _TO_MM:.0f} мм")
-    print(f"Действительная площадь живого сечения: {actual_area:.4f} м²")
-    print(f"Действительная скорость набегания: {actual_velocity:.3f} м/с")
-    print(f"Производительность: {capacity:.4f} м³/с")
+    wire_mesh_demister = design_demister(properties, flows)
+    print(f"Диаметр: {wire_mesh_demister.diameter * _TO_MM:.1f} мм")
+    print(
+        f"Принятый диаметр: {wire_mesh_demister.nominal_diameter * _TO_MM:.0f} мм")
+    print(
+        f"Действительная площадь живого сечения: {wire_mesh_demister.actual_area:.4f} м²")
+    print(
+        f"Действительная скорость набегания:{wire_mesh_demister.actual_velocity:.3f} м/с")
+    print(f"Производительность: {wire_mesh_demister.capacity:.4f} м³/с")

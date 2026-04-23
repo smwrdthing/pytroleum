@@ -4,7 +4,9 @@ from pytroleum.plant.tps.inputs import (SeparatorDesign,
                                         OperationConditions,
                                         PhysicalProperties,
                                         FlowRates)
-from pytroleum.plant.tps.wire_mesh_demister import WireMeshDemister
+from pytroleum.plant.tps.wire_mesh_demister import (WireMeshDemister,
+                                                    design_demister,
+                                                    MESH_RESISTANCE_COEFF)
 from pytroleum.plant.tps.nozzle import Nozzle
 
 from scipy.constants import g
@@ -180,11 +182,10 @@ class Separator:
         assert liquidgasnozzle.resistance_coeff is not None
         assert gasnozzle.resistance_coeff is not None
         gas_density = properties.gas_density_work(conditions)
-        _, _, actual_velocity, _ = demister.compute()
 
         pressure_drop_mesh_demister = (
-            demister.mesh_resistance_coefficient * gas_density *
-            actual_velocity ** 2 / 2)
+            MESH_RESISTANCE_COEFF * gas_density *
+            demister.actual_velocity ** 2 / 2)
 
         pressure_drop_inlet_nozzle = (
             liquidgasnozzle.resistance_coeff * gas_density *
@@ -239,9 +240,7 @@ if __name__ == "__main__":
 
     separator = Separator(design=design, flows=flows)
 
-    demister = WireMeshDemister(properties, flows,
-                                area_reduction_coefficient=1.05,
-                                mesh_resistance_coefficient=70)
+    wire_mesh_demister = design_demister(properties, flows)
     gas_speed = 10.0
     liquid_speed = 1.0
     gasnozzle = design_nozzle(
@@ -375,12 +374,13 @@ if __name__ == "__main__":
     print(f"Коэффициент сопротивления выходного патрубка: "
           f"{gasnozzle.resistance_coeff}")
     print(f"Коэффициент сопротивления сетчатого отбойника: "
-          f"{demister.mesh_resistance_coefficient}")
+          f"{MESH_RESISTANCE_COEFF}")
     print(f"Коэффициент неучтенных потерь: {losses_unaccounted}")
 
     (pressure_drop_mesh_demister, pressure_drop_inlet_nozzle,
      pressure_drop_outlet_nozzle, pressure_drop_total) = separator.resistance(
-        conditions, properties, losses_unaccounted, demister, liquidgasnozzle, gasnozzle)
+        conditions, properties, losses_unaccounted,
+        wire_mesh_demister, liquidgasnozzle, gasnozzle)
 
     _minor_divider()
     print(
