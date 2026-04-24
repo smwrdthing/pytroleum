@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python -c \"from pytroleum.plant.tps.nozzle import *; from pytroleum.plant.tps.additional import *\")"
-    ]
-  }
-}
