@@ -7,6 +7,7 @@ from pytroleum.plant.tps.utils import _major_header, _minor_divider
 from pytroleum.plant.tps.nozzle import select_nominal_diameter
 from pytroleum.plant.tps.inputs import (OperationConditions,
                                         flow_based_water_cut,
+                                        STANDARD_STATE,
                                         VAPOR, OIL, WATER)
 from pytroleum.plant.tps.utils import (SECONDS_PER_DAY,
                                        SECONDS_PER_HOUR,
@@ -151,76 +152,95 @@ def design_demister(conditions: OperationConditions,
 if __name__ == "__main__":
     from CoolProp import constants as CoolConst
 
-    pressure_work = 4e6
-    temperature_work = 353
-    flow_gas_norm = 300_000 / SECONDS_PER_DAY
-    flow_oil = 200 / SECONDS_PER_DAY
-    flow_water = 300 / SECONDS_PER_DAY
+    pressure = 4e6
+    temperature = 353
+    vol_flow_gas_norm = 300_000 / SECONDS_PER_DAY
+    vol_flow_oil = 200 / SECONDS_PER_DAY
+    vol_flow_water = 300 / SECONDS_PER_DAY
     oil_surface_tension = 0.02848  # Н/м
 
     conditions = OperationConditions()
-    gas_density_norm = conditions.phase[VAPOR].rhomass()
     conditions.phase[OIL].change(933, 3.073e-3)  # type: ignore
-    conditions.update_state((CoolConst.PT_INPUTS, pressure_work, temperature_work),
+    conditions.phase[VAPOR].update(*STANDARD_STATE)
+    gas_density_norm = conditions.phase[VAPOR].rhomass()
+    conditions.update_state((CoolConst.PT_INPUTS, pressure, temperature),
                             upd_containers=True)
     conditions.vol_flow_rate = np.array([
-        flow_gas_norm * gas_density_norm / conditions.phase[VAPOR].rhomass(),
-        flow_oil, flow_water,
+        vol_flow_gas_norm * gas_density_norm /
+        conditions.phase[VAPOR].rhomass(),
+        vol_flow_oil, vol_flow_water,
     ])
 
     plt.figure(figsize=(10, 6))
     plt.plot(_PRESSURE_PA / PA_TO_MPA, _FLOW_STABILITY_COEFFICIENT,
              'o', markersize=4, label='Данные по графику')
-    pressure_smooth = np.linspace(_PRESSURE_PA.min(), _PRESSURE_PA.max(), 200)
-    plt.plot(pressure_smooth / PA_TO_MPA,
-             _STABILITY_COEFFICIENT_INTERPOLATOR(pressure_smooth),
-             '--', alpha=0.7, label='Интерполяция')
 
-    current_k = get_flow_stability_coefficient(conditions.pressure[VAPOR])
-    plt.plot(conditions.pressure[VAPOR] / PA_TO_MPA, current_k, 'ro', markersize=8,
-             label=(f'Рабочее давление: {conditions.pressure[VAPOR]/PA_TO_MPA:.2f} МПа, '
-                    f'k={current_k:.3f}'))
+    # Кривая интерполяции
+    pressure_smooth = np.linspace(_PRESSURE_PA.min(),
+                                  _PRESSURE_PA.max(), 200)
+    flow_stability_coefficient_smooth = _STABILITY_COEFFICIENT_INTERPOLATOR(
+        pressure_smooth)
+
+    plt.plot(pressure_smooth / PA_TO_MPA, flow_stability_coefficient_smooth, '--',
+             alpha=0.7, label='Интерполяция')
     plt.xlabel('Давление, МПа', fontsize=12)
     plt.ylabel('Коэффициент устойчивости', fontsize=12)
     plt.title('Коэффициент устойчивости режимов течения от давления')
     plt.grid(True, alpha=0.3)
     plt.ylim(0.4, 1.1)
     plt.legend()
+
+    # Текущая точка
+    current_pressure = pressure
+    current_flow_stability_coefficient = get_flow_stability_coefficient(
+        pressure)
+    plt.plot(current_pressure / PA_TO_MPA, current_flow_stability_coefficient,
+             'ro', markersize=8,
+             label=(f'Рабочее давление: {current_pressure/PA_TO_MPA:.2f} МПа, '
+                    f'k={current_flow_stability_coefficient:.3f}'))
+    plt.legend()
+
+    # ax = plt.gca()
+    # ax.set_xlim((2, 13))
+    # ax.set_ylim((0.4, 1.1))
+
     plt.tight_layout()
     plt.show()
 
     _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СЕТЧАТОГО КАПЛЕУЛОВИТЕЛЯ")
-    print(f"Рабочее давление:    {conditions.pressure[VAPOR] / PA_TO_MPA} МПа")
-    print(f"Рабочая температура: {conditions.temperature[VAPOR]} К "
-          f"({conditions.temperature[VAPOR] - KELVIN_TO_CELSIUS} °C)")
+    print(f"Рабочее давление: {pressure / PA_TO_MPA} МПа")
+    print(f"Рабочая температура: {temperature} К "
+          f"({temperature - KELVIN_TO_CELSIUS} °C)")
 
     _minor_divider()
     print(f"Объемный расход газа при н.у.: "
-          f"{flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
+          f"{vol_flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
     print(f"Объемный расход газа при р.у.: "
           f"{conditions.vol_flow_rate[VAPOR] * SECONDS_PER_HOUR:.4f} м³/ч")
-    q_liquid = conditions.vol_flow_rate[OIL] + conditions.vol_flow_rate[WATER]
-    print(f"Объемный расход жидкости:      "
-          f"{q_liquid * SECONDS_PER_DAY:.0f} м³/сут")
-    print(f"Обводнённость:                 "
+    vol_flow_liquid = conditions.vol_flow_rate[OIL] + \
+        conditions.vol_flow_rate[WATER]
+    print(f"Объемный расход жидкости: "
+          f"{vol_flow_liquid * SECONDS_PER_DAY:.0f} м³/сут")
+    print(f"Обводнённость: "
           f"{flow_based_water_cut(conditions) * PERCENT:.0f} %")
 
     _minor_divider()
     print(
-        f"Плотность газа в р.у.:   {conditions.phase[VAPOR].rhomass():.3f} кг/м³")
+        f"Плотность газа в р.у.: {conditions.phase[VAPOR].rhomass():.3f} кг/м³")
     water_cut = flow_based_water_cut(conditions)
     rho_liquid = (conditions.phase[OIL].rhomass() * (1 - water_cut) +
                   conditions.phase[WATER].rhomass() * water_cut)
     print(f"Плотность жидкости (Н+В): {rho_liquid:.2f} кг/м³")
-    print(f"Коэффициент k:            {current_k:.3f}")
-    print(f"Критическая скорость:     "
+    print(
+        f"Коэффициент k: {current_flow_stability_coefficient:.3f}")
+    print(f"Критическая скорость: "
           f"{calculate_critical_velocity(conditions, oil_surface_tension):.3f} м/с")
 
     _minor_divider()
     wmd = design_demister(conditions, oil_surface_tension)
-    print(f"Диаметр:                          {wmd.diameter * _TO_MM:.1f} мм")
+    print(f"Диаметр: {wmd.diameter * _TO_MM:.1f} мм")
     print(
-        f"Принятый диаметр:                 {wmd.nominal_diameter * _TO_MM:.0f} мм")
-    print(f"Действительная площадь сечения:   {wmd.actual_area:.4f} м²")
-    print(f"Действительная скорость набегания:{wmd.actual_velocity:.3f} м/с")
-    print(f"Производительность:               {wmd.capacity:.4f} м³/с")
+        f"Принятый диаметр: {wmd.nominal_diameter * _TO_MM:.0f} мм")
+    print(f"Действительная площадь сечения: {wmd.actual_area:.4f} м²")
+    print(f"Действительная скорость набегания: {wmd.actual_velocity:.3f} м/с")
+    print(f"Производительность: {wmd.capacity:.4f} м³/с")

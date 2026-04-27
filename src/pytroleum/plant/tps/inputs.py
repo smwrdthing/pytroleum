@@ -190,9 +190,9 @@ if __name__ == "__main__":
 
     pressure = 4e6
     temperature = 353
-    flow_gas_norm = 300_000 / SECONDS_PER_DAY
-    flow_oil = 200 / SECONDS_PER_DAY
-    flow_water = 300 / SECONDS_PER_DAY
+    vol_flow_gas_norm = 300_000 / SECONDS_PER_DAY
+    vol_flow_oil = 200 / SECONDS_PER_DAY
+    vol_flow_water = 300 / SECONDS_PER_DAY
 
     oil_density = 933
     oil_viscosity = 3.073e-3
@@ -205,10 +205,11 @@ if __name__ == "__main__":
     conditions.update_state((CoolConst.PT_INPUTS, pressure, temperature),
                             upd_containers=True)
 
-    mass_flow_gas = flow_gas_norm * gas_density_norm
-    flow_gas_work = mass_flow_gas / conditions.phase[VAPOR].rhomass()
+    mass_flow_gas = vol_flow_gas_norm * gas_density_norm
+    vol_flow_gas_work = mass_flow_gas / conditions.phase[VAPOR].rhomass()
 
-    conditions.vol_flow_rate = np.array([flow_gas_work, flow_oil, flow_water])
+    conditions.vol_flow_rate = np.array(
+        [vol_flow_gas_work, vol_flow_oil, vol_flow_water])
     conditions.mass_flow_rate = conditions.vol_flow_rate * np.array(
         [phase.rhomass() for phase in conditions.phase])
 
@@ -218,35 +219,31 @@ if __name__ == "__main__":
     mass_flow_total = np.sum(conditions.mass_flow_rate)
 
     _major_header("УСЛОВИЯ РАБОТЫ")
-    print(
-        f"Давление при н.у.: {DEFAULT_PRESSURE / PA_TO_MPA:.1f} МПа")
+    print(f"Давление при н.у.: {DEFAULT_PRESSURE / PA_TO_MPA:.1f} МПа")
     print(f"Температура при н.у.: {DEFAULT_TEMPERATURE} К")
-    print(
-        f"Рабочее давление: {conditions.pressure[0] / PA_TO_MPA:.1f} МПа")
-    print(f"Рабочая температура: {conditions.temperature[0]} К "
-          f"({conditions.temperature[0] - KELVIN_TO_CELSIUS:.0f} °C)")
+    print(f"Рабочее давление: {pressure / PA_TO_MPA:.1f} МПа")
+    print(f"Рабочая температура: {temperature} К "
+          f"({temperature - KELVIN_TO_CELSIUS:.0f} °C)")
     print(f"Объемный расход газа при н.у.: "
-          f"{flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
+          f"{vol_flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
 
-    q_liquid = conditions.vol_flow_rate[OIL] + conditions.vol_flow_rate[WATER]
-    print(f"Объемный расход жидкости:      "
-          f"{q_liquid * SECONDS_PER_DAY:.0f} м³/сут")
+    vol_flow_liquid = conditions.vol_flow_rate[OIL] + \
+        conditions.vol_flow_rate[WATER]
+    print(f"Объемный расход жидкости: "
+          f"{vol_flow_liquid * SECONDS_PER_DAY:.0f} м³/сут")
 
     _major_header("СВОЙСТВА ФЛЮИДА")
     print(f"Плотность газа при н.у.: {gas_density_norm:.3f} кг/м³")
-    print(
-        f"Плотность нефти: {conditions.phase[OIL].rhomass():.0f} кг/м³")
-    print(
-        f"Плотность воды: {conditions.phase[WATER].rhomass():.0f} кг/м³")
-    print(
-        f"Обводненность: {flow_based_water_cut(conditions) * PERCENT:.0f}%")
+    print(f"Плотность нефти: {conditions.phase[OIL].rhomass():.0f} кг/м³")
+    print(f"Плотность воды: {conditions.phase[WATER].rhomass():.0f} кг/м³")
+    print(f"Обводненность: {flow_based_water_cut(conditions) * PERCENT:.0f}%")
 
     _major_header("ОБЪЕМНЫЕ РАСХОДЫ")
     print(f"Объемный расход газа при р.у.: "
           f"{conditions.vol_flow_rate[VAPOR] * SECONDS_PER_DAY:.0f} м³/сут")
-    print(f"Объемный расход по нефти:      "
+    print(f"Объемный расход по нефти: "
           f"{conditions.vol_flow_rate[OIL] * SECONDS_PER_DAY:.0f} м³/сут")
-    print(f"Объемный расход по воде:       "
+    print(f"Объемный расход по воде: "
           f"{conditions.vol_flow_rate[WATER] * SECONDS_PER_DAY:.0f} м³/сут")
 
     _major_header("МАССОВЫЕ РАСХОДЫ (кг/с)")
@@ -257,12 +254,9 @@ if __name__ == "__main__":
     print(f"Массовый суммарный расход (Г+Н+В): {mass_flow_total:.2f} кг/с")
 
     _major_header("МАССОВЫЕ РАСХОДЫ (т/ч)")
-    print(
-        f"Массовый расход газа: {mass_flow_gas * KG_S_TO_T_H:.2f} т/ч")
-    print(
-        f"Массовый расход нефти: {mass_flow_oil * KG_S_TO_T_H:.2f} т/ч")
-    print(
-        f"Массовый расход воды: {mass_flow_water * KG_S_TO_T_H:.2f} т/ч")
+    print(f"Массовый расход газа: {mass_flow_gas * KG_S_TO_T_H:.2f} т/ч")
+    print(f"Массовый расход нефти: {mass_flow_oil * KG_S_TO_T_H:.2f} т/ч")
+    print(f"Массовый расход воды: {mass_flow_water * KG_S_TO_T_H:.2f} т/ч")
     print(
         f"Массовый расход жидкости (Н+В): {mass_flow_liquid * KG_S_TO_T_H:.2f} т/ч")
     print(

@@ -5,6 +5,7 @@ from pytroleum.plant.tps.inputs import (SeparatorDesign,
                                         OperationConditions,
                                         flow_based_water_cut,
                                         flow_velocity,
+                                        STANDARD_STATE,
                                         VAPOR, OIL, WATER, N_FLOWS)
 from scipy.constants import g
 from typing import Iterable
@@ -72,12 +73,12 @@ class Separator:
         где V_сек — объём секции, к_зап — коэффициент заполнения, Q_ж — расход жидкости.
         Суммарное: τ_общ = τ_пр_1 + τ_пр_2.
         """
-        q_liquid = (self.conditions.vol_flow_rate[OIL] +
-                    self.conditions.vol_flow_rate[WATER])
+        vol_flow_liquid = (self.conditions.vol_flow_rate[OIL] +
+                           self.conditions.vol_flow_rate[WATER])
         rt_first = (self.design.volume[FIRST_SECTION] *
-                    FILL_COEFFS[FIRST_SECTION] / q_liquid)
+                    FILL_COEFFS[FIRST_SECTION] / vol_flow_liquid)
         rt_total = (self.design.volume_separator * FILL_COEFFS[TOTAL] /
-                    q_liquid)
+                    vol_flow_liquid)
         rt_second = rt_total - rt_first
         return rt_first, rt_second, rt_total
 
@@ -129,21 +130,22 @@ if __name__ == "__main__":
     from CoolProp import constants as CoolConst
     from pytroleum.plant.tps.utils import SECONDS_PER_DAY
 
-    pressure_work = 4e6
-    temperature_work = 353
-    flow_oil = 200 / SECONDS_PER_DAY
-    flow_water = 300 / SECONDS_PER_DAY
-    flow_gas_norm = 300_000 / SECONDS_PER_DAY
+    pressure = 4e6
+    temperature = 353
+    vol_flow_oil = 200 / SECONDS_PER_DAY
+    vol_flow_water = 300 / SECONDS_PER_DAY
+    vol_flow_gas_norm = 300_000 / SECONDS_PER_DAY
 
     conditions = OperationConditions()
-    gas_density_norm = conditions.phase[VAPOR].rhomass()
     conditions.phase[OIL].change(933, 3.073e-3)  # type: ignore
-    conditions.update_state((CoolConst.PT_INPUTS, pressure_work, temperature_work),
+    conditions.phase[VAPOR].update(*STANDARD_STATE)
+    gas_density_norm = conditions.phase[VAPOR].rhomass()
+    conditions.update_state((CoolConst.PT_INPUTS, pressure, temperature),
                             upd_containers=True)
-    mass_flow_gas = flow_gas_norm * gas_density_norm
+    mass_flow_gas = vol_flow_gas_norm * gas_density_norm
     conditions.vol_flow_rate = np.array([
         mass_flow_gas / conditions.phase[VAPOR].rhomass(),
-        flow_oil, flow_water,
+        vol_flow_oil, vol_flow_water,
     ])
 
     design = SeparatorDesign(
@@ -167,14 +169,13 @@ if __name__ == "__main__":
         f"Длина цилиндрической части: {design.length_cylindrical_part:.1f} м")
     print(
         f"Длина полуоси эллиптического днища: {design.length_semiaxis:.3f} м")
-    q_liquid = conditions.vol_flow_rate[OIL] + conditions.vol_flow_rate[WATER]
+    vol_flow_liquid = conditions.vol_flow_rate[OIL] + \
+        conditions.vol_flow_rate[WATER]
     print(f"Объёмный расход жидкости: "
-          f"{q_liquid * SECONDS_PER_DAY:.1f} м³/сут")
+          f"{vol_flow_liquid * SECONDS_PER_DAY:.1f} м³/сут")
 
-    print(
-        f"Коэффициент заполнения: {FILL_COEFFS[TOTAL] * PERCENT:.1f} %")
-    print(
-        f"Номинальный объём сепаратора: {design.volume_separator:.3f} м³")
+    print(f"Коэффициент заполнения: {FILL_COEFFS[TOTAL] * PERCENT:.1f} %")
+    print(f"Номинальный объём сепаратора: {design.volume_separator:.3f} м³")
 
     separator.compute_velocities()
     rt = separator.residence_time()
@@ -184,12 +185,10 @@ if __name__ == "__main__":
         f"Время пребывания жидкости: {rt[TOTAL] / SECONDS_PER_MINUTE:.2f} мин")
 
     _minor_header("ПЕРВАЯ СЕКЦИЯ (НЕФТЬ + ВОДА)")
-    print(
-        f"Длина первой секции: {design.length_first_section:.1f} м")
+    print(f"Длина первой секции: {design.length_first_section:.1f} м")
     print(
         f"Коэффициент заполнения: {FILL_COEFFS[FIRST_SECTION] * PERCENT:.1f} %")
-    print(
-        f"Объём первой секции: {design.volume[FIRST_SECTION]:.3f} м³")
+    print(f"Объём первой секции: {design.volume[FIRST_SECTION]:.3f} м³")
     print(
         f"Время пребывания (Н+В): {rt[FIRST_SECTION] / SECONDS_PER_MINUTE:.3f} мин")
     print(f"Пропускная способность: "
@@ -226,8 +225,8 @@ if __name__ == "__main__":
     rho_water = conditions.phase[WATER].rhomass()
     mu_oil = conditions.phase[OIL].viscosity()
     mu_water = conditions.phase[WATER].viscosity()
-    print(
-        f"Расстояние решётка — перегородка: {design.length_to_baffle:.1f} м")
+    print(f"Расстояние от распределительной решетки до сливной перегородки: "
+          f"{design.length_to_baffle:.1f} м")
     print(
         f"Диаметр капли воды: {diameter_water_droplet * _TO_MICRON:.0f} мкм")
 
@@ -244,8 +243,8 @@ if __name__ == "__main__":
           f"{height_water * _TO_MM:.2f} мм")
 
     _minor_header("ВСПЛЫТИЕ КАПЕЛЬ НЕФТИ В СЛОЕ ВОДЫ")
-    print(
-        f"Расстояние решётка — перегородка: {design.length_to_baffle:.1f} м")
+    print(f"Расстояние от распределительной решетки до сливной перегородки: "
+          f"{design.length_to_baffle:.1f} м")
     print(
         f"Диаметр капли нефти: {diameter_oil_droplet * _TO_MICRON:.0f} мкм")
     velocity_oil = compute_settling_velocity(

@@ -1,5 +1,6 @@
 import numpy as np
-from pytroleum.plant.tps.inputs import OperationConditions, VAPOR, OIL, WATER
+from pytroleum.plant.tps.inputs import (OperationConditions,
+                                        STANDARD_STATE, VAPOR, OIL, WATER)
 from pytroleum.plant.tps.utils import _TO_MM, _TO_M
 
 MAX_GAS_VELOCITY = 20  # м/с
@@ -99,20 +100,22 @@ if __name__ == "__main__":
     from CoolProp import constants as CoolConst
     from pytroleum.plant.tps.utils import SECONDS_PER_DAY, _major_header, _minor_header
 
-    pressure_work = 4e6
-    temperature_work = 353
-    flow_gas_norm = 300_000 / SECONDS_PER_DAY
-    flow_oil = 200 / SECONDS_PER_DAY
-    flow_water = 300 / SECONDS_PER_DAY
+    pressure = 4e6
+    temperature = 353
+    vol_flow_gas_norm = 300_000 / SECONDS_PER_DAY
+    vol_flow_oil = 200 / SECONDS_PER_DAY
+    vol_flow_water = 300 / SECONDS_PER_DAY
 
     conditions = OperationConditions()
-    gas_density_norm = conditions.phase[VAPOR].rhomass()
     conditions.phase[OIL].change(933, 3.073e-3)  # type: ignore
-    conditions.update_state((CoolConst.PT_INPUTS, pressure_work, temperature_work),
+    conditions.phase[VAPOR].update(*STANDARD_STATE)
+    gas_density_norm = conditions.phase[VAPOR].rhomass()
+    conditions.update_state((CoolConst.PT_INPUTS, pressure, temperature),
                             upd_containers=True)
     conditions.vol_flow_rate = np.array([
-        flow_gas_norm * gas_density_norm / conditions.phase[VAPOR].rhomass(),
-        flow_oil, flow_water,
+        vol_flow_gas_norm * gas_density_norm /
+        conditions.phase[VAPOR].rhomass(),
+        vol_flow_oil, vol_flow_water,
     ])
 
     gas_speed = 10.0
@@ -121,8 +124,9 @@ if __name__ == "__main__":
     gasnozzle = design_nozzle(conditions.vol_flow_rate[VAPOR], gas_speed)
     oil_nozzle = design_nozzle(conditions.vol_flow_rate[OIL], liquid_speed)
     water_nozzle = design_nozzle(conditions.vol_flow_rate[WATER], liquid_speed)
-    q_liquid = conditions.vol_flow_rate[OIL] + conditions.vol_flow_rate[WATER]
-    liquid_nozzle = design_nozzle(q_liquid, liquid_speed)
+    vol_flow_liquid = conditions.vol_flow_rate[OIL] + \
+        conditions.vol_flow_rate[WATER]
+    liquid_nozzle = design_nozzle(vol_flow_liquid, liquid_speed)
     liquidgasnozzle = design_two_phase_nozzle(conditions=conditions,
                                               gas_speed=gas_speed,
                                               liquid_speed=liquid_speed)
@@ -164,7 +168,7 @@ if __name__ == "__main__":
         f"Стандартный диаметр: {liquid_nozzle.nominal_diameter * _TO_MM:.0f} мм")
     print(f"Площадь сечения: {liquid_nozzle.nominal_area:.4f} м²")
     print(f"Фактическая скорость: "
-          f"{liquid_nozzle.flow_velocity(q_liquid):.4f} м/с")
+          f"{liquid_nozzle.flow_velocity(vol_flow_liquid):.4f} м/с")
 
     print()
     _minor_header("Штуцер ГЖС")

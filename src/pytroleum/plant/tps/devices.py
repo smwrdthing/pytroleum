@@ -73,19 +73,20 @@ if __name__ == "__main__":
 
     pressure = 4e6
     temperature = 353
-    flow_gas_norm = 300_000 / SECONDS_PER_DAY
-    flow_oil = 200 / SECONDS_PER_DAY
-    flow_water = 300 / SECONDS_PER_DAY
+    vol_flow_gas_norm = 300_000 / SECONDS_PER_DAY
+    vol_flow_oil = 200 / SECONDS_PER_DAY
+    vol_flow_water = 300 / SECONDS_PER_DAY
 
     conditions = OperationConditions()
+    conditions.phase[OIL].change(933, 3.073e-3)  # type: ignore
     conditions.phase[VAPOR].update(*STANDARD_STATE)
     gas_density_norm = conditions.phase[VAPOR].rhomass()
-    conditions.phase[OIL].change(933, 3.073e-3)  # type: ignore
     conditions.update_state((CoolConst.PT_INPUTS, pressure, temperature),
                             upd_containers=True)
     conditions.vol_flow_rate = np.array([
-        flow_gas_norm * gas_density_norm / conditions.phase[VAPOR].rhomass(),
-        flow_oil, flow_water,
+        vol_flow_gas_norm * gas_density_norm /
+        conditions.phase[VAPOR].rhomass(),
+        vol_flow_oil, vol_flow_water,
     ])
 
     design = SeparatorDesign(
