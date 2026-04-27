@@ -96,7 +96,12 @@ def reference_state_flow_rate(
 
 
 def flow_based_water_cut(conditions: OperationConditions) -> float:
-    """Обводнённость по объёмным расходам фаз."""
+    """Обводнённость по объёмным расходам фаз, д.е.
+
+    w = Q_в / (Q_в + Q_н)
+
+    где Q_в, Q_н — объёмные расходы воды и нефти, м³/с.
+    """
     cut = conditions.vol_flow_rate[W]/(
         conditions.vol_flow_rate[W]+conditions.vol_flow_rate[O])
 
@@ -105,7 +110,12 @@ def flow_based_water_cut(conditions: OperationConditions) -> float:
 
 def flow_velocity(conditions: OperationConditions,
                   effective_area: float | NDArray[float64]) -> NDArray[float64]:
-    """Скорости фаз в сечении, м/с."""
+    """Скорости фаз в поперечном сечении, м/с.
+
+    u = Q / F
+
+    где Q — объёмный расход фазы, м³/с, F — площадь сечения для фазы, м².
+    """
     return conditions.vol_flow_rate / effective_area
 
 
