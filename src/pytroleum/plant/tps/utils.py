@@ -1,7 +1,3 @@
-# Стандартные условия
-DEFAULT_PRESSURE = 0.1e6    # Па
-DEFAULT_TEMPERATURE = 293   # К (20°C)
-
 # Коэффициенты перевода единиц измерения
 SECONDS_PER_DAY = 86400
 SECONDS_PER_HOUR = 3600

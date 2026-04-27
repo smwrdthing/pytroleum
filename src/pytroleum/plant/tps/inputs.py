@@ -22,30 +22,9 @@ N_FLOWS = 3
 STANDARD_TEMPERATURE = 273.15 + 15  # К (15°C)
 STANDARD_PRESSURE = 101325          # Па
 STANDARD_STATE = (CoolConst.PT_INPUTS, STANDARD_PRESSURE, STANDARD_TEMPERATURE)
-# NOTE ^ расхожения с маткадом скорее всего из-за значения давления и темпертуры
-
-# Состав газа по умолчанию
-DEFAULT_GAS_COMPOSITION = {
-    'Nitrogen': 0.00844,
-    'CO2': 0.00341,
-    'Hydrogen': 0.00002,
-    'Methane': 0.98469,
-    'Ethane': 0.00297,
-    'Propane': 0.00017,
-    'IsoButane': 0.00007,
-    'n-Butane': 0.00004,
-    'Isopentane': 0.00011,
-    'n-Pentane': 0.00001,
-    'Hexane': 0.00003,
-    'Heptane': 0.00002,
-    'Octane': 0.00001,
-}
-# NOTE для состава по умолчнаию лучше остановиться на чём-то более простом,
-# NOTE должно хавтить просто метана
-# NOTE если только для отладки, то норм
 
 # Объекты EOS по умолчанию
-VAPOR_EOS = eos.factory_eos(DEFAULT_GAS_COMPOSITION, with_state=STANDARD_STATE)
+VAPOR_EOS = eos.factory_eos({"Methane": 1}, with_state=STANDARD_STATE)
 OIL_EOS = eos.CrudeOilHardcoded()
 OIL_EOS.update(*STANDARD_STATE)
 WATER_EOS = eos.factory_eos({"Water": 1}, with_state=STANDARD_STATE)
@@ -195,7 +174,6 @@ class SeparatorDesign:
 if __name__ == "__main__":
     from pytroleum.plant.tps.utils import (PA_TO_MPA, PERCENT, KG_S_TO_T_H,
                                            SECONDS_PER_DAY,
-                                           DEFAULT_PRESSURE, DEFAULT_TEMPERATURE,
                                            KELVIN_TO_CELSIUS, _major_header)
 
     pressure = 4e6
@@ -229,8 +207,8 @@ if __name__ == "__main__":
     mass_flow_total = np.sum(conditions.mass_flow_rate)
 
     _major_header("УСЛОВИЯ РАБОТЫ")
-    print(f"Давление при н.у.: {DEFAULT_PRESSURE / PA_TO_MPA:.1f} МПа")
-    print(f"Температура при н.у.: {DEFAULT_TEMPERATURE} К")
+    print(f"Давление при н.у.: {STANDARD_PRESSURE / PA_TO_MPA:.1f} МПа")
+    print(f"Температура при н.у.: {STANDARD_TEMPERATURE} К")
     print(f"Рабочее давление: {pressure / PA_TO_MPA:.1f} МПа")
     print(f"Рабочая температура: {temperature} К "
           f"({temperature - KELVIN_TO_CELSIUS:.0f} °C)")
