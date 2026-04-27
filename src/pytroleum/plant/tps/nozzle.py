@@ -1,6 +1,6 @@
 import numpy as np
 from pytroleum.plant.tps.inputs import (OperationConditions,
-                                        STANDARD_STATE, VAPOR, OIL, WATER)
+                                        VAPOR, OIL, WATER)
 from pytroleum.plant.tps.utils import _TO_MM, _TO_M
 
 MAX_GAS_VELOCITY = 20  # м/с

@@ -1,19 +1,17 @@
 import numpy as np
-from pytroleum.plant.tps.utils import (_major_header, _minor_header, _minor_divider,
-                                       _TO_MM, _TO_MICRON, PERCENT, SECONDS_PER_MINUTE)
 from pytroleum.plant.tps.inputs import (SeparatorDesign,
                                         OperationConditions,
                                         flow_based_water_cut,
                                         flow_velocity,
-                                        STANDARD_STATE,
-                                        VAPOR, OIL, WATER, N_FLOWS)
+                                        OIL, WATER, N_FLOWS)
 from scipy.constants import g
 from typing import Iterable
 
 FIRST_SECTION = 0
 SECOND_SECTION = 1
 TOTAL = 2
-# (первая секция, вторая секция, суммарный)
+
+# Коэффициенты заполнения в первой секции, второй, общий
 FILL_COEFFS = (0.858, 0.858, 0.858)
 
 

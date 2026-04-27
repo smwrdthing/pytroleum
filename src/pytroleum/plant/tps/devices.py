@@ -1,11 +1,8 @@
 import numpy as np
-from pytroleum.plant.tps.utils import (_major_header, _minor_header, _minor_divider,
-                                       SECONDS_PER_DAY, _TO_MM)
 from pytroleum.plant.tps.inputs import (OperationConditions,
                                         CoalescerPacking,
                                         GeometryCyclone,
-                                        STANDARD_STATE,
-                                        VAPOR, OIL, WATER)
+                                        VAPOR)
 from pytroleum.plant.tps.separator import compute_settling_velocity, Separator
 
 

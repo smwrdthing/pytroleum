@@ -2,20 +2,11 @@ import numpy as np
 from dataclasses import dataclass
 from scipy import interpolate
 from scipy.constants import g
-import matplotlib.pyplot as plt
-from pytroleum.plant.tps.utils import _major_header, _minor_divider
 from pytroleum.plant.tps.nozzle import select_nominal_diameter
 from pytroleum.plant.tps.inputs import (OperationConditions,
                                         flow_based_water_cut,
-                                        STANDARD_STATE,
                                         VAPOR, OIL, WATER)
-from pytroleum.plant.tps.utils import (SECONDS_PER_DAY,
-                                       SECONDS_PER_HOUR,
-                                       PA_TO_MPA,
-                                       PERCENT,
-                                       _TO_MM,
-                                       _TO_M,
-                                       KELVIN_TO_CELSIUS)
+from pytroleum.plant.tps.utils import _TO_M
 
 # Данные взяты из рис.5 График зависимости коэффициента устойчивости
 # режимов течения газожидкостной смеси от давления для вертикальной

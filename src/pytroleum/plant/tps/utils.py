@@ -39,3 +39,11 @@ def _minor_header(title: str) -> None:
     print(_MINOR_DIVIDER)
     print(title.center(_DIVIDER_LENGTH))
     print(_MINOR_DIVIDER)
+
+
+_LABEL_WIDTH = 60
+
+
+def print_row(label: str, value: str, unit: str = '') -> None:
+    """Вывод строки таблицы результатов с выравниванием по столбцам."""
+    print(f"{label:<{_LABEL_WIDTH}} {value} {unit}".rstrip())
