@@ -130,8 +130,8 @@ if __name__ == "__main__":
     from CoolProp import constants as CoolConst
     from pytroleum.plant.tps.utils import SECONDS_PER_DAY
 
-    pressure = 4e6
-    temperature = 353
+    pressure = 2e6
+    temperature = 273.15 + 50
     vol_flow_oil = 200 / SECONDS_PER_DAY
     vol_flow_water = 300 / SECONDS_PER_DAY
     vol_flow_gas_norm = 300_000 / SECONDS_PER_DAY
