@@ -5,9 +5,9 @@ from scipy.constants import g
 import matplotlib.pyplot as plt
 from pytroleum.plant.tps.utils import _major_header, _minor_divider
 from pytroleum.plant.tps.nozzle import select_nominal_diameter
-from pytroleum.plant.tps.inputs import (PhysicalProperties,
-                                        FlowRates,
-                                        OperationConditions)
+from pytroleum.plant.tps.inputs import (OperationConditions,
+                                        flow_based_water_cut,
+                                        VAPOR, OIL, WATER)
 from pytroleum.plant.tps.utils import (SECONDS_PER_DAY,
                                        SECONDS_PER_HOUR,
                                        PA_TO_MPA,
@@ -18,9 +18,8 @@ from pytroleum.plant.tps.utils import (SECONDS_PER_DAY,
 
 # Данные взяты из рис.5 График зависимости коэффициента устойчивости
 # режимов течения газожидкостной смеси от давления для вертикальной
-# сетчатой начадки сепаратора (РД 0352-92-85 Методика
+# сетчатой насадки сепаратора (РД 0352-92-85 Методика
 # технологического расчета газосепараторов сетчатых)
-
 
 # Давление в ата (исходные данные из графика)
 _PRESSURE_ATA = np.array([
@@ -69,8 +68,8 @@ def get_flow_stability_coefficient(pressure: float) -> float:
     return _STABILITY_COEFFICIENT_INTERPOLATOR(pressure)
 
 
-def calculate_critical_velocity(properties: PhysicalProperties,
-                                conditions: OperationConditions) -> float:
+def calculate_critical_velocity(conditions: OperationConditions,
+                                oil_surface_tension: float) -> float:
     """Критическая скорость газа для сетчатого каплеуловителя, м/с.
 
     v_кр = k_уст * √(√(g * σ_н * (ρ_ж - ρ_г_ру) / ρ_г_ру²))
@@ -79,10 +78,13 @@ def calculate_critical_velocity(properties: PhysicalProperties,
     σ_н — поверхностное натяжение нефти,
     ρ_ж, ρ_г_ру — плотности жидкости и газа при р.у.
     """
-    k = get_flow_stability_coefficient(conditions.pressure)
-    gas_density = properties.gas_density_work(conditions)
-    return k * np.sqrt(np.sqrt((g * properties.oil_surface_tension *
-                                (properties.liquid_density() - gas_density)) /
+    k = get_flow_stability_coefficient(conditions.pressure[VAPOR])
+    gas_density = conditions.phase[VAPOR].rhomass()
+    water_cut = flow_based_water_cut(conditions)
+    density_liquid = (conditions.phase[OIL].rhomass() * (1 - water_cut) +
+                      conditions.phase[WATER].rhomass() * water_cut)
+    return k * np.sqrt(np.sqrt((g * oil_surface_tension *
+                                (density_liquid - gas_density)) /
                                gas_density ** 2))
 
 
@@ -101,9 +103,9 @@ class WireMeshDemister:
     capacity: float
 
 
-def design_demister(properties: PhysicalProperties,
-                    flows: FlowRates,
-                    area_reduction_coeff=AREA_REDUCTION_COEFF
+def design_demister(conditions: OperationConditions,
+                    oil_surface_tension: float,
+                    area_reduction_coeff: float = AREA_REDUCTION_COEFF
                     ) -> WireMeshDemister:
     """Расчёт геометрических параметров и производительности каплеуловителя.
 
@@ -114,21 +116,22 @@ def design_demister(properties: PhysicalProperties,
     u_нб   = Q_г_ру / F_факт  — скорость набегания газа, м/с
     Q_доп  = v_кр * F_факт — производительность каплеуловителя, м³/с
 
-    где k_пл  — коэффициент снижения живого сечения элементами насадки
-        D_ном — ближайший больший номинальный диаметр, м
-        v_кр  — критическая скорость газа, м/с
+    где k_пл — коэффициент снижения живого сечения элементами насадки,
+    D_ном — ближайший больший номинальный диаметр, м,
+    v_кр — критическая скорость газа, м/с.
     """
     critical_velocity = calculate_critical_velocity(
-        properties, flows.conditions)
+        conditions, oil_surface_tension)
 
-    area = area_reduction_coeff * flows.flow_gas_work / critical_velocity
+    area = area_reduction_coeff * \
+        conditions.vol_flow_rate[VAPOR] / critical_velocity
     diameter = np.sqrt(4 * area / np.pi)
 
     nominal_diameter = select_nominal_diameter(diameter, NOMINAL_DIAMETERS)
     actual_area = (np.pi * nominal_diameter ** 2 /
                    (4 * area_reduction_coeff))
 
-    actual_velocity = flows.flow_gas_work / actual_area
+    actual_velocity = conditions.vol_flow_rate[VAPOR] / actual_area
     capacity = critical_velocity * actual_area
 
     return WireMeshDemister(
@@ -145,97 +148,79 @@ def design_demister(properties: PhysicalProperties,
 # Пример использования
 # ============================================================
 
-
 if __name__ == "__main__":
+    from CoolProp import constants as CoolConst
 
-    conditions = OperationConditions(
-        pressure=4e6,
-        temperature=353,                  # К
-        flow_gas_norm=300000 / SECONDS_PER_DAY,  # м³/с
-        flow_liquid=500 / SECONDS_PER_DAY,      # м³/с
-    )
+    pressure_work = 4e6
+    temperature_work = 353
+    flow_gas_norm = 300_000 / SECONDS_PER_DAY
+    flow_oil = 200 / SECONDS_PER_DAY
+    flow_water = 300 / SECONDS_PER_DAY
+    oil_surface_tension = 0.02848  # Н/м
 
-    properties = PhysicalProperties(
-        gas_density_norm=0.94,      # кг/м³
-        oil_density=933,            # кг/м³
-        water_density=966,          # кг/м³
-        water_cut=0.6,              # обводнённость
-        gas_factor=267.9,           # м³/т
-        oil_surface_tension=0.02848,  # Н/м
-        viscosity_oil=3.073e-3,
-        viscosity_water=0.544e-3
-    )
-
-    flows = FlowRates(conditions=conditions, properties=properties)
+    conditions = OperationConditions()
+    gas_density_norm = conditions.phase[VAPOR].rhomass()
+    conditions.phase[OIL].change(933, 3.073e-3)  # type: ignore
+    conditions.update_state((CoolConst.PT_INPUTS, pressure_work, temperature_work),
+                            upd_containers=True)
+    conditions.vol_flow_rate = np.array([
+        flow_gas_norm * gas_density_norm / conditions.phase[VAPOR].rhomass(),
+        flow_oil, flow_water,
+    ])
 
     plt.figure(figsize=(10, 6))
     plt.plot(_PRESSURE_PA / PA_TO_MPA, _FLOW_STABILITY_COEFFICIENT,
              'o', markersize=4, label='Данные по графику')
+    pressure_smooth = np.linspace(_PRESSURE_PA.min(), _PRESSURE_PA.max(), 200)
+    plt.plot(pressure_smooth / PA_TO_MPA,
+             _STABILITY_COEFFICIENT_INTERPOLATOR(pressure_smooth),
+             '--', alpha=0.7, label='Интерполяция')
 
-    # Кривая интерполяции
-    pressure_smooth = np.linspace(_PRESSURE_PA.min(),
-                                  _PRESSURE_PA.max(), 200)
-    flow_stability_coefficient_smooth = _STABILITY_COEFFICIENT_INTERPOLATOR(
-        pressure_smooth)
-
-    plt.plot(pressure_smooth / PA_TO_MPA, flow_stability_coefficient_smooth, '--',
-             alpha=0.7, label='Интерполяция')
+    current_k = get_flow_stability_coefficient(conditions.pressure[VAPOR])
+    plt.plot(conditions.pressure[VAPOR] / PA_TO_MPA, current_k, 'ro', markersize=8,
+             label=(f'Рабочее давление: {conditions.pressure[VAPOR]/PA_TO_MPA:.2f} МПа, '
+                    f'k={current_k:.3f}'))
     plt.xlabel('Давление, МПа', fontsize=12)
     plt.ylabel('Коэффициент устойчивости', fontsize=12)
     plt.title('Коэффициент устойчивости режимов течения от давления')
     plt.grid(True, alpha=0.3)
     plt.ylim(0.4, 1.1)
     plt.legend()
-
-    # Текущая точка
-    current_pressure = conditions.pressure
-    current_flow_stability_coefficient = get_flow_stability_coefficient(
-        conditions.pressure)
-    plt.plot(current_pressure / PA_TO_MPA, current_flow_stability_coefficient,
-             'ro', markersize=8,
-             label=(f'Рабочее давление: {current_pressure/PA_TO_MPA:.2f} МПа, '
-                    f'k={current_flow_stability_coefficient:.3f}'))
-    plt.legend()
-
-    # ax = plt.gca()
-    # ax.set_xlim((2, 13))
-    # ax.set_ylim((0.4, 1.1))
-
     plt.tight_layout()
     plt.show()
 
-    # Вывод результатов
     _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СЕТЧАТОГО КАПЛЕУЛОВИТЕЛЯ")
-    print(f"Рабочее давление: {conditions.pressure/PA_TO_MPA} МПа")
-    print(f"Рабочая температура: {conditions.temperature} К "
-          f"({conditions.temperature - KELVIN_TO_CELSIUS} °C)")
+    print(f"Рабочее давление:    {conditions.pressure[VAPOR] / PA_TO_MPA} МПа")
+    print(f"Рабочая температура: {conditions.temperature[VAPOR]} К "
+          f"({conditions.temperature[VAPOR] - KELVIN_TO_CELSIUS} °C)")
 
     _minor_divider()
     print(f"Объемный расход газа при н.у.: "
-          f"{conditions.flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
+          f"{flow_gas_norm * SECONDS_PER_DAY:,.0f} м³/сут".replace(",", " "))
     print(f"Объемный расход газа при р.у.: "
-          f"{flows.flow_gas_work * SECONDS_PER_HOUR:.4f} м³/ч")
-    print(f"Объемный расход жидкости: "
-          f"{conditions.flow_liquid * SECONDS_PER_DAY} м³/сут")
-    print(f"Обводнённость: {properties.water_cut * PERCENT} %")
+          f"{conditions.vol_flow_rate[VAPOR] * SECONDS_PER_HOUR:.4f} м³/ч")
+    q_liquid = conditions.vol_flow_rate[OIL] + conditions.vol_flow_rate[WATER]
+    print(f"Объемный расход жидкости:      "
+          f"{q_liquid * SECONDS_PER_DAY:.0f} м³/сут")
+    print(f"Обводнённость:                 "
+          f"{flow_based_water_cut(conditions) * PERCENT:.0f} %")
 
     _minor_divider()
-    print(f"Плотность газа в р.у.: "
-          f"{properties.gas_density_work(conditions):.3f} кг/м³")
-    print(f"Плотность жидкости (Н+В) при заданной обводненности: "
-          f"{properties.liquid_density():.2f} кг/м³")
     print(
-        f"Коэффициент k: {get_flow_stability_coefficient(conditions.pressure):.2f}")
-    print(f"Критическая скорость: "
-          f"{calculate_critical_velocity(properties, conditions):.3f} м/с")
+        f"Плотность газа в р.у.:   {conditions.phase[VAPOR].rhomass():.3f} кг/м³")
+    water_cut = flow_based_water_cut(conditions)
+    rho_liquid = (conditions.phase[OIL].rhomass() * (1 - water_cut) +
+                  conditions.phase[WATER].rhomass() * water_cut)
+    print(f"Плотность жидкости (Н+В): {rho_liquid:.2f} кг/м³")
+    print(f"Коэффициент k:            {current_k:.3f}")
+    print(f"Критическая скорость:     "
+          f"{calculate_critical_velocity(conditions, oil_surface_tension):.3f} м/с")
 
     _minor_divider()
-    wire_mesh_demister = design_demister(properties, flows)
-    print(f"Диаметр: {wire_mesh_demister.diameter * _TO_MM:.1f} мм")
+    wmd = design_demister(conditions, oil_surface_tension)
+    print(f"Диаметр:                          {wmd.diameter * _TO_MM:.1f} мм")
     print(
-        f"Принятый диаметр: {wire_mesh_demister.nominal_diameter * _TO_MM:.0f} мм")
-    print(
-        f"Действительная площадь живого сечения: {wire_mesh_demister.actual_area:.4f} м²")
-    print(
-        f"Действительная скорость набегания:{wire_mesh_demister.actual_velocity:.3f} м/с")
-    print(f"Производительность: {wire_mesh_demister.capacity:.4f} м³/с")
+        f"Принятый диаметр:                 {wmd.nominal_diameter * _TO_MM:.0f} мм")
+    print(f"Действительная площадь сечения:   {wmd.actual_area:.4f} м²")
+    print(f"Действительная скорость набегания:{wmd.actual_velocity:.3f} м/с")
+    print(f"Производительность:               {wmd.capacity:.4f} м³/с")

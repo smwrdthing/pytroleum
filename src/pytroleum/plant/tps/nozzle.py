@@ -1,5 +1,5 @@
 import numpy as np
-from pytroleum.plant.tps.inputs import FlowRates
+from pytroleum.plant.tps.inputs import OperationConditions, VAPOR, OIL, WATER
 from pytroleum.plant.tps.utils import _TO_MM, _TO_M
 
 MAX_GAS_VELOCITY = 20  # м/с
@@ -64,7 +64,6 @@ def design_nozzle(volumetric_flow_rate, target_velocity) -> Nozzle:
 
     где Q_i — объёмные расходы фаз, u_зад_i — заданные скорости фаз.
     """
-
     volumetric_flow_rate = np.atleast_1d(volumetric_flow_rate)
     target_velocity = np.atleast_1d(target_velocity)
 
@@ -79,7 +78,7 @@ def design_nozzle(volumetric_flow_rate, target_velocity) -> Nozzle:
     return Nozzle(diameter)
 
 
-def design_two_phase_nozzle(flows: FlowRates, gas_speed: float,
+def design_two_phase_nozzle(conditions: OperationConditions, gas_speed: float,
                             liquid_speed: float) -> Nozzle:
     """Штуцер для двухфазного потока (ГЖС)."""
     _validate_velocity("Штуцер ГЖС (газ)", gas_speed,
@@ -87,48 +86,44 @@ def design_two_phase_nozzle(flows: FlowRates, gas_speed: float,
     _validate_velocity("Штуцер ГЖС (жидкость)", liquid_speed,
                        MIN_LIQUID_VELOCITY, MAX_LIQUID_VELOCITY)
     return design_nozzle(
-        [flows.flow_gas_work, flows.conditions.flow_liquid],
+        [conditions.vol_flow_rate[VAPOR],
+         conditions.vol_flow_rate[OIL] + conditions.vol_flow_rate[WATER]],
         [gas_speed, liquid_speed])
+
 
 # ============================================================
 # Пример использования
 # ============================================================
 
-
 if __name__ == "__main__":
-    from pytroleum.plant.tps.inputs import (
-        OperationConditions, PhysicalProperties, FlowRates,
-    )
-    from pytroleum.plant.tps.utils import (
-        SECONDS_PER_DAY, _major_header, _minor_header,
-    )
+    from CoolProp import constants as CoolConst
+    from pytroleum.plant.tps.utils import SECONDS_PER_DAY, _major_header, _minor_header
 
-    conditions = OperationConditions(
-        pressure=4e6,
-        temperature=353,
-        flow_gas_norm=300000 / SECONDS_PER_DAY,
-        flow_liquid=500 / SECONDS_PER_DAY,
-    )
-    properties = PhysicalProperties(
-        gas_density_norm=0.94,
-        oil_density=933,
-        water_density=966,
-        water_cut=0.6,
-        gas_factor=267.9,
-        oil_surface_tension=0.02848,
-        viscosity_oil=3.073e-3,
-        viscosity_water=0.544e-3
-    )
-    flows = FlowRates(conditions=conditions, properties=properties)
+    pressure_work = 4e6
+    temperature_work = 353
+    flow_gas_norm = 300_000 / SECONDS_PER_DAY
+    flow_oil = 200 / SECONDS_PER_DAY
+    flow_water = 300 / SECONDS_PER_DAY
+
+    conditions = OperationConditions()
+    gas_density_norm = conditions.phase[VAPOR].rhomass()
+    conditions.phase[OIL].change(933, 3.073e-3)  # type: ignore
+    conditions.update_state((CoolConst.PT_INPUTS, pressure_work, temperature_work),
+                            upd_containers=True)
+    conditions.vol_flow_rate = np.array([
+        flow_gas_norm * gas_density_norm / conditions.phase[VAPOR].rhomass(),
+        flow_oil, flow_water,
+    ])
 
     gas_speed = 10.0
     liquid_speed = 1.0
 
-    gasnozzle = design_nozzle(flows.flow_gas_work, gas_speed)
-    oil_nozzle = design_nozzle(flows.flow_oil, liquid_speed)
-    water_nozzle = design_nozzle(flows.flow_water, liquid_speed)
-    liquid_nozzle = design_nozzle(flows.conditions.flow_liquid, liquid_speed)
-    liquidgasnozzle = design_two_phase_nozzle(flows=flows,
+    gasnozzle = design_nozzle(conditions.vol_flow_rate[VAPOR], gas_speed)
+    oil_nozzle = design_nozzle(conditions.vol_flow_rate[OIL], liquid_speed)
+    water_nozzle = design_nozzle(conditions.vol_flow_rate[WATER], liquid_speed)
+    q_liquid = conditions.vol_flow_rate[OIL] + conditions.vol_flow_rate[WATER]
+    liquid_nozzle = design_nozzle(q_liquid, liquid_speed)
+    liquidgasnozzle = design_two_phase_nozzle(conditions=conditions,
                                               gas_speed=gas_speed,
                                               liquid_speed=liquid_speed)
 
@@ -138,19 +133,18 @@ if __name__ == "__main__":
     print(f"Скорость: {gas_speed:.2f} м/с")
     print(f"Расчетный диаметр: {gasnozzle.diameter * _TO_MM:.1f} мм")
     print(f"Стандартный диаметр: {gasnozzle.nominal_diameter * _TO_MM:.0f} мм")
-    print(f"Площадь сечения штуцера: {gasnozzle.nominal_area:.4f} м²")
-    print(
-        f"Фактическая скорость: {gasnozzle.flow_velocity(flows.flow_gas_work):.4f} м/с")
-
+    print(f"Площадь сечения: {gasnozzle.nominal_area:.4f} м²")
+    print(f"Фактическая скорость: "
+          f"{gasnozzle.flow_velocity(conditions.vol_flow_rate[VAPOR]):.4f} м/с")
     print()
     _minor_header("Штуцер нефти")
     print(f"Скорость: {liquid_speed:.2f} м/с")
     print(f"Расчетный диаметр: {oil_nozzle.diameter * _TO_MM:.1f} мм")
     print(
         f"Стандартный диаметр: {oil_nozzle.nominal_diameter * _TO_MM:.0f} мм")
-    print(f"Площадь сечения штуцера: {oil_nozzle.nominal_area:.4f} м²")
-    print(
-        f"Фактическая скорость: {oil_nozzle.flow_velocity(flows.flow_oil):.4f} м/с")
+    print(f"Площадь сечения: {oil_nozzle.nominal_area:.4f} м²")
+    print(f"Фактическая скорость: "
+          f"{oil_nozzle.flow_velocity(conditions.vol_flow_rate[OIL]):.4f} м/с")
 
     print()
     _minor_header("Штуцер воды")
@@ -158,9 +152,9 @@ if __name__ == "__main__":
     print(f"Расчетный диаметр: {water_nozzle.diameter * _TO_MM:.1f} мм")
     print(
         f"Стандартный диаметр: {water_nozzle.nominal_diameter * _TO_MM:.0f} мм")
-    print(f"Площадь сечения штуцера: {water_nozzle.nominal_area:.4f} м²")
-    print(
-        f"Фактическая скорость: {water_nozzle.flow_velocity(flows.flow_water):.4f} м/с")
+    print(f"Площадь сечения: {water_nozzle.nominal_area:.4f} м²")
+    print(f"Фактическая скорость: "
+          f"{water_nozzle.flow_velocity(conditions.vol_flow_rate[WATER]):.4f} м/с")
 
     print()
     _minor_header("Штуцер жидкости")
@@ -168,9 +162,9 @@ if __name__ == "__main__":
     print(f"Расчетный диаметр: {liquid_nozzle.diameter * _TO_MM:.1f} мм")
     print(
         f"Стандартный диаметр: {liquid_nozzle.nominal_diameter * _TO_MM:.0f} мм")
-    print(f"Площадь сечения штуцера: {liquid_nozzle.nominal_area:.4f} м²")
+    print(f"Площадь сечения: {liquid_nozzle.nominal_area:.4f} м²")
     print(f"Фактическая скорость: "
-          f"{liquid_nozzle.flow_velocity(flows.conditions.flow_liquid):.4f} м/с")
+          f"{liquid_nozzle.flow_velocity(q_liquid):.4f} м/с")
 
     print()
     _minor_header("Штуцер ГЖС")
@@ -179,6 +173,6 @@ if __name__ == "__main__":
     print(f"Расчетный диаметр: {liquidgasnozzle.diameter * _TO_MM:.1f} мм")
     print(
         f"Стандартный диаметр: {liquidgasnozzle.nominal_diameter * _TO_MM:.0f} мм")
-    print(f"Площадь сечения штуцера: {liquidgasnozzle.nominal_area:.4f} м²")
+    print(f"Площадь сечения: {liquidgasnozzle.nominal_area:.4f} м²")
     print(f"Фактическая скорость: "
-          f"{liquidgasnozzle.flow_velocity(flows.flow_gas_work):.4f} м/с")
+          f"{liquidgasnozzle.flow_velocity(conditions.vol_flow_rate[VAPOR]):.4f} м/с")
