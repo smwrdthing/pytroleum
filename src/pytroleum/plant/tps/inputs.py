@@ -22,6 +22,7 @@ N_FLOWS = 3
 STANDARD_TEMPERATURE = 273.15 + 15  # К (15°C)
 STANDARD_PRESSURE = 101325          # Па
 STANDARD_STATE = (CoolConst.PT_INPUTS, STANDARD_PRESSURE, STANDARD_TEMPERATURE)
+# NOTE ^ расхожения с маткадом скорее всего из-за значения давления и темпертуры
 
 # Состав газа по умолчанию
 DEFAULT_GAS_COMPOSITION = {
@@ -39,6 +40,9 @@ DEFAULT_GAS_COMPOSITION = {
     'Heptane': 0.00002,
     'Octane': 0.00001,
 }
+# NOTE для состава по умолчнаию лучше остановиться на чём-то более простом,
+# NOTE должно хавтить просто метана
+# NOTE если только для отладки, то норм
 
 # Объекты EOS по умолчанию
 VAPOR_EOS = eos.factory_eos(DEFAULT_GAS_COMPOSITION, with_state=STANDARD_STATE)
