@@ -25,13 +25,19 @@ STANDARD_STATE = (CoolConst.PT_INPUTS, STANDARD_PRESSURE, STANDARD_TEMPERATURE)
 
 # Состав газа по умолчанию
 DEFAULT_GAS_COMPOSITION = {
-    'Methane': 0.60,
-    'Ethane': 0.10,
-    'Propane': 0.10,
-    'Nitrogen': 0.10,
-    'CO2': 0.05,
-    'CO': 0.04,
-    'H2S': 0.01,
+    'Nitrogen': 0.00844,
+    'CO2': 0.00341,
+    'Hydrogen': 0.00002,
+    'Methane': 0.98469,
+    'Ethane': 0.00297,
+    'Propane': 0.00017,
+    'IsoButane': 0.00007,
+    'n-Butane': 0.00004,
+    'Isopentane': 0.00011,
+    'n-Pentane': 0.00001,
+    'Hexane': 0.00003,
+    'Heptane': 0.00002,
+    'Octane': 0.00001,
 }
 
 # Объекты EOS по умолчанию
