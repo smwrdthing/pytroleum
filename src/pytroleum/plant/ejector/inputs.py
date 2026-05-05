@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 
-THERMAL_EQUIVALENT_OF_WORK = 0.982   # Дж/Дж
-
-# Все исходные данные взяты с ТЗ или же с Aspen Hysys
+# Все исходные данные берутся с ТЗ или же с Aspen Hysys
 
 
 @dataclass
@@ -22,13 +20,13 @@ class BaseMediumData:
 
 
 @dataclass
-class EjectingData(BaseMediumData):
+class ActiveMediumData(BaseMediumData):
     """Входные данные эжектирующей среды"""
     pass
 
 
 @dataclass
-class EjectedData(BaseMediumData):
+class PassiveMediumData(BaseMediumData):
     """Входные данные эжектируемой среды"""
     pass
 
