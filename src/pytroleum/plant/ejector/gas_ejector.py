@@ -47,6 +47,8 @@ class Ejector:
     pressure_cyl_section_exit: float
     temperature_cyl_section_exit: float
     nozzle_exit_velocity: float
+    adiabatic_index: float
+    critical_pressure_ratio: float
 
 
 def operation_conditions(active: ActiveMediumData, passive: PassiveMediumData,
@@ -118,4 +120,155 @@ def operation_conditions(active: ActiveMediumData, passive: PassiveMediumData,
                    ejector_head_no_diff=ejector_head_no_diff,
                    pressure_cyl_section_exit=pressure_cyl_section_exit,
                    temperature_cyl_section_exit=temperature_cyl_section_exit,
-                   nozzle_exit_velocity=nozzle_exit_velocity)
+                   nozzle_exit_velocity=nozzle_exit_velocity,
+                   adiabatic_index=adiabatic_index,
+                   critical_pressure_ratio=critical_pressure_ratio)
+
+
+if __name__ == '__main__':
+    from pytroleum.plant.tps.utils import (_major_header, _minor_header,
+                                           print_row as p,
+                                           PA_TO_MPA, KELVIN_TO_CELSIUS)
+
+    # ========== ИСХОДНЫЕ ДАННЫЕ ==========
+
+    # Активная среда (эжектирующая)
+    active = ActiveMediumData(
+        mass_flow=36.25,                    # кг/с
+        temperature=248,       # К
+        inlet_pressure=7e6,                # Па
+        enthalpy=4376087.44,       # Дж/кг
+        entropy=1.73 * 4.1868e3,           # Дж/(кг·К)
+        specific_volume=1.73,              # м3/кг
+        density=0.578,                     # кг/м3
+        dynamic_viscosity=98.89 * 9.80665,  # Па·с
+        inlet_diameter=0.325,              # м
+        molecular_mass=0.01870,            # кг/моль
+        heat_capacity=16.23 * 4.1868e3     # Дж/(моль·К)
+    )
+
+    # Пассивная среда (эжектируемая)
+    passive = PassiveMediumData(
+        mass_flow=6.52,                    # кг/с
+        temperature=25 + 273.15,           # К
+        inlet_pressure=2.5e6,              # Па
+        enthalpy=927.89 * 4.1868e3,        # Дж/кг
+        entropy=1.69 * 4.1868e3,           # Дж/(кг·К)
+        specific_volume=1.0,               # м3/кг
+        density=1.0,                       # кг/м3
+        dynamic_viscosity=0.00000116 * 9.80665,  # Па·с
+        inlet_diameter=0.11,               # м
+        molecular_mass=0.0180,             # кг/моль
+        heat_capacity=15.0 * 4.1868e3      # Дж/(моль·К)
+    )
+
+    # Общие параметры
+    common = CommonParams(
+        num_stages=1,                      # количество ступеней
+        outlet_pressure=4e6,               # Па
+        outlet_diameter=0.325              # м
+    )
+
+    ejector = operation_conditions(active, passive, common)
+
+# ============================================================
+# Вывод результатов расчета эжектора
+# ============================================================
+
+    _major_header("ИСХОДНЫЕ ДАННЫЕ")
+
+    _minor_header("АКТИВНАЯ СРЕДА (Эжектирующая)")
+    p("Массовый расход:", f"{active.mass_flow:.2f}", "кг/с")
+    p("Температура:",
+      f"{active.temperature} К ({active.temperature - KELVIN_TO_CELSIUS:.0f} °C)")
+    p("Давление на входе:", f"{active.inlet_pressure/PA_TO_MPA:.3f}", "МПа")
+    p("Энтальпия:", f"{active.enthalpy/1000:.2f}", "кДж/кг")
+    p("Энтропия:", f"{active.entropy:.2f}", "Дж/(кг·К)")
+    p("Удельный объем:", f"{active.specific_volume:.3f}", "м³/кг")
+    p("Плотность:", f"{active.density:.3f}", "кг/м³")
+    p("Динамическая вязкость:", f"{active.dynamic_viscosity:.6f}", "Па·с")
+    p("Диаметр трубопровода:", f"{active.inlet_diameter * 1000:.0f}", "мм")
+    p("Молекулярная масса:", f"{active.molecular_mass * 1000:.1f}", "г/моль")
+    p("Теплоемкость:", f"{active.heat_capacity/1000:.3f}", "кДж/(моль·К)")
+
+    _minor_header("ПАССИВНАЯ СРЕДА (Эжектируемая)")
+    p("Массовый расход:", f"{passive.mass_flow:.2f}", "кг/с")
+    p("Температура:",
+      f"{passive.temperature} К ({passive.temperature - KELVIN_TO_CELSIUS:.0f} °C)")
+    p("Давление на входе:", f"{passive.inlet_pressure/PA_TO_MPA:.3f}", "МПа")
+    p("Энтальпия:", f"{passive.enthalpy/1000:.2f}", "кДж/кг")
+    p("Энтропия:", f"{passive.entropy:.2f}", "Дж/(кг·К)")
+    p("Удельный объем:", f"{passive.specific_volume:.3f}", "м³/кг")
+    p("Плотность:", f"{passive.density:.3f}", "кг/м³")
+    p("Динамическая вязкость:", f"{passive.dynamic_viscosity:.6f}", "Па·с")
+    p("Диаметр трубопровода:", f"{passive.inlet_diameter * 1000:.0f}", "мм")
+    p("Молекулярная масса:", f"{passive.molecular_mass * 1000:.1f}", "г/моль")
+    p("Теплоемкость:", f"{passive.heat_capacity/1000:.3f}", "кДж/(моль·К)")
+
+    _minor_header("ОБЩИЕ ПАРАМЕТРЫ")
+    p("Количество ступеней:", f"{common.num_stages}", "шт.")
+    p("Давление на выходе:", f"{common.outlet_pressure/PA_TO_MPA:.3f}", "МПа")
+    p("Диаметр выходного трубопровода:",
+      f"{common.outlet_diameter * 1000:.0f}", "мм")
+
+    _major_header("РЕЗУЛЬТАТЫ РАСЧЕТА ЭЖЕКТОРА")
+
+    _minor_header("ОСНОВНЫЕ ПАРАМЕТРЫ")
+    p("Степень сжатия:", f"{ejector.compression_ratio:.4f}")
+    p("Коэффициент эжекции:", f"{ejector.entrainment_ratio:.4f}")
+
+    _minor_header("ГАЗОДИНАМИЧЕСКИЕ ПАРАМЕТРЫ")
+    p("Газовая постоянная активной среды R_a:",
+      f"{calculate_gas_constant(active.molecular_mass):.2f}", "Дж/(кг·К)")
+    p("Газовая постоянная пассивной среды R_n:",
+      f"{calculate_gas_constant(passive.molecular_mass):.2f}", "Дж/(кг·К)")
+    p("Теплоемкость активной среды Cp_a:",
+      f"{calculate_specific_heat_capacity(active.heat_capacity,
+                                          active.molecular_mass):.2f}", "Дж/(кг·К)")
+    p("Теплоемкость пассивной среды Cp_n:",
+      f"{calculate_specific_heat_capacity(passive.heat_capacity,
+                                          passive.molecular_mass):.2f}", "Дж/(кг·К)")
+    p("Показатель адиабаты k:", f"{ejector.adiabatic_index:.4f}")
+    p("Критическое отношение давлений β:",
+      f"{ejector.critical_pressure_ratio:.6f}")
+
+    _minor_header("КРИТИЧЕСКИЕ ПАРАМЕТРЫ СОПЛА")
+    p("Критическое давление P_кр:",
+      f"{ejector.critical_pressure/PA_TO_MPA:.3f}", "МПа")
+    p("Критическая температура T_кр:",
+      f"{ejector.critical_temperature:.2f} К "
+      f"({ejector.critical_temperature - KELVIN_TO_CELSIUS:.0f} °C)")
+
+    _minor_header("ГЕОМЕТРИЧЕСКИЕ ПАРАМЕТРЫ")
+    p("m1 (участок струи до стенки):", f"{ejector.m1:.4f}")
+    p("m (основной геометрический параметр):", f"{ejector.m:.4f}")
+    p("n:", f"{ejector.n:.4f}")
+
+    _minor_header("ГАЗОДИНАМИЧЕСКИЕ ПАРАМЕТРЫ ПО СЕЧЕНИЯМ")
+    p("Динамический напор на выходе из сопла (I-I):",
+      f"{ejector.dynamic_head_nozzle_exit/PA_TO_MPA:.3f}", "МПа")
+    p("Напор эжектора без диффузора:",
+      f"{ejector.ejector_head_no_diff/PA_TO_MPA:.3f}", "МПа")
+    p("Давление в конце цилиндрического участка (III-III):",
+      f"{ejector.pressure_cyl_section_exit/PA_TO_MPA:.3f}", "МПа")
+    p("Температура в конце цилиндрического участка (III-III):",
+      f"{ejector.temperature_cyl_section_exit:.2f} К "
+      f"({ejector.temperature_cyl_section_exit - KELVIN_TO_CELSIUS:.0f} °C)")
+    p("Скорость истечения газа из сопла:",
+      f"{ejector.nozzle_exit_velocity:.2f}", "м/с")
+
+    _minor_header("СКОРОСТИ ПОТОКОВ")
+    p("Скорость активной среды в трубопроводе:",
+      f"{calculate_gas_outflow_velocity(active.mass_flow,
+                                        active.temperature,
+                                        active.inlet_pressure,
+                                        active.inlet_diameter,
+                                        active.molecular_mass):.2f}", "м/с")
+    p("Скорость пассивной среды в трубопроводе:",
+      f"{calculate_gas_outflow_velocity(passive.mass_flow,
+                                        passive.temperature,
+                                        passive.inlet_pressure,
+                                        passive.inlet_diameter,
+                                        passive.molecular_mass):.2f}", "м/с")
+
+    _major_header("РАСЧЕТ ЗАВЕРШЕН")
