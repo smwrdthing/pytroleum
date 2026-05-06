@@ -79,6 +79,22 @@ def calculate_circle_diameter(area: float) -> float:
     return np.sqrt(4 * area / np.pi)
 
 
+def calculate_reynolds_number(density: float,
+                              velocity: float,
+                              diameter: float,
+                              dynamic_viscosity: float) -> float:
+    """Число Рейнольдса Re = γ·w·D / (g·η)"""
+    return (calculate_specific_weight(density) * velocity * diameter /
+            (g * dynamic_viscosity))
+
+
+def calculate_nozzle_throat_area(mass_flow: float, pressure: float,
+                                 specific_volume: float,
+                                 flow_coefficient: float) -> float:
+    """Площадь сечения узкой части сопла, м²"""
+    return mass_flow / (flow_coefficient * np.sqrt(pressure / specific_volume))
+
+
 @dataclass
 class GasEjector:
     compression_ratio: float
