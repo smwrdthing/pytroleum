@@ -126,7 +126,7 @@ def operation_conditions(active: ActiveMediumData, passive: PassiveMediumData,
     ejector_head_no_diff = dynamic_head_nozzle_exit / m
 
     # Давление в конце цилиндрического участка (сечение III-III):
-    pressure_cyl_section_exit = ejector_head_no_diff - passive.inlet_pressure
+    pressure_cyl_section_exit = ejector_head_no_diff + passive.inlet_pressure
 
     # Скорость истечения газа из сопла:
     nozzle_exit_velocity = np.sqrt(
