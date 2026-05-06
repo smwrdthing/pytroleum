@@ -69,8 +69,18 @@ def calculate_temperature_cyl_section_exit(critical_temperature: float,
             (pressure_cyl_section_exit / critical_pressure) ** ((adiabatic_index - 1) / adiabatic_index))
 
 
+def calculate_circle_area(diameter: float) -> float:
+    """Площадь круглого сечения, м"""
+    return np.pi * diameter ** 2 / 4
+
+
+def calculate_circle_diameter(area: float) -> float:
+    """Диаметр сечения, м"""
+    return np.sqrt(4 * area / np.pi)
+
+
 @dataclass
-class Ejector:
+class GasEjector:
     compression_ratio: float
     entrainment_ratio: float
     adiabatic_index: float
@@ -85,7 +95,7 @@ class Ejector:
 
 
 def operation_conditions(active: ActiveMediumData, passive: PassiveMediumData,
-                         common_params: CommonParams) -> Ejector:
+                         common_params: CommonParams) -> GasEjector:
     # Степень сжатия установки
     compression_ratio = common_params.outlet_pressure / passive.inlet_pressure
 
@@ -132,16 +142,16 @@ def operation_conditions(active: ActiveMediumData, passive: PassiveMediumData,
     nozzle_exit_velocity = np.sqrt(
         2 * g * dynamic_head_nozzle_exit / calculate_specific_weight(active.density))
 
-    return Ejector(compression_ratio=compression_ratio,
-                   entrainment_ratio=entrainment_ratio,
-                   adiabatic_index=adiabatic_index,
-                   critical_pressure_ratio=critical_pressure_ratio,
-                   m1=m1,
-                   m=m, n=n,
-                   dynamic_head_nozzle_exit=dynamic_head_nozzle_exit,
-                   ejector_head_no_diff=ejector_head_no_diff,
-                   pressure_cyl_section_exit=pressure_cyl_section_exit,
-                   nozzle_exit_velocity=nozzle_exit_velocity)
+    return GasEjector(compression_ratio=compression_ratio,
+                      entrainment_ratio=entrainment_ratio,
+                      adiabatic_index=adiabatic_index,
+                      critical_pressure_ratio=critical_pressure_ratio,
+                      m1=m1,
+                      m=m, n=n,
+                      dynamic_head_nozzle_exit=dynamic_head_nozzle_exit,
+                      ejector_head_no_diff=ejector_head_no_diff,
+                      pressure_cyl_section_exit=pressure_cyl_section_exit,
+                      nozzle_exit_velocity=nozzle_exit_velocity)
 
 # ============================================================
 # Пример использования
