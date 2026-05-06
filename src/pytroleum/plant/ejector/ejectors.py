@@ -95,6 +95,22 @@ def calculate_nozzle_throat_area(mass_flow: float, pressure: float,
     return mass_flow / (flow_coefficient * np.sqrt(pressure / specific_volume))
 
 
+def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,
+                              opening_angle: float) -> float:
+    """Длина диффузора, м"""
+    return (diameter_exit - diameter_inlet) / (2 * np.tan(np.radians(opening_angle / 2)))
+
+
+def calculate_section_area(area: float, ratio: float) -> float:
+    """Площадь сечения через отношение площадей s=F4/F3, м²"""
+    return area / ratio
+
+
+def calculate_section_velocity(velocity: float, ratio: float) -> float:
+    """Скорость потока через отношение площадей сечений, м/с"""
+    return velocity / ratio
+
+
 @dataclass
 class GasEjector:
     compression_ratio: float
@@ -110,8 +126,15 @@ class GasEjector:
     nozzle_exit_velocity: float
 
 
-def operation_conditions(active: ActiveMediumData, passive: PassiveMediumData,
-                         common_params: CommonParams) -> GasEjector:
+def operation_conditions(active: ActiveMediumData,
+                         passive: PassiveMediumData,
+                         common_params: CommonParams,
+                         s: float | int,
+                         mixture_density: float,
+                         pressure_recovery_coefficient: float,
+                         psi: float,
+                         opening_angle: float,
+                         mixture_dynamic_viscosity: float) -> GasEjector:
     # Степень сжатия установки
     compression_ratio = common_params.outlet_pressure / passive.inlet_pressure
 
@@ -145,18 +168,76 @@ def operation_conditions(active: ActiveMediumData, passive: PassiveMediumData,
     critical_pressure_ratio = calculate_critical_pressure_ratio(
         adiabatic_index)
 
-    # Динамический напор эжектирующей струи на выходе из сопла (сечение I-I):
+    # Динамический напор эжектирующей струи на выходе из сопла (сечение I-I)
     dynamic_head_nozzle_exit = active.inlet_pressure / 1.1
 
     # Напор создаваемый эжектором без диффузора
     ejector_head_no_diff = dynamic_head_nozzle_exit / m
 
-    # Давление в конце цилиндрического участка (сечение III-III):
+    # Давление в конце цилиндрического участка (сечение III-III)
     pressure_cyl_section_exit = ejector_head_no_diff + passive.inlet_pressure
 
     # Скорость истечения газа из сопла:
     nozzle_exit_velocity = np.sqrt(
         2 * g * dynamic_head_nozzle_exit / calculate_specific_weight(active.density))
+
+    # Площадь конечного сечения диффузора
+    diffuser_exit_area = calculate_circle_area(common_params.outlet_diameter)
+
+    # Площадь сечения цилиндрического смесительного участка
+    mixing_section_area = calculate_section_area(diffuser_exit_area, s)
+
+    # Диаметр сечения цилиндрического смесительного участка
+    mixing_section_diameter = calculate_circle_diameter(mixing_section_area)
+
+    # Скорость газа в конце смесительного участка
+    mixing_exit_velocity = ((active.mass_flow + passive.mass_flow) /
+                            (calculate_specific_weight(mixture_density)*mixing_section_area))
+
+    # Площадь выходного сечения сопла
+    nozzle_exit_area = calculate_section_area(mixing_section_area, m)
+
+    # Диаметр выходного сечения сопла
+    nozzle_exit_diameter = calculate_circle_diameter(nozzle_exit_area)
+
+    # Давление за диффузором
+    pressure_after_diffuser = (pressure_cyl_section_exit +
+                               pressure_recovery_coefficient *
+                               (calculate_specific_weight(mixture_density) * mixing_exit_velocity**2)/(2*g))
+
+    # Площадь сечения узкой части сопла
+    nozzle_throat_area = calculate_nozzle_throat_area(
+        active.mass_flow, active.inlet_pressure, active.specific_volume, psi)
+
+    # Диаметр сечения узкой части сопла
+    nozzle_throat_diameter = calculate_circle_diameter(nozzle_throat_area)
+
+    # Длина струи
+    jet_length = nozzle_exit_diameter * (4 * (1 + entrainment_ratio) - 1.8)
+
+    # Длина смесительного участка
+    mixing_section_length = 2.5 * mixing_section_diameter
+
+    # Расстояние l1
+    l1 = jet_length - 0.5 * mixing_section_diameter
+
+    # Расстояние l2
+    l2 = jet_length + mixing_section_length - l1
+
+    # Длина диффузора
+    diffuser_length = calculate_diffuser_length(common_params.outlet_diameter,
+                                                mixing_section_diameter,
+                                                opening_angle)
+
+    # Скорость движения потока
+    discharge_pipe_velocity = calculate_section_velocity(
+        mixing_exit_velocity, s)
+
+    # Расчет числа Re в нагнетательном трубопроводе, установленном за диффузором
+    discharge_pipe_reynolds_number = calculate_reynolds_number(mixture_density,
+                                                               discharge_pipe_velocity,
+                                                               common_params.outlet_diameter,
+                                                               mixture_dynamic_viscosity)
 
     return GasEjector(compression_ratio=compression_ratio,
                       entrainment_ratio=entrainment_ratio,
@@ -225,7 +306,10 @@ if __name__ == '__main__':
         outlet_diameter=0.325              # м
     )
 
-    ejector = operation_conditions(active, passive, common)
+    ejector = operation_conditions(
+        active, passive, common, mixture_density=56.05,
+        s=2, pressure_recovery_coefficient=0.8, psi=2.14,
+        opening_angle=8, mixture_dynamic_viscosity=0.0000012 * KGS_S_M2_TO_PA_S)
 
 # ============================================================
 # Вывод результатов расчета эжектора
