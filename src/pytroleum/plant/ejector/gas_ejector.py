@@ -143,6 +143,10 @@ def operation_conditions(active: ActiveMediumData, passive: PassiveMediumData,
                    pressure_cyl_section_exit=pressure_cyl_section_exit,
                    nozzle_exit_velocity=nozzle_exit_velocity)
 
+# ============================================================
+# Пример использования
+# ============================================================
+
 
 if __name__ == '__main__':
     from pytroleum.plant.ejector.utils import (_major_header, _minor_header,
@@ -152,7 +156,9 @@ if __name__ == '__main__':
                                                KGS_S_M2_TO_PA_S, KG_PER_KMOL_TO_KG_PER_MOL,
                                                KG_PER_MOL_TO_G_PER_MOL, J_TO_KJ, M_TO_MM)
 
-    # ========== ИСХОДНЫЕ ДАННЫЕ ==========
+# ============================================================
+# Исходные данные
+# ============================================================
 
     # Активная среда (эжектирующая)
     active = ActiveMediumData(
