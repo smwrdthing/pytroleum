@@ -79,7 +79,7 @@ class PipelineParams:
 @dataclass
 class GasEjector:
     """Результаты расчёта газового эжектора"""
-    ejection: EjectionParams
+    ejection_params: EjectionParams
     nozzle: NozzleGeometry
     mixer: MixerGeometry
     diffuser: DiffuserGeometry
@@ -148,13 +148,13 @@ def calculate_ejection_params(active: ActiveMediumData,
         nozzle_exit_velocity=nozzle_exit_velocity)
 
 
-def calculate_nozzle(ejection: EjectionParams,
+def calculate_nozzle(ejection_params: EjectionParams,
                      active: ActiveMediumData,
                      mixer: 'MixerGeometry',
                      psi: float) -> NozzleGeometry:
     """Геометрия сопла: площади и диаметры выходного и критического сечений"""
     # Площадь выходного сечения сопла
-    exit_area = calculate_section_area(mixer.section_area, ejection.m)
+    exit_area = calculate_section_area(mixer.section_area, ejection_params.m)
 
     # Диаметр выходного сечения сопла
     exit_diameter = calculate_circle_diameter(exit_area)
@@ -173,7 +173,7 @@ def calculate_nozzle(ejection: EjectionParams,
         throat_diameter=throat_diameter)
 
 
-def calculate_mixer(ejection: EjectionParams,
+def calculate_mixer(ejection_params: EjectionParams,
                     active: ActiveMediumData,
                     passive: PassiveMediumData,
                     diffuser_exit_area: float,
@@ -192,8 +192,8 @@ def calculate_mixer(ejection: EjectionParams,
 
     # Длина струи
     jet_length = calculate_circle_diameter(
-        calculate_section_area(section_area, ejection.m)
-    ) * (4 * (1 + ejection.entrainment_ratio) - 1.8)
+        calculate_section_area(section_area, ejection_params.m)
+    ) * (4 * (1 + ejection_params.entrainment_ratio) - 1.8)
 
     # Длина смесительного участка
     section_length = 2.5 * section_diameter
@@ -215,7 +215,7 @@ def calculate_mixer(ejection: EjectionParams,
         cylinder_length=cylinder_length)
 
 
-def calculate_diffuser(ejection: EjectionParams,
+def calculate_diffuser(ejection_params: EjectionParams,
                        mixer: MixerGeometry,
                        common_params: CommonParams,
                        diffuser_exit_area: float,
@@ -228,7 +228,7 @@ def calculate_diffuser(ejection: EjectionParams,
         common_params.outlet_diameter, mixer.section_diameter, opening_angle)
 
     # Давление за диффузором
-    pressure_after = (ejection.pressure_cyl_section_exit +
+    pressure_after = (ejection_params.pressure_cyl_section_exit +
                       pressure_recovery_coefficient *
                       (calculate_specific_weight(mixture_density) *
                        mixer.exit_velocity ** 2) / (2 * g))
@@ -266,22 +266,22 @@ def calculate_gas_ejector(active: ActiveMediumData,
                           opening_angle: float,
                           mixture_dynamic_viscosity: float) -> GasEjector:
     """Полный расчёт газового эжектора"""
-    ejection = calculate_ejection_params(active, passive, common_params)
+    ejection_params = calculate_ejection_params(active, passive, common_params)
 
     # Площадь конечного сечения диффузора — нужна раньше calculate_mixer
     diffuser_exit_area = calculate_circle_area(common_params.outlet_diameter)
 
     mixer = calculate_mixer(
-        ejection, active, passive, diffuser_exit_area, mixture_density, s)
-    nozzle = calculate_nozzle(ejection, active, mixer, psi)
+        ejection_params, active, passive, diffuser_exit_area, mixture_density, s)
+    nozzle = calculate_nozzle(ejection_params, active, mixer, psi)
     diffuser = calculate_diffuser(
-        ejection, mixer, common_params, diffuser_exit_area,
+        ejection_params, mixer, common_params, diffuser_exit_area,
         mixture_density, pressure_recovery_coefficient, opening_angle)
     pipeline = calculate_pipeline(
         mixer, common_params, mixture_density, mixture_dynamic_viscosity, s)
 
     return GasEjector(
-        ejection=ejection,
+        ejection_params=ejection_params,
         nozzle=nozzle,
         mixer=mixer,
         diffuser=diffuser,
@@ -403,20 +403,22 @@ if __name__ == '__main__':
     Cp_passive = calculate_specific_heat_capacity(
         passive.heat_capacity, passive.molecular_mass)
     critical_pressure = calculate_critical_pressure(
-        ejector.ejection.critical_pressure_ratio, active.inlet_pressure)
+        ejector.ejection_params.critical_pressure_ratio, active.inlet_pressure)
     critical_temperature = calculate_critical_temperature(
-        active.temperature, ejector.ejection.critical_pressure_ratio,
-        ejector.ejection.adiabatic_index)
+        active.temperature, ejector.ejection_params.critical_pressure_ratio,
+        ejector.ejection_params.adiabatic_index)
     temperature_cyl_exit = calculate_temperature_cyl_section_exit(
-        critical_temperature, ejector.ejection.pressure_cyl_section_exit,
-        critical_pressure, ejector.ejection.adiabatic_index)
+        critical_temperature, ejector.ejection_params.pressure_cyl_section_exit,
+        critical_pressure, ejector.ejection_params.adiabatic_index)
 
     _minor_header("ОСНОВНЫЕ ПАРАМЕТРЫ ЭЖЕКЦИИ")
-    p("Степень сжатия:", f"{ejector.ejection.compression_ratio:.4f}")
-    p("Коэффициент эжекции:", f"{ejector.ejection.entrainment_ratio:.4f}")
-    p("m1 (участок струи до стенки):", f"{ejector.ejection.m1:.4f}")
-    p("m (основной геометрический параметр):", f"{ejector.ejection.m:.4f}")
-    p("n:", f"{ejector.ejection.n:.4f}")
+    p("Степень сжатия:", f"{ejector.ejection_params.compression_ratio:.4f}")
+    p("Коэффициент эжекции:",
+      f"{ejector.ejection_params.entrainment_ratio:.4f}")
+    p("m1 (участок струи до стенки):", f"{ejector.ejection_params.m1:.4f}")
+    p("m (основной геометрический параметр):",
+      f"{ejector.ejection_params.m:.4f}")
+    p("n:", f"{ejector.ejection_params.n:.4f}")
 
     _minor_header("ГАЗОДИНАМИЧЕСКИЕ ПАРАМЕТРЫ")
     p("Газовая постоянная активной среды R_a:", f"{R_active:.2f}", "Дж/(кг·К)")
@@ -424,9 +426,10 @@ if __name__ == '__main__':
       f"{R_passive:.2f}", "Дж/(кг·К)")
     p("Теплоемкость активной среды Cp_a:", f"{Cp_active:.2f}", "Дж/(кг·К)")
     p("Теплоемкость пассивной среды Cp_n:", f"{Cp_passive:.2f}", "Дж/(кг·К)")
-    p("Показатель адиабаты k:", f"{ejector.ejection.adiabatic_index:.4f}")
+    p("Показатель адиабаты k:",
+      f"{ejector.ejection_params.adiabatic_index:.4f}")
     p("Критическое отношение давлений β:",
-      f"{ejector.ejection.critical_pressure_ratio:.6f}")
+      f"{ejector.ejection_params.critical_pressure_ratio:.6f}")
 
     _minor_header("КРИТИЧЕСКИЕ ПАРАМЕТРЫ СОПЛА")
     p("Критическое давление P_кр:",
@@ -436,11 +439,11 @@ if __name__ == '__main__':
 
     _minor_header("ДАВЛЕНИЯ И НАПОРЫ")
     p("Динамический напор на выходе из сопла (I-I):",
-      f"{ejector.ejection.dynamic_head_nozzle_exit/PA_TO_MPA:.3f}", "МПа")
+      f"{ejector.ejection_params.dynamic_head_nozzle_exit/PA_TO_MPA:.3f}", "МПа")
     p("Напор эжектора без диффузора:",
-      f"{ejector.ejection.ejector_head_no_diff/PA_TO_MPA:.3f}", "МПа")
+      f"{ejector.ejection_params.ejector_head_no_diff/PA_TO_MPA:.3f}", "МПа")
     p("Давление в конце цилиндрического участка (III-III):",
-      f"{ejector.ejection.pressure_cyl_section_exit/PA_TO_MPA:.3f}", "МПа")
+      f"{ejector.ejection_params.pressure_cyl_section_exit/PA_TO_MPA:.3f}", "МПа")
     p("Температура в конце цилиндрического участка (III-III):",
       f"{temperature_cyl_exit:.2f} К ({temperature_cyl_exit - KELVIN_TO_CELSIUS:.0f} °C)")
     p("Давление за диффузором:",
@@ -456,7 +459,7 @@ if __name__ == '__main__':
                                         passive.inlet_pressure, passive.inlet_diameter,
                                         passive.molecular_mass):.2f}", "м/с")
     p("Скорость истечения газа из сопла:",
-      f"{ejector.ejection.nozzle_exit_velocity:.2f}", "м/с")
+      f"{ejector.ejection_params.nozzle_exit_velocity:.2f}", "м/с")
     p("Скорость газа в конце смесительного участка:",
       f"{ejector.mixer.exit_velocity:.2f}", "м/с")
     p("Скорость движения потока за диффузором:",
