@@ -1,6 +1,6 @@
 # Коэффициенты перевода единиц измерения
 PA_TO_MPA = 1e6
-KELVIN_TO_CELSIUS = 273
+KELVIN_TO_CELSIUS = 273.15
 
 KCAL_TO_J = 4186.8                      # ккал → Дж
 KCAL_PER_KMOL_TO_J_PER_MOL = 4.1868    # ккал/(кмоль·°С) → Дж/(моль·К)

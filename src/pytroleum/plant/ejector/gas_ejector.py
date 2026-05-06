@@ -21,7 +21,7 @@ def calculate_specific_heat_capacity(heat_capacity: float,
 
 
 def calculate_specific_weight(density: float) -> float:
-    """Удельный вес, кг/(c2*м2) или H/м3 """
+    """Удельный вес, кг/(c2*м2)"""
     return g * density
 
 
@@ -66,7 +66,7 @@ def calculate_temperature_cyl_section_exit(critical_temperature: float,
                                            adiabatic_index: float) -> float:
     """Температура в конце цилиндрического участка, К"""
     return (critical_temperature *
-            (pressure_cyl_section_exit / critical_pressure) ** (adiabatic_index - 1) / adiabatic_index)
+            (pressure_cyl_section_exit / critical_pressure) ** ((adiabatic_index - 1) / adiabatic_index))
 
 
 @dataclass
