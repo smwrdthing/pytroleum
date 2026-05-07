@@ -46,12 +46,10 @@ common = CommonParams(
     outlet_diameter=0.325
 )
 
-mixture_density = 56.05
-
 ejector = calculate_gas_ejector(
     active, passive, common,
     s=2,
-    mixture_density=mixture_density,
+    mixture_density=56.05,
     pressure_recovery_coefficient=0.8,
     psi=2.14,
     opening_angle=8,
@@ -65,7 +63,7 @@ section = [0, 1, 2, 3]
 
 pressures = [
     active.inlet_pressure / PA_TO_MPA,
-    ejector.pressure.dynamic_head_nozzle_exit / PA_TO_MPA,
+    ejector.pressure.critical / PA_TO_MPA,
     ejector.pressure.cyl_section_exit / PA_TO_MPA,
     ejector.pressure.ejector_outlet / PA_TO_MPA,
 ]
@@ -90,37 +88,40 @@ velocities = [
 
 fig1, ax1 = plt.subplots(figsize=(8, 5))
 ax1.plot(section, pressures, marker='o')
+ax1.set_title('Давление в эжекторе по сечениям', pad=10)
 ax1.set_ylabel('Давление, МПа')
 ax1.set_xlabel('Сечение')
 ax1.set_xticks(section)
 ax1.set_xticklabels(['0', '1', '3', '4'])
 ax1.grid(True, linestyle='--', alpha=0.5)
-for xi, val in zip(section, pressures):
-    ax1.annotate(f'{val:.2f}', (xi, val),
+for section_i, val in zip(section, pressures):
+    ax1.annotate(f'{val:.2f}', (section_i, val),
                  textcoords='offset points', xytext=(0, 10), ha='center')
 ax1.set_ylim(0, 8)
 
 fig2, ax2 = plt.subplots(figsize=(8, 5))
 ax2.plot(section, temperatures, marker='o')
+ax2.set_title('Температура в эжекторе по сечениям', pad=10)
 ax2.set_ylabel('Температура, °C')
 ax2.set_xlabel('Сечение')
 ax2.set_xticks(section)
 ax2.set_xticklabels(['0', '1', '3', '4'])
 ax2.grid(True, linestyle='--', alpha=0.5)
-for xi, val in zip(section, temperatures):
-    ax2.annotate(f'{val:.1f}', (xi, val),
+for section_i, val in zip(section, temperatures):
+    ax2.annotate(f'{val:.1f}', (section_i, val),
                  textcoords='offset points', xytext=(0, 10), ha='center')
 ax2.set_ylim(-50, 0)
 
 fig3, ax3 = plt.subplots(figsize=(8, 5))
 ax3.plot(section, velocities, marker='o')
+ax3.set_title('Скорость в эжекторе по сечениям', pad=10)
 ax3.set_ylabel('Скорость, м/с')
 ax3.set_xlabel('Сечение')
 ax3.set_xticks(section)
 ax3.set_xticklabels(['0', '1', '3', '4'])
 ax3.grid(True, linestyle='--', alpha=0.5)
-for xi, val in zip(section, velocities):
-    ax3.annotate(f'{val:.1f}', (xi, val),
+for section_i, val in zip(section, velocities):
+    ax3.annotate(f'{val:.1f}', (section_i, val),
                  textcoords='offset points', xytext=(0, 20), ha='center')
 ax3.set_ylim(0, 450)
 
