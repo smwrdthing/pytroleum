@@ -13,7 +13,7 @@ M_TO_MM = 1e3                           # м → мм
 # ============================================================
 # Функции форматирования консольного вывода результатов расчёта
 
-
+_LABEL_WIDTH = 60
 _DIVIDER_LENGTH = 75
 _MINOR_DIVIDER = '-' * _DIVIDER_LENGTH
 _MAJOR_DIVIDER = '=' * _DIVIDER_LENGTH
@@ -37,9 +37,6 @@ def _minor_header(title: str) -> None:
     print(_MINOR_DIVIDER)
     print(title.center(_DIVIDER_LENGTH))
     print(_MINOR_DIVIDER)
-
-
-_LABEL_WIDTH = 60
 
 
 def print_row(label: str, value: str, unit: str = '') -> None:
