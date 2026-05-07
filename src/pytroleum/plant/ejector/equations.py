@@ -97,7 +97,7 @@ def calculate_nozzle_throat_area(mass_flow: float, pressure: float,
                                  specific_volume: float,
                                  psi: float) -> float:
     """Площадь сечения узкой части сопла, м²"""
-    return mass_flow / (psi * np.sqrt(pressure / specific_volume))
+    return mass_flow / (psi * np.sqrt(pressure / g / specific_volume))
 
 
 def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,
