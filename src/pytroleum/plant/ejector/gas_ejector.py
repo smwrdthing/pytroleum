@@ -100,9 +100,9 @@ def calculate_pressure_params(ejection: EjectionParams,
         ejection.critical_pressure_ratio, active.inlet_pressure)
 
     # Давление за диффузором
-    ejector_outlet = (cyl_section_exit -
+    ejector_outlet = (cyl_section_exit +
                       pressure_recovery_coefficient *
-                      (calculate_specific_weight(mixture_density) +
+                      (calculate_specific_weight(mixture_density) *
                        mixer_exit_velocity ** 2) / (2 * g))
 
     return PressureParams(
