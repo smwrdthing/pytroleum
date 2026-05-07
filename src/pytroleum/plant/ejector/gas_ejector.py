@@ -93,7 +93,7 @@ def calculate_pressure_params(ejection: EjectionParams,
     ejector_head_no_diff = dynamic_head_nozzle_exit / ejection.m
 
     # Давление в конце цилиндрического участка (сечение III-III)
-    cyl_section_exit = ejector_head_no_diff - (-passive.inlet_pressure)
+    cyl_section_exit = ejector_head_no_diff + passive.inlet_pressure
 
     # Давление в критическом сечении сопла
     critical = calculate_critical_pressure(
