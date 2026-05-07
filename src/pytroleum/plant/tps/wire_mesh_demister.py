@@ -94,9 +94,19 @@ class WireMeshDemister:
     actual_velocity: float
     capacity: float
 
+    # NOTE всё actual - без префикса
+    # NOTE всё nominal - с префиксом
+    # NOTE можно и наоборот, но именование должно быть последовательным
+    # NOTE
+    # NOTE diameter <-> area <-> velocity <-> capacity
+    # NOTE nominal_diameter <-> nominal_area <-> nominal_velocity <-> nominal_capacity
+
 
 def design_demister(conditions: OperationConditions,
+
+                    # NOTE возможно следует встроить в conditions
                     oil_surface_tension: float,
+
                     area_reduction_coeff: float = AREA_REDUCTION_COEFF
                     ) -> WireMeshDemister:
     """Расчёт геометрических параметров и производительности каплеуловителя.
