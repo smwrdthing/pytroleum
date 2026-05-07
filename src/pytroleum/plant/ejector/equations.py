@@ -2,7 +2,7 @@ from scipy.constants import g
 import numpy as np
 
 UNIVERSAL_GAS_CONSTANT = 8.314       # Дж/(моль·К)
-ATMOSPHERIC_PRESSURE = 1e5           # Па
+ATMOSPHERIC_PRESSURE = 101325           # Па
 THERMAL_EQUIVALENT_OF_WORK = 0.982   # Дж/Дж
 
 
