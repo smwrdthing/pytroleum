@@ -359,8 +359,7 @@ if __name__ == '__main__':
         temperature=248,                                    # К
         inlet_pressure=7e6,                                 # Па
         enthalpy=1045.91 * KCAL_TO_J,                      # ккал/кг → Дж/кг
-        # ккал/(кг·°С) → Дж/(кг·К)
-        entropy=1.73 * KCAL_TO_J,
+        entropy=1.73 * KCAL_TO_J,                 # ккал/(кг·°С) → Дж/(кг·К)
         specific_volume=0.01,                               # м³/кг
         density=98.89,                                      # кг/м³
         dynamic_viscosity=0.00000099 * KGS_S_M2_TO_PA_S,  # кгс·с/м² → Па·с
@@ -376,8 +375,7 @@ if __name__ == '__main__':
         temperature=289,                                     # К
         inlet_pressure=2.5e6,                                # Па
         enthalpy=927.89 * KCAL_TO_J,                        # ккал/кг → Дж/кг
-        # ккал/(кг·°С) → Дж/(кг·К)
-        entropy=1.69 * KCAL_TO_J,
+        entropy=1.69 * KCAL_TO_J,                  # ккал/(кг·°С) → Дж/(кг·К)
         specific_volume=0.04,                                # м³/кг
         density=26.18,                                       # кг/м³
         dynamic_viscosity=0.00000116 * KGS_S_M2_TO_PA_S,   # кгс·с/м² → Па·с
@@ -542,5 +540,3 @@ if __name__ == '__main__':
 
     _minor_header("НАГНЕТАТЕЛЬНЫЙ ТРУБОПРОВОД")
     p("Число Рейнольдса Re:", f"{ejector.reynolds_number:.0f}")
-
-    _major_header("РАСЧЕТ ЗАВЕРШЕН")
