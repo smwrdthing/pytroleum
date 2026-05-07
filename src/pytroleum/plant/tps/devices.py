@@ -9,7 +9,14 @@ from pytroleum.plant.tps.separator import compute_settling_velocity, Separator
 class Coalescer:
     def __init__(self, coalescer_packing: CoalescerPacking,
                  separator: Separator) -> None:
+
+        # NOTE можно просто packing
+        # NOTE coalescer.coalescer_packing -> coalescer.packing
         self.coalescer_packing = coalescer_packing
+
+        # NOTE почему сепаратор (более курпная единица оборудования) -
+        # NOTE атрибут коалесцера (более мелкая единица оборудования)?
+        # NOTE Это нрушает иерархию композиции
         self.separator = separator
 
     def droplet_settling_time(self, plate_spacing: float, drop_diameter: float,
@@ -37,6 +44,9 @@ class Coalescer:
 
         где u_ф — скорость фазы в канале, t_к — время осаждения/всплытия капли.
         """
+
+        # NOTE self не используется, метод можно вынести как свободную функцию
+
         return phase_velocity * settling_time
 
 
@@ -46,6 +56,7 @@ class Cyclone:
                  geometry_cyclone: GeometryCyclone):
         self.conditions = conditions
         self.geometry_cyclone = geometry_cyclone
+        # NOTE cyclone.geometry_cyclone -> cyclone.geometry
 
     def vapor_velocity(self, number_of_cyclones: int) -> float:
         """Скорость газа в спиральном канале, м/с.

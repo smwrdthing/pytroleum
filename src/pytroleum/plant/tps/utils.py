@@ -41,7 +41,7 @@ def _minor_header(title: str) -> None:
     print(_MINOR_DIVIDER)
 
 
-_LABEL_WIDTH = 60
+_LABEL_WIDTH = 60  # NOTE константы в начале файла
 
 
 def print_row(label: str, value: str, unit: str = '') -> None:

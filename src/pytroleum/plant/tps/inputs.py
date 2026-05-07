@@ -116,6 +116,7 @@ def flow_velocity(conditions: OperationConditions,
 
     где Q — объёмный расход фазы, м³/с, F — площадь сечения для фазы, м².
     """
+    # NOTE возможно velocity удобнее будет занести в conditions как атрибут
     return conditions.vol_flow_rate / effective_area
 
 
@@ -124,12 +125,23 @@ class CoalescerPacking:
     coalescer_top_gap: float     # расстояние между пластинами в верхнем коалесцере, м
     coalescer_bottom_gap: float  # расстояние между пластинами в нижнем коалесцере, м
     angle: float = 45.0          # угол наклона пластин, градусы
+    # NOTE константа для angle в начале файла
+    # NOTE COALESCER_PACKING_ANGLE = 45.0
+    # NOTE ...
+    # NOTE class CoalescerPacking
+    # NOTE     ...
+    # NOTE     angle: float = COALESCER_PACKING_ANGLE
+    # NOTE     ...
 
 
 @dataclass
 class GeometryCyclone:
     width_inlet_cyclone: float   # м - ширина входа в циклон
     height_inlet_cyclone: float  # м - высота входа в циклон
+    # NOTE _cyclone в именахз избыточно, атрибуты и так в классе гемоетрии циклона
+    # NOTE получится что-то вроде cyclone.geometry.width_inlet_cyclone
+    # NOTE
+    # NOTE cyclone.geometry.inlet_width <- лучше читается
 
     def __post_init__(self):
         """Площадь сечения спирального канала одного циклона, м².
