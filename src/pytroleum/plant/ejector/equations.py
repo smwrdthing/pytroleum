@@ -30,10 +30,18 @@ def calculate_gas_outflow_velocity(mass_flow: float, temperature: float,
             ((pressure + ATMOSPHERIC_PRESSURE) * np.pi * diameter ** 2))
 
 
-def calculate_adiabatic_index(entrainment_ratio: float,
-                              R_active: float, R_passive: float,
-                              Cp_active: float, Cp_passive: float) -> float:
+def calculate_adiabatic_index(active_molecular_mass: float,
+                              active_heat_capacity: float,
+                              passive_molecular_mass: float,
+                              passive_heat_capacity: float,
+                              entrainment_ratio: float) -> float:
     """Показатель адиабаты смеси активной и пассивной сред"""
+    R_active = calculate_gas_constant(active_molecular_mass)
+    R_passive = calculate_gas_constant(passive_molecular_mass)
+    Cp_active = calculate_specific_heat_capacity(
+        active_heat_capacity, active_molecular_mass)
+    Cp_passive = calculate_specific_heat_capacity(
+        passive_heat_capacity, passive_molecular_mass)
     return 1 / (1 - THERMAL_EQUIVALENT_OF_WORK *
                 (entrainment_ratio * R_passive + R_active) /
                 (Cp_passive * entrainment_ratio + Cp_active))
@@ -57,13 +65,13 @@ def calculate_critical_temperature(active_temperature: float,
     return active_temperature * critical_pressure_ratio ** ((adiabatic_index - 1) / adiabatic_index)
 
 
-def calculate_temperature_cyl_section_exit(critical_temperature: float,
-                                           pressure_cyl_section_exit: float,
-                                           critical_pressure: float,
-                                           adiabatic_index: float) -> float:
-    """Температура в конце цилиндрического участка, К"""
-    return (critical_temperature *
-            (pressure_cyl_section_exit / critical_pressure) ** ((adiabatic_index - 1) / adiabatic_index))
+def calculate_section_temperature(inlet_temperature: float,
+                                  outlet_pressure: float,
+                                  inlet_pressure: float,
+                                  adiabatic_index: float) -> float:
+    """Температура в сечении через адиабатный процесс, К"""
+    return (inlet_temperature *
+            (outlet_pressure / inlet_pressure) ** ((adiabatic_index - 1) / adiabatic_index))
 
 
 def calculate_circle_area(diameter: float) -> float:
@@ -87,9 +95,9 @@ def calculate_reynolds_number(density: float,
 
 def calculate_nozzle_throat_area(mass_flow: float, pressure: float,
                                  specific_volume: float,
-                                 flow_coefficient: float) -> float:
+                                 psi: float) -> float:
     """Площадь сечения узкой части сопла, м²"""
-    return mass_flow / (flow_coefficient * np.sqrt(pressure / specific_volume))
+    return mass_flow / (psi * np.sqrt(pressure / specific_volume))
 
 
 def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,
