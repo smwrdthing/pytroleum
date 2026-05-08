@@ -117,9 +117,7 @@ Cp_active = calculate_specific_heat_capacity(
 Cp_passive = calculate_specific_heat_capacity(
     passive.heat_capacity, passive.molecular_mass)
 adiabatic_index = calculate_adiabatic_index(
-    active.molecular_mass, active.heat_capacity,
-    passive.molecular_mass, passive.heat_capacity,
-    ejector.ejection_params.entrainment_ratio)
+    active, passive, ejector.ejection_params.entrainment_ratio)
 
 _minor_header("ОСНОВНЫЕ ПАРАМЕТРЫ ЭЖЕКЦИИ")
 p("Степень сжатия:", f"{ejector.ejection_params.compression_ratio:.4f}")

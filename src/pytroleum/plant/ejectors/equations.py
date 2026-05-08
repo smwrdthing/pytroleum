@@ -1,5 +1,6 @@
 from scipy.constants import g
 import numpy as np
+from pytroleum.plant.ejectors.inputs import ActiveMediumData, PassiveMediumData
 
 UNIVERSAL_GAS_CONSTANT = 8.314       # Дж/(моль·К)
 ATMOSPHERIC_PRESSURE = 101325           # Па
@@ -30,18 +31,16 @@ def calculate_gas_outflow_velocity(mass_flow: float, temperature: float,
             ((pressure + ATMOSPHERIC_PRESSURE) * np.pi * diameter ** 2))
 
 
-def calculate_adiabatic_index(active_molecular_mass: float,
-                              active_heat_capacity: float,
-                              passive_molecular_mass: float,
-                              passive_heat_capacity: float,
+def calculate_adiabatic_index(active: ActiveMediumData,
+                              passive: PassiveMediumData,
                               entrainment_ratio: float) -> float:
     """Показатель адиабаты смеси активной и пассивной сред"""
-    R_active = calculate_gas_constant(active_molecular_mass)
-    R_passive = calculate_gas_constant(passive_molecular_mass)
+    R_active = calculate_gas_constant(active.molecular_mass)
+    R_passive = calculate_gas_constant(passive.molecular_mass)
     Cp_active = calculate_specific_heat_capacity(
-        active_heat_capacity, active_molecular_mass)
+        active.heat_capacity, active.molecular_mass)
     Cp_passive = calculate_specific_heat_capacity(
-        passive_heat_capacity, passive_molecular_mass)
+        passive.heat_capacity, passive.molecular_mass)
     return 1 / (1 - THERMAL_EQUIVALENT_OF_WORK *
                 (entrainment_ratio * R_passive + R_active) /
                 (Cp_passive * entrainment_ratio + Cp_active))

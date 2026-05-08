@@ -45,9 +45,7 @@ def calculate_ejection_params(active: ActiveMediumData,
 
     # Показатель адиабаты
     adiabatic_index = calculate_adiabatic_index(
-        active.molecular_mass, active.heat_capacity,
-        passive.molecular_mass, passive.heat_capacity,
-        entrainment_ratio)
+        active, passive, entrainment_ratio)
 
     # Критическое отношение давлений
     critical_pressure_ratio = calculate_critical_pressure_ratio(
@@ -176,9 +174,7 @@ def calculate_temperature_params(active: ActiveMediumData,
     """Температуры по сечениям эжектора"""
     # Показатель адиабаты
     adiabatic_index = calculate_adiabatic_index(
-        active.molecular_mass, active.heat_capacity,
-        passive.molecular_mass, passive.heat_capacity,
-        ejection.entrainment_ratio)
+        active, passive, ejection.entrainment_ratio)
 
     # Температура в критическом сечении сопла (T1)
     nozzle_exit = calculate_critical_temperature(
