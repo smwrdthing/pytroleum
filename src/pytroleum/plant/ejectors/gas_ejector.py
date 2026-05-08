@@ -1,10 +1,10 @@
 from scipy.constants import g
 import numpy as np
 from dataclasses import dataclass
-from pytroleum.plant.ejector.inputs import (ActiveMediumData,
-                                            PassiveMediumData,
-                                            CommonParams)
-from pytroleum.plant.ejector.equations import (
+from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
+                                             PassiveMediumData,
+                                             CommonParams)
+from pytroleum.plant.ejectors.equations import (
     calculate_specific_weight,
     calculate_gas_outflow_velocity,
     calculate_adiabatic_index,

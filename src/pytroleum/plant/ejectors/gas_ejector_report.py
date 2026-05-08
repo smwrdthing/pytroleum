@@ -1,18 +1,18 @@
-from pytroleum.plant.ejector.inputs import (ActiveMediumData,
-                                            PassiveMediumData,
-                                            CommonParams)
-from pytroleum.plant.ejector.gas_ejector import calculate_gas_ejector
-from pytroleum.plant.ejector.equations import (
+from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
+                                             PassiveMediumData,
+                                             CommonParams)
+from pytroleum.plant.ejectors.gas_ejector import calculate_gas_ejector
+from pytroleum.plant.ejectors.equations import (
     calculate_gas_constant,
     calculate_specific_heat_capacity,
     calculate_adiabatic_index,
 )
-from pytroleum.plant.ejector.utils import (_major_header, _minor_header,
-                                           print_row as p,
-                                           PA_TO_MPA, KELVIN_TO_CELSIUS,
-                                           KCAL_TO_J, KCAL_PER_KMOL_TO_J_PER_MOL,
-                                           KGS_S_M2_TO_PA_S, KG_PER_KMOL_TO_KG_PER_MOL,
-                                           KG_PER_MOL_TO_G_PER_MOL, J_TO_KJ, M_TO_MM)
+from pytroleum.plant.ejectors.utils import (_major_header, _minor_header,
+                                            print_row as p,
+                                            PA_TO_MPA, KELVIN_TO_CELSIUS,
+                                            KCAL_TO_J, KCAL_PER_KMOL_TO_J_PER_MOL,
+                                            KGS_S_M2_TO_PA_S, KG_PER_KMOL_TO_KG_PER_MOL,
+                                            KG_PER_MOL_TO_G_PER_MOL, J_TO_KJ, M_TO_MM)
 
 # ============================================================
 # Исходные данные
