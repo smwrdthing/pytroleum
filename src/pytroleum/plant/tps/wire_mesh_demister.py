@@ -92,14 +92,7 @@ class WireMeshDemister:
     nominal_diameter: float
     nominal_area: float
     nominal_velocity: float
-    capacity: float
-
-    # NOTE всё actual - без префикса
-    # NOTE всё nominal - с префиксом
-    # NOTE можно и наоборот, но именование должно быть последовательным
-    # NOTE
-    # NOTE diameter <-> area <-> velocity <-> capacity
-    # NOTE nominal_diameter <-> nominal_area <-> nominal_velocity <-> nominal_capacity
+    nominal_capacity: float
 
 
 def design_demister(conditions: OperationConditions,
@@ -134,7 +127,7 @@ def design_demister(conditions: OperationConditions,
                     (4 * area_reduction_coeff))
 
     nominal_velocity = conditions.vol_flow_rate[VAPOR] / nominal_area
-    capacity = critical_velocity * nominal_area
+    nominal_capacity = critical_velocity * nominal_area
 
     return WireMeshDemister(
         area=area,
@@ -142,5 +135,5 @@ def design_demister(conditions: OperationConditions,
         nominal_diameter=nominal_diameter,
         nominal_area=nominal_area,
         nominal_velocity=nominal_velocity,
-        capacity=capacity,
+        nominal_capacity=nominal_capacity,
     )
