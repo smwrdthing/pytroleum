@@ -80,6 +80,7 @@ liquid_speed = 1.0  # м/с
 
 conditions = OperationConditions()
 conditions.phase[OIL].change(oil_density, oil_viscosity)  # type: ignore
+conditions.oil_surface_tension = oil_surface_tension
 conditions.phase[VAPOR].update(*STANDARD_STATE)
 gas_density_norm = conditions.phase[VAPOR].rhomass()
 
@@ -167,7 +168,7 @@ liquid_gas_nozzle = design_two_phase_nozzle(conditions=conditions,
 # ============================================================
 
 current_flow_stability_coefficient = get_flow_stability_coefficient(pressure)
-wmd = design_demister(conditions, oil_surface_tension)
+wmd = design_demister(conditions)
 
 # ============================================================
 # Вывод результатов
@@ -435,7 +436,7 @@ p("Плотность жидкости (Н+В):", f"{liquid_density:.2f}", "кг
 p("Коэффициент k:",
   f"{current_flow_stability_coefficient:.3f}")
 p("Критическая скорость:",
-  f"{calculate_critical_velocity(conditions, oil_surface_tension):.3f}", "м/с")
+  f"{calculate_critical_velocity(conditions):.3f}", "м/с")
 
 _minor_divider()
 p("Диаметр:", f"{wmd.diameter * _TO_MM:.1f}", "мм")

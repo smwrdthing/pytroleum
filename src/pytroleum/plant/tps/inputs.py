@@ -55,6 +55,8 @@ class OperationConditions:
     phase: PhaseEOSInterfaces = field(
         default_factory=lambda: PHASE_EOS_INTERFACES)
 
+    oil_surface_tension: float = 0.0  # поверхностное натяжение нефти, Н/м
+
     pressure: ThreePhaseFlow = field(
         default_factory=lambda: np.zeros(N_FLOWS))
     temperature: ThreePhaseFlow = field(

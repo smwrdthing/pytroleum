@@ -63,8 +63,7 @@ def get_flow_stability_coefficient(pressure: float) -> float:
     return _STABILITY_COEFFICIENT_INTERPOLATOR(pressure)
 
 
-def calculate_critical_velocity(conditions: OperationConditions,
-                                oil_surface_tension: float) -> float:
+def calculate_critical_velocity(conditions: OperationConditions) -> float:
     """Критическая скорость газа для сетчатого каплеуловителя, м/с.
 
     v_кр = k_уст * √(√(g * σ_н * (ρ_ж - ρ_г_ру) / ρ_г_ру²))
@@ -78,7 +77,7 @@ def calculate_critical_velocity(conditions: OperationConditions,
     water_cut = flow_based_water_cut(conditions)
     density_liquid = (conditions.phase[OIL].rhomass() * (1 - water_cut) +
                       conditions.phase[WATER].rhomass() * water_cut)
-    return k * np.sqrt(np.sqrt((g * oil_surface_tension *
+    return k * np.sqrt(np.sqrt((g * conditions.oil_surface_tension *
                                 (density_liquid - gas_density)) /
                                gas_density ** 2))
 
@@ -95,10 +94,6 @@ class WireMeshDemister:
 
 
 def design_demister(conditions: OperationConditions,
-
-                    # NOTE возможно следует встроить в conditions
-                    oil_surface_tension: float,
-
                     area_reduction_coeff: float = AREA_REDUCTION_COEFF
                     ) -> WireMeshDemister:
     """Расчёт геометрических параметров и производительности каплеуловителя.
@@ -114,8 +109,7 @@ def design_demister(conditions: OperationConditions,
     D_ном — ближайший больший номинальный диаметр, м,
     v_кр — критическая скорость газа, м/с.
     """
-    critical_velocity = calculate_critical_velocity(
-        conditions, oil_surface_tension)
+    critical_velocity = calculate_critical_velocity(conditions)
 
     area = area_reduction_coeff * \
         conditions.vol_flow_rate[VAPOR] / critical_velocity

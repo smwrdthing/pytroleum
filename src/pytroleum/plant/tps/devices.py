@@ -3,7 +3,7 @@ from pytroleum.plant.tps.inputs import (OperationConditions,
                                         CoalescerPacking,
                                         GeometryCyclone,
                                         VAPOR)
-from pytroleum.plant.tps.separator import compute_settling_velocity, Separator
+from pytroleum.plant.tps.separator import compute_settling_velocity
 
 
 class Coalescer:
