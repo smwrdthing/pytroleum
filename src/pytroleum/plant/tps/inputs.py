@@ -132,12 +132,8 @@ class CoalescerPacking:
 
 @dataclass
 class GeometryCyclone:
-    width_inlet_cyclone: float   # м - ширина входа в циклон
-    height_inlet_cyclone: float  # м - высота входа в циклон
-    # NOTE _cyclone в именахз избыточно, атрибуты и так в классе гемоетрии циклона
-    # NOTE получится что-то вроде cyclone.geometry.width_inlet_cyclone
-    # NOTE
-    # NOTE cyclone.geometry.inlet_width <- лучше читается
+    inlet_width: float   # м - ширина входа в циклон
+    inlet_height: float  # м - высота входа в циклон
 
     def __post_init__(self):
         """Площадь сечения спирального канала одного циклона, м².
@@ -146,7 +142,7 @@ class GeometryCyclone:
 
         где b — ширина входа, h — высота входа в циклон.
         """
-        self.area_spiral_channel = self.width_inlet_cyclone * self.height_inlet_cyclone
+        self.area_spiral_channel = self.inlet_width * self.inlet_height
 
 
 @dataclass

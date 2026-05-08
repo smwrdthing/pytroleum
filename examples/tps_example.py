@@ -67,8 +67,8 @@ packing = CoalescerPacking(coalescer_top_gap=15e-3,
 
 # Циклон
 number_of_cyclones = 4
-geometry = GeometryCyclone(width_inlet_cyclone=47.5e-3,
-                           height_inlet_cyclone=75e-3)
+geometry = GeometryCyclone(inlet_width=47.5e-3,
+                           inlet_height=75e-3)
 
 # Штуцера
 gas_speed = 10.0    # м/с
@@ -319,9 +319,9 @@ _major_header(
 
 _minor_header("ГЕОМЕТРИЯ ЦИКЛОНА")
 p("Ширина входа в циклон:",
-  f"{geometry.width_inlet_cyclone * _TO_MM:.1f}", "мм")
+  f"{geometry.inlet_width * _TO_MM:.1f}", "мм")
 p("Высота входа в циклон:",
-  f"{geometry.height_inlet_cyclone * _TO_MM:.1f}", "мм")
+  f"{geometry.inlet_height * _TO_MM:.1f}", "мм")
 p("Количество циклонов:", f"{number_of_cyclones}")
 _minor_divider()
 p("Расход газа при р.у.:",
