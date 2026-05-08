@@ -12,7 +12,7 @@ from pytroleum.plant.tps.separator import (
     Separator, compute_settling_velocity,
     FILL_COEFFS, FIRST_SECTION, SECOND_SECTION, TOTAL,
 )
-from pytroleum.plant.tps.devices import Coalescer, Cyclone
+from pytroleum.plant.tps.devices import Coalescer, Cyclone, required_length_for
 from pytroleum.plant.tps.nozzle import design_nozzle, design_two_phase_nozzle
 from pytroleum.plant.tps.wire_mesh_demister import (
     design_demister, get_flow_stability_coefficient,
@@ -303,7 +303,7 @@ p("Зазор между пластинами:",
 p("Время осаждения капель воды в зазоре:",
   f"{t_top / SECONDS_PER_MINUTE:.2f}", "мин")
 p("Длина канала:",
-  f"{coalescer.required_length_for(separator.velocity[OIL], t_top):.4f}", "м")
+  f"{required_length_for(separator.velocity[OIL], t_top):.4f}", "м")
 
 _minor_header("НИЖНИЙ КОАЛЕСЦЕР")
 p("Угол наклона пластин:", f"{packing.angle:.0f}", "°")
@@ -312,7 +312,7 @@ p("Зазор между пластинами:",
 p("Время всплытия капель нефти в зазоре:",
   f"{t_bottom / SECONDS_PER_MINUTE:.2f}", "мин")
 p("Длина канала:",
-  f"{coalescer.required_length_for(separator.velocity[WATER], t_bottom):.4f}", "м")
+  f"{required_length_for(separator.velocity[WATER], t_bottom):.4f}", "м")
 
 _major_header(
     "РАСЧЁТ СКОРОСТИ ГАЗА В СЕПАРАЦИОННОМ ЭЛЕМЕНТЕ (СПИРАЛЬНЫЙ КАНАЛ)")

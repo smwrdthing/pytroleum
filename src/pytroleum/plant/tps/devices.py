@@ -28,17 +28,15 @@ class Coalescer:
         return (plate_spacing / (abs(velocity) *
                                  np.cos(np.radians(self.packing.angle))))
 
-    def required_length_for(self, phase_velocity: float, settling_time: float) -> float:
-        """Длина канала коалесцера, м.
 
-        L_кан = u_ф * t_к
+def required_length_for(phase_velocity: float, settling_time: float) -> float:
+    """Длина канала коалесцера, м.
 
-        где u_ф — скорость фазы в канале, t_к — время осаждения/всплытия капли.
-        """
+    L_кан = u_ф * t_к
 
-        # NOTE self не используется, метод можно вынести как свободную функцию
-
-        return phase_velocity * settling_time
+    где u_ф — скорость фазы в канале, t_к — время осаждения/всплытия капли.
+    """
+    return phase_velocity * settling_time
 
 
 class Cyclone:
