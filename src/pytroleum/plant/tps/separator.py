@@ -5,7 +5,6 @@ from pytroleum.plant.tps.inputs import (SeparatorDesign,
                                         flow_velocity,
                                         OIL, WATER, N_FLOWS)
 from scipy.constants import g
-from typing import Iterable
 
 FIRST_SECTION = 0
 SECOND_SECTION = 1
