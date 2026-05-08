@@ -77,9 +77,6 @@ class Separator:
         rt_total = (self.design.volume_separator * FILL_COEFFS[TOTAL] /
                     vol_flow_liquid)
         rt_second = rt_total - rt_first
-        # NOTE думаю можно убрать rt_total из return, информация избыточна,
-        # NOTE если нужно полное время пребывания, вызов этой функции можно обернуть в sum
-        # NOTE sum(separator.residence_time) -> значение rt_total
         return rt_first, rt_second
 
     def transit_time(self, phase: int) -> float:
