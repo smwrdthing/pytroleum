@@ -111,14 +111,13 @@ class Separator:
         )
         return abs(velocity) * self.transit_time(phase)
 
-    def capacity(self, fill_coeffs: Iterable[float] = FILL_COEFFS) -> tuple[float, float]:
+    def capacity(self, fill_coeffs: tuple[float, ...] = FILL_COEFFS) -> tuple[float, float]:
         """Пропускная способность сепаратора по жидкости для каждой секции, м³/с.
 
         Q_доп = V_сек * к_зап / τ_пр
 
         где V_сек — объём секции, к_зап — коэффициент заполнения, τ_пр — время пребывания.
         """
-        fill_coeffs = tuple(fill_coeffs)  # NOTE можно сразу передавать tuple?
         rt = self.residence_time()
         first_section_capacity = (self.design.volume[FIRST_SECTION] *
                                   fill_coeffs[FIRST_SECTION] / rt[FIRST_SECTION])
