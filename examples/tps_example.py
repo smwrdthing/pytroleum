@@ -62,8 +62,8 @@ design = SeparatorDesign(
 )
 
 # Коалесцер
-coalescer_packing = CoalescerPacking(coalescer_top_gap=15e-3,
-                                     coalescer_bottom_gap=25e-3)
+packing = CoalescerPacking(coalescer_top_gap=15e-3,
+                           coalescer_bottom_gap=25e-3)
 
 # Циклон
 number_of_cyclones = 4
@@ -136,16 +136,16 @@ height_oil = separator.settling_height(
 # Коалесцер и циклон
 # ============================================================
 
-coalescer = Coalescer(coalescer_packing=coalescer_packing, separator=separator)
+coalescer = Coalescer(packing=packing, separator=separator)
 cyclone = Cyclone(conditions=conditions, geometry_cyclone=geometry_cyclone)
 
 t_top = coalescer.droplet_settling_time(
-    coalescer_packing.coalescer_top_gap,
+    packing.coalescer_top_gap,
     diameter_water_droplet,
     rho_oil, mu_oil, rho_water,
 )
 t_bottom = coalescer.droplet_settling_time(
-    coalescer_packing.coalescer_bottom_gap,
+    packing.coalescer_bottom_gap,
     diameter_oil_droplet,
     rho_water, mu_water, rho_oil,
 )
@@ -297,18 +297,18 @@ p("Высота подъёма капель нефти:", f"{height_oil * _TO_MM
 _major_header("РАСЧЁТ КОАЛЕСЦЕРА")
 
 _minor_header("ВЕРХНИЙ КОАЛЕСЦЕР")
-p("Угол наклона пластин:", f"{coalescer_packing.angle:.0f}", "°")
+p("Угол наклона пластин:", f"{packing.angle:.0f}", "°")
 p("Зазор между пластинами:",
-  f"{coalescer_packing.coalescer_top_gap * _TO_MM:.0f}", "мм")
+  f"{packing.coalescer_top_gap * _TO_MM:.0f}", "мм")
 p("Время осаждения капель воды в зазоре:",
   f"{t_top / SECONDS_PER_MINUTE:.2f}", "мин")
 p("Длина канала:",
   f"{coalescer.required_length_for(separator.velocity[OIL], t_top):.4f}", "м")
 
 _minor_header("НИЖНИЙ КОАЛЕСЦЕР")
-p("Угол наклона пластин:", f"{coalescer_packing.angle:.0f}", "°")
+p("Угол наклона пластин:", f"{packing.angle:.0f}", "°")
 p("Зазор между пластинами:",
-  f"{coalescer_packing.coalescer_bottom_gap * _TO_MM:.0f}", "мм")
+  f"{packing.coalescer_bottom_gap * _TO_MM:.0f}", "мм")
 p("Время всплытия капель нефти в зазоре:",
   f"{t_bottom / SECONDS_PER_MINUTE:.2f}", "мин")
 p("Длина канала:",

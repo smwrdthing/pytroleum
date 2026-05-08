@@ -7,12 +7,9 @@ from pytroleum.plant.tps.separator import compute_settling_velocity, Separator
 
 
 class Coalescer:
-    def __init__(self, coalescer_packing: CoalescerPacking,
+    def __init__(self, packing: CoalescerPacking,
                  separator: Separator) -> None:
-
-        # NOTE можно просто packing
-        # NOTE coalescer.coalescer_packing -> coalescer.packing
-        self.coalescer_packing = coalescer_packing
+        self.packing = packing
 
         # NOTE почему сепаратор (более курпная единица оборудования) -
         # NOTE атрибут коалесцера (более мелкая единица оборудования)?
@@ -35,7 +32,7 @@ class Coalescer:
             continuous_phase_viscosity, dispersed_phase_density,
         )
         return (plate_spacing / (abs(velocity) *
-                                 np.cos(np.radians(self.coalescer_packing.angle))))
+                                 np.cos(np.radians(self.packing.angle))))
 
     def required_length_for(self, phase_velocity: float, settling_time: float) -> float:
         """Длина канала коалесцера, м.
