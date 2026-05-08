@@ -54,6 +54,9 @@ _STABILITY_COEFFICIENT_INTERPOLATOR = interpolate.interp1d(
     _FLOW_STABILITY_COEFFICIENT,
     kind='cubic')
 
+# Коэффициент учитывающий снижение площади сечения элементами насадки
+AREA_REDUCTION_COEFF = 1.05
+
 
 def get_flow_stability_coefficient(pressure: float) -> float:
     """Коэффициент устойчивости режимов течения при заданном давлении."""
@@ -78,10 +81,6 @@ def calculate_critical_velocity(conditions: OperationConditions,
     return k * np.sqrt(np.sqrt((g * oil_surface_tension *
                                 (density_liquid - gas_density)) /
                                gas_density ** 2))
-
-
-# Коэффициент учитывающий снижение площади сечения элементами насадки
-AREA_REDUCTION_COEFF = 1.05
 
 
 @dataclass
