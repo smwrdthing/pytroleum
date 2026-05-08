@@ -236,7 +236,7 @@ p("Коэффициент заполнения:",
 p("Номинальный объём сепаратора:",
   f"{design.volume_separator:.3f}", "м³")
 p("Время пребывания жидкости:",
-  f"{rt[TOTAL] / SECONDS_PER_MINUTE:.2f}", "мин")
+  f"{sum(rt) / SECONDS_PER_MINUTE:.2f}", "мин")
 
 _minor_header("ПЕРВАЯ СЕКЦИЯ (НЕФТЬ + ВОДА)")
 p("Длина первой секции:", f"{design.length_first_section:.1f}", "м")

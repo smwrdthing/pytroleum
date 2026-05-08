@@ -62,7 +62,7 @@ class Separator:
         areas = self.compute_flow_areas()
         self.velocity = flow_velocity(self.conditions, np.array(areas))
 
-    def residence_time(self) -> tuple[float, float, float]:
+    def residence_time(self) -> tuple[float, float]:
         """Время пребывания жидкости в секциях сепаратора, с.
 
         τ_пр = V_сек * к_зап / Q_ж
@@ -80,7 +80,7 @@ class Separator:
         # NOTE думаю можно убрать rt_total из return, информация избыточна,
         # NOTE если нужно полное время пребывания, вызов этой функции можно обернуть в sum
         # NOTE sum(separator.residence_time) -> значение rt_total
-        return rt_first, rt_second, rt_total
+        return rt_first, rt_second
 
     def transit_time(self, phase: int) -> float:
         """Время прохождения фазой расстояния от распределительной решётки до
