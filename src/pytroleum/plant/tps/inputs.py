@@ -23,6 +23,9 @@ STANDARD_TEMPERATURE = 273.15 + 15  # К (15°C)
 STANDARD_PRESSURE = 101325          # Па
 STANDARD_STATE = (CoolConst.PT_INPUTS, STANDARD_PRESSURE, STANDARD_TEMPERATURE)
 
+# Угол наклона пластин в коалесцере, градусы
+COALESCER_PACKING_ANGLE = 45.0
+
 # Объекты EOS по умолчанию
 VAPOR_EOS = eos.factory_eos({"Methane": 1}, with_state=STANDARD_STATE)
 OIL_EOS = eos.CrudeOilHardcoded()
@@ -124,14 +127,7 @@ def flow_velocity(conditions: OperationConditions,
 class CoalescerPacking:
     coalescer_top_gap: float     # расстояние между пластинами в верхнем коалесцере, м
     coalescer_bottom_gap: float  # расстояние между пластинами в нижнем коалесцере, м
-    angle: float = 45.0          # угол наклона пластин, градусы
-    # NOTE константа для angle в начале файла
-    # NOTE COALESCER_PACKING_ANGLE = 45.0
-    # NOTE ...
-    # NOTE class CoalescerPacking
-    # NOTE     ...
-    # NOTE     angle: float = COALESCER_PACKING_ANGLE
-    # NOTE     ...
+    angle: float = COALESCER_PACKING_ANGLE       # угол наклона пластин, градусы
 
 
 @dataclass
