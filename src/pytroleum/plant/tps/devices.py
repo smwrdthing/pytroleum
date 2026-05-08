@@ -50,10 +50,9 @@ class Coalescer:
 class Cyclone:
 
     def __init__(self, conditions: OperationConditions,
-                 geometry_cyclone: GeometryCyclone):
+                 geometry: GeometryCyclone):
         self.conditions = conditions
-        self.geometry_cyclone = geometry_cyclone
-        # NOTE cyclone.geometry_cyclone -> cyclone.geometry
+        self.geometry = geometry
 
     def vapor_velocity(self, number_of_cyclones: int) -> float:
         """Скорость газа в спиральном канале, м/с.
@@ -64,4 +63,4 @@ class Cyclone:
         F_кан — площадь сечения спирального канала одного циклона.
         """
         return self.conditions.vol_flow_rate[VAPOR] / (
-            number_of_cyclones * self.geometry_cyclone.area_spiral_channel)
+            number_of_cyclones * self.geometry.area_spiral_channel)

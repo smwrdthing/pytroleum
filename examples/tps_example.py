@@ -67,8 +67,8 @@ packing = CoalescerPacking(coalescer_top_gap=15e-3,
 
 # Циклон
 number_of_cyclones = 4
-geometry_cyclone = GeometryCyclone(width_inlet_cyclone=47.5e-3,
-                                   height_inlet_cyclone=75e-3)
+geometry = GeometryCyclone(width_inlet_cyclone=47.5e-3,
+                           height_inlet_cyclone=75e-3)
 
 # Штуцера
 gas_speed = 10.0    # м/с
@@ -137,7 +137,7 @@ height_oil = separator.settling_height(
 # ============================================================
 
 coalescer = Coalescer(packing=packing, separator=separator)
-cyclone = Cyclone(conditions=conditions, geometry_cyclone=geometry_cyclone)
+cyclone = Cyclone(conditions=conditions, geometry=geometry)
 
 t_top = coalescer.droplet_settling_time(
     packing.coalescer_top_gap,
@@ -319,15 +319,15 @@ _major_header(
 
 _minor_header("ГЕОМЕТРИЯ ЦИКЛОНА")
 p("Ширина входа в циклон:",
-  f"{geometry_cyclone.width_inlet_cyclone * _TO_MM:.1f}", "мм")
+  f"{geometry.width_inlet_cyclone * _TO_MM:.1f}", "мм")
 p("Высота входа в циклон:",
-  f"{geometry_cyclone.height_inlet_cyclone * _TO_MM:.1f}", "мм")
+  f"{geometry.height_inlet_cyclone * _TO_MM:.1f}", "мм")
 p("Количество циклонов:", f"{number_of_cyclones}")
 _minor_divider()
 p("Расход газа при р.у.:",
   f"{conditions.vol_flow_rate[VAPOR] * SECONDS_PER_DAY:.1f}", "м³/сут")
 p("Площадь сечения спирального канала:",
-  f"{geometry_cyclone.area_spiral_channel:.4f}", "м²")
+  f"{geometry.area_spiral_channel:.4f}", "м²")
 p("Скорость газа в спиральном канале:",
   f"{cyclone.vapor_velocity(number_of_cyclones):.3f}", "м/с")
 
