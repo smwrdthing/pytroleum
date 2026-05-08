@@ -92,11 +92,10 @@ def calculate_reynolds_number(density: float,
             (g * dynamic_viscosity))
 
 
-def calculate_nozzle_throat_area(mass_flow: float, pressure: float,
-                                 specific_volume: float,
+def calculate_nozzle_throat_area(active: ActiveMediumData,
                                  psi: float) -> float:
     """Площадь сечения узкой части сопла, м²"""
-    return mass_flow / (psi * np.sqrt(pressure / g / specific_volume))
+    return active.mass_flow / (psi * np.sqrt(active.inlet_pressure / g / active.specific_volume))
 
 
 def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,

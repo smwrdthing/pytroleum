@@ -241,8 +241,7 @@ def calculate_geometry_params(ejection: EjectionParams,
     nozzle_exit_diameter = calculate_circle_diameter(nozzle_exit_area)
 
     # Площадь сечения узкой части сопла
-    nozzle_throat_area = calculate_nozzle_throat_area(
-        active.mass_flow, active.inlet_pressure, active.specific_volume, psi)
+    nozzle_throat_area = calculate_nozzle_throat_area(active, psi)
 
     # Диаметр сечения узкой части сопла
     nozzle_throat_diameter = calculate_circle_diameter(nozzle_throat_area)
