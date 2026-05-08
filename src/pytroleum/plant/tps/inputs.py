@@ -66,6 +66,8 @@ class OperationConditions:
         default_factory=lambda: np.zeros(N_FLOWS))
     mass_flow_rate: ThreePhaseFlow = field(
         default_factory=lambda: np.zeros(N_FLOWS))
+    velocity: ThreePhaseFlow = field(
+        default_factory=lambda: np.zeros(N_FLOWS))
 
     def update_state(self, new_state: ThermodynamicState,
                      upd_containers: bool = False) -> None:
@@ -121,8 +123,8 @@ def flow_velocity(conditions: OperationConditions,
 
     где Q — объёмный расход фазы, м³/с, F — площадь сечения для фазы, м².
     """
-    # NOTE возможно velocity удобнее будет занести в conditions как атрибут
-    return conditions.vol_flow_rate / effective_area
+    conditions.velocity = conditions.vol_flow_rate / effective_area
+    return conditions.velocity
 
 
 @dataclass

@@ -268,11 +268,11 @@ p("Площадь сечения для прохода газа:", f"{areas[VAPO
 p("Площадь сечения для прохода нефти:", f"{areas[OIL]:.3f}", "м²")
 p("Площадь сечения для прохода воды:", f"{areas[WATER]:.3f}", "м²")
 _minor_divider()
-p("Скорость движения газа:", f"{separator.velocity[VAPOR]:.4f}", "м/с")
+p("Скорость движения газа:", f"{conditions.velocity[VAPOR]:.4f}", "м/с")
 p("Скорость движения нефти:",
-  f"{separator.velocity[OIL] * _TO_MM:.4f}", "мм/с")
+  f"{conditions.velocity[OIL] * _TO_MM:.4f}", "мм/с")
 p("Скорость движения воды:",
-  f"{separator.velocity[WATER] * _TO_MM:.4f}", "мм/с")
+  f"{conditions.velocity[WATER] * _TO_MM:.4f}", "мм/с")
 
 _minor_header("ОСАЖДЕНИЕ КАПЕЛЬ ВОДЫ В СЛОЕ НЕФТИ")
 p("Расстояние от распределительной решетки до сливной перегородки: ",
@@ -304,7 +304,7 @@ p("Зазор между пластинами:",
 p("Время осаждения капель воды в зазоре:",
   f"{t_top / SECONDS_PER_MINUTE:.2f}", "мин")
 p("Длина канала:",
-  f"{required_length_for(separator.velocity[OIL], t_top):.4f}", "м")
+  f"{required_length_for(conditions.velocity[OIL], t_top):.4f}", "м")
 
 _minor_header("НИЖНИЙ КОАЛЕСЦЕР")
 p("Угол наклона пластин:", f"{packing.angle:.0f}", "°")
@@ -313,7 +313,7 @@ p("Зазор между пластинами:",
 p("Время всплытия капель нефти в зазоре:",
   f"{t_bottom / SECONDS_PER_MINUTE:.2f}", "мин")
 p("Длина канала:",
-  f"{required_length_for(separator.velocity[WATER], t_bottom):.4f}", "м")
+  f"{required_length_for(conditions.velocity[WATER], t_bottom):.4f}", "м")
 
 _major_header(
     "РАСЧЁТ СКОРОСТИ ГАЗА В СЕПАРАЦИОННОМ ЭЛЕМЕНТЕ (СПИРАЛЬНЫЙ КАНАЛ)")

@@ -1,9 +1,11 @@
 import numpy as np
+from numpy import float64
+from numpy.typing import NDArray
 from pytroleum.plant.tps.inputs import (SeparatorDesign,
                                         OperationConditions,
                                         flow_based_water_cut,
                                         flow_velocity,
-                                        OIL, WATER, N_FLOWS)
+                                        OIL, WATER)
 from scipy.constants import g
 
 FIRST_SECTION = 0
@@ -35,7 +37,6 @@ class Separator:
                  conditions: OperationConditions):
         self.design = design
         self.conditions = conditions
-        self.velocity = np.zeros(N_FLOWS)
 
     def compute_flow_areas(self) -> tuple[float, float, float]:
         """Площади поперечного сечения для газа, нефти и воды, м².
@@ -51,7 +52,7 @@ class Separator:
         gas_area = self.design.section_area - liquid_area
         return gas_area, oil_area, water_area
 
-    def compute_velocities(self) -> None:
+    def compute_velocities(self) -> NDArray[float64]:
         """Скорости движения фаз в поперечном сечении сепаратора, м/с.
 
         u_г = Q_г_ру / F_г,  u_н = Q_н / F_н,  u_в = Q_в / F_в
@@ -60,7 +61,7 @@ class Separator:
         F_г, F_н, F_в — площади сечения для каждой фазы.
         """
         areas = self.compute_flow_areas()
-        self.velocity = flow_velocity(self.conditions, np.array(areas))
+        return flow_velocity(self.conditions, np.array(areas))
 
     def residence_time(self) -> tuple[float, float]:
         """Время пребывания жидкости в секциях сепаратора, с.
@@ -87,7 +88,7 @@ class Separator:
 
         где L_c — расстояние от решётки до перегородки, u_ф — скорость фазы.
         """
-        return self.design.length_to_baffle / self.velocity[phase]
+        return self.design.length_to_baffle / self.conditions.velocity[phase]
 
     def settling_height(self, drop_diameter: float,
                         continuous_phase_density: float,
