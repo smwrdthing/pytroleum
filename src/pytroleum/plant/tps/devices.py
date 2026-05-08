@@ -7,14 +7,8 @@ from pytroleum.plant.tps.separator import compute_settling_velocity, Separator
 
 
 class Coalescer:
-    def __init__(self, packing: CoalescerPacking,
-                 separator: Separator) -> None:
+    def __init__(self, packing: CoalescerPacking) -> None:
         self.packing = packing
-
-        # NOTE почему сепаратор (более курпная единица оборудования) -
-        # NOTE атрибут коалесцера (более мелкая единица оборудования)?
-        # NOTE Это нрушает иерархию композиции
-        self.separator = separator
 
     def droplet_settling_time(self, plate_spacing: float, drop_diameter: float,
                               continuous_phase_density: float,

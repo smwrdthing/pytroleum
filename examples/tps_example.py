@@ -136,7 +136,7 @@ height_oil = separator.settling_height(
 # Коалесцер и циклон
 # ============================================================
 
-coalescer = Coalescer(packing=packing, separator=separator)
+coalescer = Coalescer(packing=packing)
 cyclone = Cyclone(conditions=conditions, geometry=geometry)
 
 t_top = coalescer.droplet_settling_time(
