@@ -181,15 +181,14 @@ def calculate_nozzle_throat_area(active: ActiveMediumData,
                                  psi: float) -> float:
     """Площадь сечения узкой части сопла, м².
 
-        F_кр = G_a / (ψ · √(P_a / (g · v_a)))
+        F_кр = G_a / (ψ · √(P_a / v_a))
         где:
         G_a — массовый расход активной среды, кг/с
         ψ = 2,14 для газов и ψ = 2,03 для перегретого и насыщенного водяного пара
         P_a — давление активной среды, Па
-        g — ускорение свободного падения, м/с²
         v_a — удельный объём активной среды, м³/кг
     """
-    return active.mass_flow / (psi * np.sqrt(active.inlet_pressure / g / active.specific_volume))
+    return active.mass_flow / (psi * np.sqrt(active.inlet_pressure / active.specific_volume))
 
 
 def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,
