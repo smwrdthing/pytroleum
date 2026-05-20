@@ -67,30 +67,34 @@ p("Массовый расход:", f"{active.mass_flow:.2f}", "кг/с")
 p("Температура:",
   f"{active.temperature} К ({active.temperature - KELVIN_TO_CELSIUS:.0f} °C)")
 p("Давление на входе:", f"{active.inlet_pressure / PA_TO_MPA:.3f}", "МПа")
-p("Энтальпия:", f"{active.enthalpy / J_TO_KJ:.2f}", "кДж/кг")
-p("Энтропия:", f"{active.entropy / J_TO_KJ:.4f}", "кДж/(кг·К)")
+p("Энтальпия:", f"{active.enthalpy / KCAL_TO_J:.2f}", "ккал/кг")
+p("Энтропия:", f"{active.entropy / KCAL_TO_J:.4f}", "ккал/(кг·°С)")
 p("Удельный объём:", f"{active.specific_volume:.3f}", "м³/кг")
 p("Плотность:", f"{active.density:.3f}", "кг/м³")
-p("Динамическая вязкость:", f"{active.dynamic_viscosity:.6f}", "Па·с")
+p("Динамическая вязкость:",
+  f"{active.dynamic_viscosity / KGS_S_M2_TO_PA_S:.8f}", "кгс·с/м²")
 p("Диаметр трубопровода:", f"{active.inlet_diameter * M_TO_MM:.0f}", "мм")
 p("Молекулярная масса:",
-  f"{active.molecular_mass * KG_PER_MOL_TO_G_PER_MOL:.1f}", "г/моль")
-p("Теплоёмкость:", f"{active.heat_capacity / J_TO_KJ:.3f}", "кДж/(моль·К)")
+  f"{active.molecular_mass / KG_PER_KMOL_TO_KG_PER_MOL:.2f}", "кг/кмоль")
+p("Теплоёмкость:",
+  f"{active.heat_capacity / KCAL_PER_KMOL_TO_J_PER_MOL:.3f}", "ккал/(кмоль·°С)")
 
 _minor_header("ПАССИВНАЯ СРЕДА (Эжектируемая)")
 p("Массовый расход:", f"{passive.mass_flow:.2f}", "кг/с")
 p("Температура:",
   f"{passive.temperature} К ({passive.temperature - KELVIN_TO_CELSIUS:.0f} °C)")
 p("Давление на входе:", f"{passive.inlet_pressure / PA_TO_MPA:.3f}", "МПа")
-p("Энтальпия:", f"{passive.enthalpy / J_TO_KJ:.2f}", "кДж/кг")
-p("Энтропия:", f"{passive.entropy / J_TO_KJ:.4f}", "кДж/(кг·К)")
+p("Энтальпия:", f"{passive.enthalpy / KCAL_TO_J:.2f}", "ккал/кг")
+p("Энтропия:", f"{passive.entropy / KCAL_TO_J:.4f}", "ккал/(кг·°С)")
 p("Удельный объём:", f"{passive.specific_volume:.3f}", "м³/кг")
 p("Плотность:", f"{passive.density:.3f}", "кг/м³")
-p("Динамическая вязкость:", f"{passive.dynamic_viscosity:.6f}", "Па·с")
+p("Динамическая вязкость:",
+  f"{passive.dynamic_viscosity / KGS_S_M2_TO_PA_S:.8f}", "кгс·с/м²")
 p("Диаметр трубопровода:", f"{passive.inlet_diameter * M_TO_MM:.0f}", "мм")
 p("Молекулярная масса:",
-  f"{passive.molecular_mass * KG_PER_MOL_TO_G_PER_MOL:.1f}", "г/моль")
-p("Теплоёмкость:", f"{passive.heat_capacity / J_TO_KJ:.3f}", "кДж/(моль·К)")
+  f"{passive.molecular_mass / KG_PER_KMOL_TO_KG_PER_MOL:.2f}", "кг/кмоль")
+p("Теплоёмкость:",
+  f"{passive.heat_capacity / KCAL_PER_KMOL_TO_J_PER_MOL:.3f}", "ккал/(кмоль·°С)")
 
 _minor_header("ОБЩИЕ ПАРАМЕТРЫ")
 p("Количество ступеней:", f"{common.num_stages}", "шт.")
