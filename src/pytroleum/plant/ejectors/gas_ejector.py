@@ -7,7 +7,7 @@ from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
                                              CommonParams)
 
 
-class GasEjector:
+class BaseEjector:
 
     def __init__(self, active: ActiveMediumData,
                  passive: PassiveMediumData,
@@ -16,15 +16,40 @@ class GasEjector:
         self.passive = passive
         self.common_params = common_params
 
-        # Аннотации результатов расчёта (заполняются после вызова calculate())
-        self.compression_ratio: float
-        self.entrainment_ratio: float
-        self.adiabatic_index: float
-        self.critical_pressure_ratio: float
-        self.m: float
-        self.m1: float
-        self.n: float
+        # Степень сжатия установки
+        self.compression_ratio = (common_params.outlet_pressure /
+                                  passive.inlet_pressure)
 
+        # Коэффициент эжекции
+        self.entrainment_ratio = passive.mass_flow / active.mass_flow
+
+        # Показатель адиабаты
+        self.adiabatic_index = calculate_adiabatic_index(
+            active, passive, self.entrainment_ratio)
+
+        # Критическое отношение давлений
+        self.critical_pressure_ratio = calculate_critical_pressure_ratio(
+            self.adiabatic_index)
+
+
+class GasEjector(BaseEjector):
+
+    def __init__(self, active: ActiveMediumData,
+                 passive: PassiveMediumData,
+                 common_params: CommonParams):
+        super().__init__(active, passive, common_params)
+
+        # Основное уравнение эжекции для участка струи от сопла до места
+        # соприкосновения со стенкой
+        self.m1 = 2 * (1 + self.entrainment_ratio) ** 2
+
+        # Основной геометрический параметр эжектора m
+        self.m = self.m1 / (1 + (2 * self.entrainment_ratio ** 2) / self.m1)
+
+        # Отношение геометрических параметров
+        self.n = self.m / self.m1
+
+        # Аннотации результатов расчёта (заполняются после вызова calculate())
         self.dynamic_head_nozzle_exit: float
         self.ejector_head_no_diff: float
         self.pressure_cyl_section_exit: float
@@ -55,33 +80,6 @@ class GasEjector:
         self.diffuser_length: float
 
         self.reynolds_number: float
-
-    def calculate_ejection_params(self) -> None:
-        """Основные параметры эжекции"""
-        # Степень сжатия установки
-        self.compression_ratio = (self.common_params.outlet_pressure /
-                                  self.passive.inlet_pressure)
-
-        # Коэффициент эжекции
-        self.entrainment_ratio = self.passive.mass_flow / self.active.mass_flow
-
-        # Показатель адиабаты
-        self.adiabatic_index = calculate_adiabatic_index(
-            self.active, self.passive, self.entrainment_ratio)
-
-        # Критическое отношение давлений
-        self.critical_pressure_ratio = calculate_critical_pressure_ratio(
-            self.adiabatic_index)
-
-        # Основное уравнение эжекции для участка струи от сопла до места
-        # соприкосновения со стенкой
-        self.m1 = 2 * (1 + self.entrainment_ratio) ** 2
-
-        # Основной геометрический параметр эжектора m
-        self.m = self.m1 / (1 + (2 * self.entrainment_ratio ** 2) / self.m1)
-
-        # Отношение геометрических параметров
-        self.n = self.m / self.m1
 
     def calculate_geometry_params(self, psi: float, opening_angle: float,
                                   s: float) -> None:
@@ -211,7 +209,6 @@ class GasEjector:
                   opening_angle: float,
                   mixture_dynamic_viscosity: float) -> None:
         """Полный расчёт газового эжектора"""
-        self.calculate_ejection_params()
         self.calculate_geometry_params(psi, opening_angle, s)
         self.calculate_velocity_params(mixture_density, s)
         self.calculate_pressure_params(mixture_density,
