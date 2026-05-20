@@ -66,9 +66,9 @@ _minor_header("АКТИВНАЯ СРЕДА (Эжектирующая)")
 p("Массовый расход:", f"{active.mass_flow:.2f}", "кг/с")
 p("Температура:",
   f"{active.temperature} К ({active.temperature - KELVIN_TO_CELSIUS:.0f} °C)")
-p("Давление на входе:", f"{active.inlet_pressure / PA_TO_MPA:.3f}", "МПа")
+p("Давление на входе:", f"{active.inlet_pressure / PA_TO_MPA:.2f}", "МПа")
 p("Энтальпия:", f"{active.enthalpy / KCAL_TO_J:.2f}", "ккал/кг")
-p("Энтропия:", f"{active.entropy / KCAL_TO_J:.4f}", "ккал/(кг·°С)")
+p("Энтропия:", f"{active.entropy / KCAL_TO_J:.2f}", "ккал/(кг·°С)")
 p("Удельный объём:", f"{active.specific_volume:.3f}", "м³/кг")
 p("Плотность:", f"{active.density:.3f}", "кг/м³")
 p("Динамическая вязкость:",
@@ -77,15 +77,15 @@ p("Диаметр трубопровода:", f"{active.inlet_diameter * M_TO_MM
 p("Молекулярная масса:",
   f"{active.molecular_mass / KG_PER_KMOL_TO_KG_PER_MOL:.2f}", "кг/кмоль")
 p("Теплоёмкость:",
-  f"{active.heat_capacity / KCAL_PER_KMOL_TO_J_PER_MOL:.3f}", "ккал/(кмоль·°С)")
+  f"{active.heat_capacity / KCAL_PER_KMOL_TO_J_PER_MOL:.2f}", "ккал/(кмоль·°С)")
 
 _minor_header("ПАССИВНАЯ СРЕДА (Эжектируемая)")
 p("Массовый расход:", f"{passive.mass_flow:.2f}", "кг/с")
 p("Температура:",
   f"{passive.temperature} К ({passive.temperature - KELVIN_TO_CELSIUS:.0f} °C)")
-p("Давление на входе:", f"{passive.inlet_pressure / PA_TO_MPA:.3f}", "МПа")
+p("Давление на входе:", f"{passive.inlet_pressure / PA_TO_MPA:.2f}", "МПа")
 p("Энтальпия:", f"{passive.enthalpy / KCAL_TO_J:.2f}", "ккал/кг")
-p("Энтропия:", f"{passive.entropy / KCAL_TO_J:.4f}", "ккал/(кг·°С)")
+p("Энтропия:", f"{passive.entropy / KCAL_TO_J:.2f}", "ккал/(кг·°С)")
 p("Удельный объём:", f"{passive.specific_volume:.3f}", "м³/кг")
 p("Плотность:", f"{passive.density:.3f}", "кг/м³")
 p("Динамическая вязкость:",
@@ -94,7 +94,7 @@ p("Диаметр трубопровода:", f"{passive.inlet_diameter * M_TO_M
 p("Молекулярная масса:",
   f"{passive.molecular_mass / KG_PER_KMOL_TO_KG_PER_MOL:.2f}", "кг/кмоль")
 p("Теплоёмкость:",
-  f"{passive.heat_capacity / KCAL_PER_KMOL_TO_J_PER_MOL:.3f}", "ккал/(кмоль·°С)")
+  f"{passive.heat_capacity / KCAL_PER_KMOL_TO_J_PER_MOL:.2f}", "ккал/(кмоль·°С)")
 
 _minor_header("ОБЩИЕ ПАРАМЕТРЫ")
 p("Количество ступеней:", f"{common.num_stages}", "шт.")
@@ -105,27 +105,27 @@ p("Диаметр выходного трубопровода:",
 _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СОПЛА")
 
 p("Энтропия на нижней пограничной кривой s(a)':",
-  f"{ejector.entropy_lower_boundary / J_TO_KJ:.4f}", "кДж/(кг·°С)")
+  f"{ejector.entropy_lower_boundary / KCAL_TO_J:.2f}", "ккал/(кг·°С)")
 p("Энтропия на верхней пограничной кривой s(a)'':",
-  f"{ejector.entropy_upper_boundary / J_TO_KJ:.4f}", "кДж/(кг·°С)")
+  f"{ejector.entropy_upper_boundary / KCAL_TO_J:.2f}", "ккал/(кг·°С)")
 p("Энтальпия на нижней пограничной кривой i(a)':",
-  f"{ejector.enthalpy_lower_boundary / J_TO_KJ:.4f}", "кДж/кг")
+  f"{ejector.enthalpy_lower_boundary / KCAL_TO_J:.2f}", "ккал/кг")
 
 p("Температура активной среды в сопле t1:",
   f"{ejector.temperature_nozzle_exit:.2f}", "К")
 p("Давление газа в конце сопла p1:",
-  f"{ejector.pressure_nozzle_exit / PA_TO_MPA:.3f}", "МПа")
+  f"{ejector.pressure_nozzle_exit / PA_TO_MPA:.2f}", "МПа")
 p("Скрытая степень льдистости газа  в выходном сечении сопла r(a):",
-  f"{ejector.latent_heat_nozzle_exit / J_TO_KJ:.2f}", "кДж/кг")
+  f"{ejector.latent_heat_nozzle_exit / KCAL_TO_J:.2f}", "ккал/кг")
 p("Степень льдистости x(a):",
   f"{ejector.ice_quality_nozzle_exit:.4f}")
 p("Энтальпия расширившейся среды i1(a):",
-  f"{ejector.enthalpy_nozzle_exit / J_TO_KJ:.2f}", "кДж/кг")
+  f"{ejector.enthalpy_nozzle_exit / KCAL_TO_J:.2f}", "ккал/кг")
 p("Скорость истечения газа из сопла w1:",
   f"{ejector.velocity_nozzle_exit:.2f}", "м/с")
 p("Потери тепла в сопле hc:",
-  f"{ejector.heat_loss_nozzle / J_TO_KJ:.2f}", "кДж/кг")
+  f"{ejector.heat_loss_nozzle / KCAL_TO_J:.2f}", "ккал/кг")
 p("Энтальпия газа в конце сопла с учётом потерь i1:",
-  f"{ejector.enthalpy_nozzle_exit_actual / J_TO_KJ:.2f}", "кДж/кг")
+  f"{ejector.enthalpy_nozzle_exit_actual / KCAL_TO_J:.2f}", "ккал/кг")
 p("Степень льдистости в конце действительного расширения x1:",
   f"{ejector.ice_quality_nozzle_actual:.4f}")
