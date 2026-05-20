@@ -188,7 +188,7 @@ def calculate_nozzle_throat_area(active: ActiveMediumData,
         P_a — давление активной среды, Па
         v_a — удельный объём активной среды, м³/кг
     """
-    return active.mass_flow / (psi * np.sqrt(active.inlet_pressure / active.specific_volume))
+    return active.mass_flow / (psi * np.sqrt(active.inlet_pressure/g / active.specific_volume))
 
 
 def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,
