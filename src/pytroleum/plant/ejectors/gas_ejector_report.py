@@ -79,11 +79,11 @@ _minor_header("АКТИВНАЯ СРЕДА (Эжектирующая)")
 p("Массовый расход:", f"{active.mass_flow:.2f}", "кг/с")
 p("Температура:",
   f"{active.temperature} К ({active.temperature - KELVIN_TO_CELSIUS:.0f} °C)")
-p("Давление на входе:", f"{active.inlet_pressure / PA_TO_MPA:.3f}", "МПа")
+p("Давление на входе:", f"{active.inlet_pressure / PA_TO_MPA:.2f}", "МПа")
 p("Энтальпия:", f"{active.enthalpy / KCAL_TO_J:.2f}", "ккал/кг")
-p("Энтропия:", f"{active.entropy / KCAL_TO_J:.4f}", "ккал/(кг·°С)")
-p("Удельный объём:", f"{active.specific_volume:.3f}", "м³/кг")
-p("Плотность:", f"{active.density:.3f}", "кг/м³")
+p("Энтропия:", f"{active.entropy / KCAL_TO_J:.2f}", "ккал/(кг·°С)")
+p("Удельный объём:", f"{active.specific_volume:.2f}", "м³/кг")
+p("Плотность:", f"{active.density:.2f}", "кг/м³")
 p("Динамическая вязкость:",
   f"{active.dynamic_viscosity / KGS_S_M2_TO_PA_S:.8f}", "кгс·с/м²")
 p("Диаметр трубопровода:", f"{active.inlet_diameter * M_TO_MM:.0f}", "мм")
@@ -96,10 +96,10 @@ _minor_header("ПАССИВНАЯ СРЕДА (Эжектируемая)")
 p("Массовый расход:", f"{passive.mass_flow:.2f}", "кг/с")
 p("Температура:",
   f"{passive.temperature} К ({passive.temperature - KELVIN_TO_CELSIUS:.0f} °C)")
-p("Давление на входе:", f"{passive.inlet_pressure / PA_TO_MPA:.3f}", "МПа")
+p("Давление на входе:", f"{passive.inlet_pressure / PA_TO_MPA:.2f}", "МПа")
 p("Энтальпия:", f"{passive.enthalpy / KCAL_TO_J:.2f}", "ккал/кг")
-p("Энтропия:", f"{passive.entropy / KCAL_TO_J:.4f}", "ккал/(кг·°С)")
-p("Удельный объём:", f"{passive.specific_volume:.3f}", "м³/кг")
+p("Энтропия:", f"{passive.entropy / KCAL_TO_J:.2f}", "ккал/(кг·°С)")
+p("Удельный объём:", f"{passive.specific_volume:.2f}", "м³/кг")
 p("Плотность:", f"{passive.density:.3f}", "кг/м³")
 p("Динамическая вязкость:",
   f"{passive.dynamic_viscosity / KGS_S_M2_TO_PA_S:.8f}", "кгс·с/м²")
@@ -107,11 +107,11 @@ p("Диаметр трубопровода:", f"{passive.inlet_diameter * M_TO_M
 p("Молекулярная масса:",
   f"{passive.molecular_mass / KG_PER_KMOL_TO_KG_PER_MOL:.2f}", "кг/кмоль")
 p("Теплоёмкость:",
-  f"{passive.heat_capacity / KCAL_PER_KMOL_TO_J_PER_MOL:.3f}", "ккал/(кмоль·°С)")
+  f"{passive.heat_capacity / KCAL_PER_KMOL_TO_J_PER_MOL:.2f}", "ккал/(кмоль·°С)")
 
 _minor_header("ОБЩИЕ ПАРАМЕТРЫ")
 p("Количество ступеней:", f"{common.num_stages}", "шт.")
-p("Давление на выходе:", f"{common.outlet_pressure / PA_TO_MPA:.3f}", "МПа")
+p("Давление на выходе:", f"{common.outlet_pressure / PA_TO_MPA:.2f}", "МПа")
 p("Диаметр выходного трубопровода:",
   f"{common.outlet_diameter * M_TO_MM:.0f}", "мм")
 
