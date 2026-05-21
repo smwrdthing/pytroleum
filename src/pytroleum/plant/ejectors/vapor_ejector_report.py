@@ -5,10 +5,11 @@ from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
 
 from pytroleum.plant.ejectors.utils import (_major_header, _minor_header,
                                             print_row as p,
+                                            _minor_divider,
                                             PA_TO_MPA, KELVIN_TO_CELSIUS,
                                             KCAL_TO_J, KCAL_PER_KMOL_TO_J_PER_MOL,
                                             KGS_S_M2_TO_PA_S, KG_PER_KMOL_TO_KG_PER_MOL,
-                                            M_TO_MM)
+                                            KG_PER_MOL_TO_G_PER_MOL, J_TO_KJ, M_TO_MM)
 
 # ============================================================
 # Исходные данные
@@ -56,9 +57,12 @@ ejector.calculate_nozzle_params(
     phi=0.95,
 )
 
-# ============================================================
-# Вывод результатов
-# ============================================================
+ejector.calculate_stage_geometry(
+    entrainment_ratios=[0.1, 0.3, 0.5],
+    pressure_recovery_coefficient=0.70,
+    mach_number=0.90,
+)
+
 
 _major_header("ИСХОДНЫЕ ДАННЫЕ")
 
@@ -143,3 +147,25 @@ p("Удельный объём льдистого газа на выходе и�
 
 p("Динамический напор эжектирующей струи H_дин:",
   f"{ejector.dynamic_head_nozzle / PA_TO_MPA:.2f}", "МПа")
+
+_major_header("РАСЧЁТ ОСНОВНОГО ГЕОМЕТРИЧЕСКОГО ПАРАМЕТРА СТУПЕНИ")
+
+p("Коэффициент восстановления давления φ:",
+  f"{ejector.pressure_recovery_coefficient:.2f}")
+p("Число Маха M3:", f"{ejector.mach_number:.2f}")
+
+_minor_header("РЕЗУЛЬТАТЫ ПО КОЭФФИЦИЕНТАМ ЭЖЕКЦИИ")
+print("Зададимся коэффициентами эжекции:")
+for i, q in enumerate(ejector.stage_entrainment_ratios, 1):
+    p(f"q({i}):", f"{q:.1f}")
+
+_minor_divider()
+print("Рассчитываем показатель адиабаты смеси в конце цилиндрического участка (сечение III)")
+print("каждого коэффициента эжекции:")
+for i, k3 in enumerate(ejector.stage_adiabatic_indices, 1):
+    p(f"k3({i}):", f"{k3:.3f}")
+
+_minor_divider()
+print("Расчёт давления смеси в конце цилиндрического участка:")
+for i, p3 in enumerate(ejector.stage_pressures_cyl_exit, 1):
+    p(f"p3({i}):", f"{p3 / PA_TO_MPA:.3f}", "МПа")

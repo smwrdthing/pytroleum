@@ -96,3 +96,27 @@ class VaporEjector(BaseEjector):
         # Динамический напор эжектирующей струи
         self.dynamic_head_nozzle = (self.velocity_nozzle_exit ** 2 /
                                     (2 * self.specific_volume_nozzle_exit))
+
+    def calculate_stage_geometry(self,
+                                 entrainment_ratios: list[float],
+                                 pressure_recovery_coefficient: float,
+                                 mach_number: float) -> None:
+        """Расчёт основного геометрического параметра ступени."""
+
+        self.stage_entrainment_ratios = entrainment_ratios
+        self.pressure_recovery_coefficient = pressure_recovery_coefficient
+        self.mach_number = mach_number
+
+        self.stage_adiabatic_indices = []
+        self.stage_pressures_cyl_exit = []
+
+        for q in entrainment_ratios:
+            # Показатель адиабаты смеси для данного q (k3)
+            k3 = calculate_adiabatic_index(self.active, self.passive, q)
+
+            # Давление смеси в конце цилиндрического участка (сечение III)
+            p3 = (self.common_params.outlet_pressure /
+                  (1 + pressure_recovery_coefficient * k3 * mach_number ** 2 / 2))
+
+            self.stage_adiabatic_indices.append(k3)
+            self.stage_pressures_cyl_exit.append(p3)
