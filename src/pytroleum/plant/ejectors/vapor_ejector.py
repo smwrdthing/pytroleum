@@ -74,3 +74,25 @@ class VaporEjector(BaseEjector):
         self.ice_quality_nozzle_actual = ((self.enthalpy_nozzle_exit_actual -
                                            self.enthalpy_lower_boundary) /
                                           self.latent_heat_nozzle_exit)
+
+        # Давление в критическом сечении сопла
+        self.pressure_critical = calculate_critical_pressure(
+            self.critical_pressure_ratio, self.active.inlet_pressure)
+
+        # Температура в критическом сечении сопла (T1)
+        self.temperature_critical = calculate_critical_temperature(
+            self.active.temperature, self.critical_pressure_ratio,
+            self.adiabatic_index)
+
+        # Удельный объём насыщенного пара при давлении p1
+        R_active = calculate_gas_constant(self.active.molecular_mass)
+        self.vapor_specific_vol = (R_active * self.temperature_critical /
+                                   self.pressure_nozzle_exit)
+
+        # Удельный объём льдистого газа на выходе из сопла
+        self.specific_volume_nozzle_exit = (self.ice_quality_nozzle_actual *
+                                            self.vapor_specific_vol)
+
+        # Динамический напор эжектирующей струи
+        self.dynamic_head_nozzle = (self.velocity_nozzle_exit ** 2 /
+                                    (2 * self.specific_volume_nozzle_exit))

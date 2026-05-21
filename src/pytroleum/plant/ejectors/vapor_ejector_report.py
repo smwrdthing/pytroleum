@@ -8,7 +8,7 @@ from pytroleum.plant.ejectors.utils import (_major_header, _minor_header,
                                             PA_TO_MPA, KELVIN_TO_CELSIUS,
                                             KCAL_TO_J, KCAL_PER_KMOL_TO_J_PER_MOL,
                                             KGS_S_M2_TO_PA_S, KG_PER_KMOL_TO_KG_PER_MOL,
-                                            KG_PER_MOL_TO_G_PER_MOL, J_TO_KJ, M_TO_MM)
+                                            M_TO_MM)
 
 # ============================================================
 # Исходные данные
@@ -115,7 +115,7 @@ p("Температура активной среды в сопле t1:",
   f"{ejector.temperature_nozzle_exit:.2f}", "К")
 p("Давление газа в конце сопла p1:",
   f"{ejector.pressure_nozzle_exit / PA_TO_MPA:.2f}", "МПа")
-p("Скрытая степень льдистости газа  в выходном сечении сопла r(a):",
+p("Скрытая степень льдистости газа в выходном сечении сопла r(a):",
   f"{ejector.latent_heat_nozzle_exit / KCAL_TO_J:.2f}", "ккал/кг")
 p("Степень льдистости x(a):",
   f"{ejector.ice_quality_nozzle_exit:.4f}")
@@ -123,9 +123,23 @@ p("Энтальпия расширившейся среды i1(a):",
   f"{ejector.enthalpy_nozzle_exit / KCAL_TO_J:.2f}", "ккал/кг")
 p("Скорость истечения газа из сопла w1:",
   f"{ejector.velocity_nozzle_exit:.2f}", "м/с")
+
 p("Потери тепла в сопле hc:",
   f"{ejector.heat_loss_nozzle / KCAL_TO_J:.2f}", "ккал/кг")
 p("Энтальпия газа в конце сопла с учётом потерь i1:",
   f"{ejector.enthalpy_nozzle_exit_actual / KCAL_TO_J:.2f}", "ккал/кг")
 p("Степень льдистости в конце действительного расширения x1:",
   f"{ejector.ice_quality_nozzle_actual:.4f}")
+
+p("Давление в критическом сечении сопла p*:",
+  f"{ejector.pressure_critical / PA_TO_MPA:.4f}", "МПа")
+p("Температура в критическом сечении сопла p*:",
+  f"{ejector.temperature_critical:.2f}", "K")
+
+p("Удельный объём насыщенного пара при давлении p1 v'':",
+  f"{ejector.vapor_specific_vol:.5f}", "м³/кг")
+p("Удельный объём льдистого газа на выходе из сопла v1:",
+  f"{ejector.specific_volume_nozzle_exit:.5f}", "м³/кг")
+
+p("Динамический напор эжектирующей струи H_дин:",
+  f"{ejector.dynamic_head_nozzle / PA_TO_MPA:.2f}", "МПа")
