@@ -135,9 +135,9 @@ p("Энтальпия газа в конце сопла с учётом поте
 p("Степень льдистости в конце действительного расширения x1:",
   f"{ejector.ice_quality_nozzle_actual:.4f}")
 
-p("Давление в критическом сечении сопла p*:",
+p("Давление в критическом сечении сопла pкр:",
   f"{ejector.pressure_critical / PA_TO_MPA:.4f}", "МПа")
-p("Температура в критическом сечении сопла p*:",
+p("Температура в критическом сечении сопла pкр:",
   f"{ejector.temperature_critical:.2f}", "K")
 
 p("Удельный объём насыщенного пара при давлении p1 v'':",
@@ -169,3 +169,8 @@ _minor_divider()
 print("Расчёт давления смеси в конце цилиндрического участка:")
 for i, p3 in enumerate(ejector.stage_pressures_cyl_exit, 1):
     p(f"p3({i}):", f"{p3 / PA_TO_MPA:.3f}", "МПа")
+
+_minor_divider()
+print("Парциальное давление активной среды в конце цилиндрического участка:")
+for i, p3_active in enumerate(ejector.stage_partial_pressures_active, 1):
+    p(f"p3_active({i}):", f"{p3_active / PA_TO_MPA:.3f}", "МПа")

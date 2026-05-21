@@ -109,6 +109,10 @@ class VaporEjector(BaseEjector):
 
         self.stage_adiabatic_indices = []
         self.stage_pressures_cyl_exit = []
+        self.stage_partial_pressures_active = []
+
+        R_active = calculate_gas_constant(self.active.molecular_mass)
+        R_passive = calculate_gas_constant(self.passive.molecular_mass)
 
         for q in entrainment_ratios:
             # Показатель адиабаты смеси для данного q (k3)
@@ -118,5 +122,9 @@ class VaporEjector(BaseEjector):
             p3 = (self.common_params.outlet_pressure /
                   (1 + pressure_recovery_coefficient * k3 * mach_number ** 2 / 2))
 
+            # Парциальное давление активной среды в конце цилиндрического участка
+            p3_active = p3 / (1 + R_passive * q / R_active)
+
             self.stage_adiabatic_indices.append(k3)
             self.stage_pressures_cyl_exit.append(p3)
+            self.stage_partial_pressures_active.append(p3_active)
