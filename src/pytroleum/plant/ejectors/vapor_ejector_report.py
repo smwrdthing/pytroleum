@@ -57,7 +57,7 @@ ejector.calculate_nozzle_params(
     phi=0.95,
 )
 
-ejector.calculate_stage_geometry(
+ejector.calculate_mixture_parameters(
     entrainment_ratios=[0.1, 0.3, 0.5],
     pressure_recovery_coefficient=0.70,
     mach_number=0.90,

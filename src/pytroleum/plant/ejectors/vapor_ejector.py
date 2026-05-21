@@ -97,10 +97,10 @@ class VaporEjector(BaseEjector):
         self.dynamic_head_nozzle = (self.velocity_nozzle_exit ** 2 /
                                     (2 * self.specific_volume_nozzle_exit))
 
-    def calculate_stage_geometry(self,
-                                 entrainment_ratios: list[float],
-                                 pressure_recovery_coefficient: float,
-                                 mach_number: float) -> None:
+    def calculate_mixture_parameters(self,
+                                     entrainment_ratios: list[float],
+                                     pressure_recovery_coefficient: float,
+                                     mach_number: float) -> None:
         """Расчёт основного геометрического параметра ступени."""
 
         self.stage_entrainment_ratios = entrainment_ratios
