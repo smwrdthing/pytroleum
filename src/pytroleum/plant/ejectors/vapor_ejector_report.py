@@ -174,3 +174,8 @@ _minor_divider()
 print("Парциальное давление активной среды в конце цилиндрического участка:")
 for i, p3_active in enumerate(ejector.stage_partial_pressures_active, 1):
     p(f"p3_active({i}):", f"{p3_active / PA_TO_MPA:.3f}", "МПа")
+
+_minor_divider()
+print("Газовая постоянная смеси:")
+for i, gas_constant_mixture in enumerate(ejector.stage_gas_constants_mixture, 1):
+    p(f"R_см({i}):", f"{gas_constant_mixture:.2f}", "Дж/(кг·К)")

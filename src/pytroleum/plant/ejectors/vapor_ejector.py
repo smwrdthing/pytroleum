@@ -110,21 +110,35 @@ class VaporEjector(BaseEjector):
         self.stage_adiabatic_indices = []
         self.stage_pressures_cyl_exit = []
         self.stage_partial_pressures_active = []
+        self.stage_gas_constants_mixture = []
 
-        R_active = calculate_gas_constant(self.active.molecular_mass)
-        R_passive = calculate_gas_constant(self.passive.molecular_mass)
+        gas_constant_active = calculate_gas_constant(
+            self.active.molecular_mass)
+        gas_constant_passive = calculate_gas_constant(
+            self.passive.molecular_mass)
 
-        for q in entrainment_ratios:
-            # Показатель адиабаты смеси для данного q (k3)
-            k3 = calculate_adiabatic_index(self.active, self.passive, q)
+        for entrainment_ratio in entrainment_ratios:
+            # Показатель адиабаты смеси
+            adiabatic_index_mixture = calculate_adiabatic_index(
+                self.active, self.passive, entrainment_ratio)
+
+            # Газовая постоянная смеси
+            gas_constant_mixture = ((gas_constant_active +
+                                    entrainment_ratio * gas_constant_passive) /
+                                    (1 + entrainment_ratio))
 
             # Давление смеси в конце цилиндрического участка (сечение III)
-            p3 = (self.common_params.outlet_pressure /
-                  (1 + pressure_recovery_coefficient * k3 * mach_number ** 2 / 2))
+            pressure_cyl_exit = (
+                self.common_params.outlet_pressure /
+                (1 + pressure_recovery_coefficient *
+                 adiabatic_index_mixture * mach_number ** 2 / 2))
 
             # Парциальное давление активной среды в конце цилиндрического участка
-            p3_active = p3 / (1 + R_passive * q / R_active)
+            partial_pressure_active = (
+                pressure_cyl_exit /
+                (1 + gas_constant_passive * entrainment_ratio / gas_constant_active))
 
-            self.stage_adiabatic_indices.append(k3)
-            self.stage_pressures_cyl_exit.append(p3)
-            self.stage_partial_pressures_active.append(p3_active)
+            self.stage_adiabatic_indices.append(adiabatic_index_mixture)
+            self.stage_pressures_cyl_exit.append(pressure_cyl_exit)
+            self.stage_partial_pressures_active.append(partial_pressure_active)
+            self.stage_gas_constants_mixture.append(gas_constant_mixture)
