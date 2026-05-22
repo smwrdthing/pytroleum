@@ -61,6 +61,9 @@ ejector.calculate_mixture_parameters(
     entrainment_ratios=[0.1, 0.3, 0.5],
     pressure_recovery_coefficient=0.70,
     mach_number=0.90,
+    enthalpies_cyl_exit=[980.00 * KCAL_TO_J,
+                         990.00 * KCAL_TO_J,
+                         985.00 * KCAL_TO_J],
 )
 
 
@@ -179,3 +182,16 @@ _minor_divider()
 print("Газовая постоянная смеси:")
 for i, gas_constant_mixture in enumerate(ejector.stage_gas_constants_mixture, 1):
     p(f"R_см({i}):", f"{gas_constant_mixture:.2f}", "Дж/(кг·К)")
+
+_minor_divider()
+print("Заданные энтальпии смеси в конце цилиндрического участка i3:")
+for i, i3 in enumerate(ejector.stage_enthalpies_cyl_exit, 1):
+    p(f"i3({i}):", f"{i3 / KCAL_TO_J:.1f}", "ккал/кг")
+
+_minor_divider()
+print("Температура смеси в конце цилиндрического участка T3")
+for i, (t3, q) in enumerate(
+        zip(ejector.stage_temperatures_cyl_exit,
+            ejector.stage_entrainment_ratios), 1):
+    p(f"T3({i}):",
+      f"{t3:.2f} К  ({t3 - KELVIN_TO_CELSIUS:.2f} °C)")

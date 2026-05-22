@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.constants import g
+from scipy.optimize import fsolve
 
 from pytroleum.plant.ejectors.equations import *
 from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
@@ -100,24 +101,31 @@ class VaporEjector(BaseEjector):
     def calculate_mixture_parameters(self,
                                      entrainment_ratios: list[float],
                                      pressure_recovery_coefficient: float,
-                                     mach_number: float) -> None:
+                                     mach_number: float,
+                                     enthalpies_cyl_exit: list[float]) -> None:
         """Расчёт основного геометрического параметра ступени."""
-
         self.stage_entrainment_ratios = entrainment_ratios
         self.pressure_recovery_coefficient = pressure_recovery_coefficient
         self.mach_number = mach_number
+        self.stage_enthalpies_cyl_exit = enthalpies_cyl_exit
 
         self.stage_adiabatic_indices = []
         self.stage_pressures_cyl_exit = []
         self.stage_partial_pressures_active = []
         self.stage_gas_constants_mixture = []
+        self.stage_temperatures_cyl_exit = []   # T3, К
 
         gas_constant_active = calculate_gas_constant(
             self.active.molecular_mass)
         gas_constant_passive = calculate_gas_constant(
             self.passive.molecular_mass)
 
-        for entrainment_ratio in entrainment_ratios:
+        # Удельные теплоёмкости, Дж/(кг·К)
+        specific_heat_capacity_passive = calculate_specific_heat_capacity(
+            self.passive.heat_capacity, self.passive.molecular_mass)
+
+        for entrainment_ratio, enthalpy_cyl_exit in zip(entrainment_ratios,
+                                                        enthalpies_cyl_exit):
             # Показатель адиабаты смеси
             adiabatic_index_mixture = calculate_adiabatic_index(
                 self.active, self.passive, entrainment_ratio)
@@ -138,7 +146,27 @@ class VaporEjector(BaseEjector):
                 pressure_cyl_exit /
                 (1 + gas_constant_passive * entrainment_ratio / gas_constant_active))
 
+            # Температура смеси в конце цилиндрического участка T3, К
+            # Уравнение теплового баланса:
+            def heat_balance(temperature_cyl_exit_guess: np.ndarray) -> list[float]:
+                T3 = temperature_cyl_exit_guess[0]
+                return [
+                    self.active.enthalpy
+                    + entrainment_ratio * specific_heat_capacity_passive * self.passive.temperature
+                    - entrainment_ratio * specific_heat_capacity_passive * T3
+                    - enthalpy_cyl_exit
+                    - THERMAL_EQUIVALENT_OF_WORK
+                    * (adiabatic_index_mixture * mach_number ** 2 / 2)
+                    * (gas_constant_active + entrainment_ratio * gas_constant_passive)
+                    * T3
+                ]
+
+            t3_initial_guess = self.passive.temperature
+            temperature_cyl_exit = float(
+                fsolve(heat_balance, [t3_initial_guess])[0])
+
             self.stage_adiabatic_indices.append(adiabatic_index_mixture)
             self.stage_pressures_cyl_exit.append(pressure_cyl_exit)
             self.stage_partial_pressures_active.append(partial_pressure_active)
             self.stage_gas_constants_mixture.append(gas_constant_mixture)
+            self.stage_temperatures_cyl_exit.append(temperature_cyl_exit)
