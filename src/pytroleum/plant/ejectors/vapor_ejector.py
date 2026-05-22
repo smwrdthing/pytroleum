@@ -114,6 +114,7 @@ class VaporEjector(BaseEjector):
         self.stage_sound_velocities = []         # a(3), м/с
         self.stage_mixture_velocities = []       # w(3), м/с
         self.stage_specific_volumes = []         # v(3), м³/кг
+        self.stage_geometric_params = []         # m, основной геометрический параметр
 
         gas_constant_active = calculate_gas_constant(
             self.active.molecular_mass)
@@ -177,6 +178,14 @@ class VaporEjector(BaseEjector):
             specific_volume = gas_constant_mixture * \
                 temperature_cyl_exit / pressure_cyl_exit
 
+            # Основной геометрический параметр ступени m
+            geometric_param = (
+                (1 + entrainment_ratio) *
+                specific_volume *
+                self.velocity_nozzle_exit /
+                (self.specific_volume_nozzle_exit * mixture_velocity)
+            )
+
             self.stage_adiabatic_indices.append(adiabatic_index_mixture)
             self.stage_pressures_cyl_exit.append(pressure_cyl_exit)
             self.stage_partial_pressures_active.append(partial_pressure_active)
@@ -185,3 +194,4 @@ class VaporEjector(BaseEjector):
             self.stage_sound_velocities.append(sound_velocity)
             self.stage_mixture_velocities.append(mixture_velocity)
             self.stage_specific_volumes.append(specific_volume)
+            self.stage_geometric_params.append(geometric_param)

@@ -210,3 +210,8 @@ _minor_divider()
 print("Удельный объём смеси в конце цилиндрического участка v(3):")
 for i, v3 in enumerate(ejector.stage_specific_volumes, 1):
     p(f"v(3){i}:", f"{v3:.4f}", "м³/кг")
+
+_minor_divider()
+print("Основной геометрический параметр ступени m:")
+for i, m in enumerate(ejector.stage_geometric_params, 1):
+    p(f"m({i}):", f"{m:.2f}")
