@@ -195,3 +195,18 @@ for i, (t3, q) in enumerate(
             ejector.stage_entrainment_ratios), 1):
     p(f"T3({i}):",
       f"{t3:.2f} К  ({t3 - KELVIN_TO_CELSIUS:.2f} °C)")
+
+_minor_divider()
+print("Местная скорость звука в конце цилиндрического участка a(3):")
+for i, a3 in enumerate(ejector.stage_sound_velocities, 1):
+    p(f"a(3){i}:", f"{a3:.2f}", "м/с")
+
+_minor_divider()
+print("Скорость смеси в конце цилиндрического участка w(3):")
+for i, w3 in enumerate(ejector.stage_mixture_velocities, 1):
+    p(f"w(3){i}:", f"{w3:.2f}", "м/с")
+
+_minor_divider()
+print("Удельный объём смеси в конце цилиндрического участка v(3):")
+for i, v3 in enumerate(ejector.stage_specific_volumes, 1):
+    p(f"v(3){i}:", f"{v3:.4f}", "м³/кг")

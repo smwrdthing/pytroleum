@@ -3,9 +3,6 @@ from scipy.constants import g
 from scipy.optimize import fsolve
 
 from pytroleum.plant.ejectors.equations import *
-from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
-                                             PassiveMediumData,
-                                             CommonParams)
 from pytroleum.plant.ejectors.gas_ejector import BaseEjector
 
 KCAL_TO_J = 4186.8
@@ -114,6 +111,9 @@ class VaporEjector(BaseEjector):
         self.stage_partial_pressures_active = []
         self.stage_gas_constants_mixture = []
         self.stage_temperatures_cyl_exit = []   # T3, К
+        self.stage_sound_velocities = []         # a(3), м/с
+        self.stage_mixture_velocities = []       # w(3), м/с
+        self.stage_specific_volumes = []         # v(3), м³/кг
 
         gas_constant_active = calculate_gas_constant(
             self.active.molecular_mass)
@@ -146,7 +146,6 @@ class VaporEjector(BaseEjector):
                 pressure_cyl_exit /
                 (1 + gas_constant_passive * entrainment_ratio / gas_constant_active))
 
-            # Температура смеси в конце цилиндрического участка T3, К
             # Уравнение теплового баланса:
             def heat_balance(temperature_cyl_exit_guess: np.ndarray) -> list[float]:
                 T3 = temperature_cyl_exit_guess[0]
@@ -162,11 +161,27 @@ class VaporEjector(BaseEjector):
                 ]
 
             t3_initial_guess = self.passive.temperature
+
+            # Температура смеси в конце цилиндрического участка T3, К
             temperature_cyl_exit = float(
                 fsolve(heat_balance, [t3_initial_guess])[0])
+
+            # Расчет местной скорости звука
+            sound_velocity = np.sqrt(adiabatic_index_mixture *
+                                     gas_constant_mixture * temperature_cyl_exit)
+
+            # Скорость смеси в конце цилиндрического участка, м/с
+            mixture_velocity = mach_number * sound_velocity
+
+            # Удельный объём смеси в конце цилиндрического участка, м³/кг
+            specific_volume = gas_constant_mixture * \
+                temperature_cyl_exit / pressure_cyl_exit
 
             self.stage_adiabatic_indices.append(adiabatic_index_mixture)
             self.stage_pressures_cyl_exit.append(pressure_cyl_exit)
             self.stage_partial_pressures_active.append(partial_pressure_active)
             self.stage_gas_constants_mixture.append(gas_constant_mixture)
             self.stage_temperatures_cyl_exit.append(temperature_cyl_exit)
+            self.stage_sound_velocities.append(sound_velocity)
+            self.stage_mixture_velocities.append(mixture_velocity)
+            self.stage_specific_volumes.append(specific_volume)
