@@ -235,20 +235,31 @@ ejector.calculate_geometry(
 
 _major_header("ГЕОМЕТРИЧЕСКИЕ ПАРАМЕТРЫ СОПЛА")
 
-_minor_header("ВЫХОДНОЕ СЕЧЕНИЕ СОПЛА")
 p("Расчётная площадь выходного сечения F1*:",
   f"{ejector.nozzle_exit_area_theoretical * M2_TO_MM2:.2f}", "мм²")
-p("Степень расширения сопла ϑ:",
-  f"{ejector.nozzle_exit_area / ejector.nozzle_exit_area_theoretical:.2f}")
-p("Действительная площадь выходного сечения F1:",
-  f"{ejector.nozzle_exit_area * M2_TO_MM2:.2f}", "мм²")
-p("Действительный диаметр выходного сечения D1:",
-  f"{ejector.nozzle_exit_diameter * M_TO_MM:.2f}", "мм")
-
-_minor_header("КРИТИЧЕСКОЕ СЕЧЕНИЕ СОПЛА")
 p("Площадь критического сечения Fкр:",
   f"{ejector.nozzle_throat_area * M2_TO_MM2:.2f}", "мм²")
 p("Диаметр критического сечения Dкр:",
   f"{ejector.nozzle_throat_diameter * M_TO_MM:.2f}", "мм")
 p("Диаметр критического сечения с учётом погранслоя Dкр*:",
   f"{ejector.nozzle_throat_diameter_corrected * M_TO_MM:.2f}", "мм")
+
+p("Степень расширения сопла ϑ:",
+  f"{ejector.nozzle_exit_area / ejector.nozzle_exit_area_theoretical:.2f}")
+p("Действительная площадь выходного сечения F1:",
+  f"{ejector.nozzle_exit_area * M2_TO_MM2:.2f}", "мм²")
+p("Действительный диаметр выходного сечения D1:",
+  f"{ejector.nozzle_exit_diameter * M_TO_MM:.2f}", "мм")
+p("Диаметр сопла D' равен диаметру трубопровода активной среды:",
+  f"{ejector.nozzle_diameter * M_TO_MM:.2f}", "мм")
+
+p("Диаметр камеры разряжения D2 (Dп):",
+  f"{ejector.vacuum_chamber_diameter * M_TO_MM:.2f}", "мм")
+p("Входной диаметр камеры смешения Dк':",
+  f"{ejector.inlet_mixing_diameter * M_TO_MM:.2f}", "мм")
+p("Диаметр камеры смешения Dк:",
+  f"{ejector.mixing_diameter * M_TO_MM:.2f}", "мм")
+p("Радиус кривизны камеры смешения Rк:",
+  f"{ejector.curvature_radius * M_TO_MM:.2f}", "мм")
+p("Длина камеры смешения Lк:",
+  f"{ejector.mixing_length * M_TO_MM:.2f}", "мм")
