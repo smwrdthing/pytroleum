@@ -1,3 +1,7 @@
+# Физические константы
+UNIVERSAL_GAS_CONSTANT = 8.314   # Дж/(моль·К)
+ATMOSPHERIC_PRESSURE = 101325    # Па
+
 # Коэффициенты перевода единиц измерения
 PA_TO_MPA = 1e6
 KELVIN_TO_CELSIUS = 273.15

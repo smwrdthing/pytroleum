@@ -4,10 +4,9 @@ from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 
 from pytroleum.plant.ejectors.equations import *
-from pytroleum.plant.ejectors.gas_ejector import BaseEjector
-from pytroleum.plant.ejectors.utils import PA_TO_MPA
+from pytroleum.plant.ejectors.base_ejector import BaseEjector
+from pytroleum.plant.ejectors.utils import PA_TO_MPA, KCAL_TO_J
 
-KCAL_TO_J = 4186.8
 NOZZLE_VELOCITY_COEFF = 0.95
 
 

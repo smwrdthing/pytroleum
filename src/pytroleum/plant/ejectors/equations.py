@@ -1,9 +1,8 @@
 from scipy.constants import g
 import numpy as np
 from pytroleum.plant.ejectors.inputs import ActiveMediumData, PassiveMediumData
+from pytroleum.plant.ejectors.utils import UNIVERSAL_GAS_CONSTANT, ATMOSPHERIC_PRESSURE
 
-UNIVERSAL_GAS_CONSTANT = 8.314       # Дж/(моль·К)
-ATMOSPHERIC_PRESSURE = 101325           # Па
 THERMAL_EQUIVALENT_OF_WORK = 0.982   # Дж/Дж
 
 
