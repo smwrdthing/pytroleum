@@ -11,8 +11,7 @@ from pytroleum.plant.ejectors.utils import (_major_header, _minor_header,
                                             PA_TO_MPA, KELVIN_TO_CELSIUS,
                                             KCAL_TO_J, KCAL_PER_KMOL_TO_J_PER_MOL,
                                             KGS_S_M2_TO_PA_S, KG_PER_KMOL_TO_KG_PER_MOL,
-                                            KG_PER_MOL_TO_G_PER_MOL, J_TO_KJ, M_TO_MM,
-                                            M2_TO_MM2)
+                                            M_TO_MM, M2_TO_MM2)
 
 # ============================================================
 # Исходные данные
@@ -70,6 +69,10 @@ ejector.calculate_mixture_parameters(
     pressure_delta=0.78
 )
 
+ejector.calculate_geometry(
+    nozzle_expansion_ratio=0.72,
+    psi=2.03
+)
 
 _major_header("ИСХОДНЫЕ ДАННЫЕ")
 
@@ -227,11 +230,6 @@ for i, p3 in enumerate(ejector.stage_mixture_pressures, 1):
 
 ejector.plot_mixture_pressure_vs_entrainment()
 plt.show()
-
-ejector.calculate_geometry(
-    nozzle_expansion_ratio=0.72,
-    psi=2.03
-)
 
 _major_header("ГЕОМЕТРИЧЕСКИЕ ПАРАМЕТРЫ СОПЛА")
 
