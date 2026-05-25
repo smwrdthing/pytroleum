@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from pytroleum.plant.ejectors.vapor_ejector import VaporEjector
 from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
                                              PassiveMediumData,
@@ -221,3 +223,6 @@ _minor_divider()
 print("Расчёт давления смеси")
 for i, p3 in enumerate(ejector.stage_mixture_pressures, 1):
     p(f"p(3){i}:", f"{p3 / PA_TO_MPA:.3f}", "МПа")
+
+ejector.plot_mixture_pressure_vs_entrainment()
+plt.show()
