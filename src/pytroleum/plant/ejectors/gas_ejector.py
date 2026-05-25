@@ -49,38 +49,6 @@ class GasEjector(BaseEjector):
         # Отношение геометрических параметров
         self.n = self.m / self.m1
 
-        # Аннотации результатов расчёта (заполняются после вызова calculate())
-        self.dynamic_head_nozzle_exit: float
-        self.ejector_head_no_diff: float
-        self.pressure_cyl_section_exit: float
-        self.pressure_critical: float
-        self.pressure_ejector_outlet: float
-
-        self.velocity_active_inlet: float
-        self.velocity_passive_inlet: float
-        self.velocity_nozzle_exit: float
-        self.velocity_cyl_section_exit: float
-        self.velocity_ejector_outlet: float
-
-        self.temperature_nozzle_exit: float
-        self.temperature_cyl_section_exit: float
-        self.temperature_diffuser_exit: float
-
-        self.diffuser_exit_area: float
-        self.mixing_section_area: float
-        self.mixing_section_diameter: float
-        self.nozzle_exit_area: float
-        self.nozzle_exit_diameter: float
-        self.nozzle_throat_area: float
-        self.nozzle_throat_diameter: float
-        self.jet_length: float
-        self.mixing_section_length: float
-        self.nozzle_to_inlet_distance: float
-        self.cylinder_length: float
-        self.diffuser_length: float
-
-        self.reynolds_number: float
-
     def calculate_geometry_params(self, psi: float, opening_angle: float,
                                   s: float) -> None:
         """Геометрические размеры эжектора"""
