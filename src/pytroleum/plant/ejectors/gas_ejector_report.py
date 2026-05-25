@@ -59,8 +59,8 @@ common = CommonParams(
     outlet_diameter=0.325  # м
 )
 
-ejector = GasEjector(active, passive, common)
-ejector.calculate(
+gas_ejector = GasEjector(active, passive, common)
+gas_ejector.calculate(
     s=2,
     mixture_density=56.05,
     pressure_recovery_coefficient=0.8,
@@ -125,13 +125,13 @@ Cp_passive = calculate_specific_heat_capacity(
     passive.heat_capacity, passive.molecular_mass)
 
 _minor_header("ОСНОВНЫЕ ПАРАМЕТРЫ ЭЖЕКЦИИ")
-p("Степень сжатия:", f"{ejector.compression_ratio:.4f}")
-p("Коэффициент эжекции:", f"{ejector.entrainment_ratio:.4f}")
-p("m1 (участок струи до стенки):", f"{ejector.m1:.4f}")
-p("m (основной геометрический параметр):", f"{ejector.m:.4f}")
-p("n:", f"{ejector.n:.4f}")
+p("Степень сжатия:", f"{gas_ejector.compression_ratio:.4f}")
+p("Коэффициент эжекции:", f"{gas_ejector.entrainment_ratio:.4f}")
+p("m1 (участок струи до стенки):", f"{gas_ejector.m1:.4f}")
+p("m (основной геометрический параметр):", f"{gas_ejector.m:.4f}")
+p("n:", f"{gas_ejector.n:.4f}")
 p("Напор эжектора без диффузора:",
-  f"{ejector.ejector_head_no_diff / PA_TO_MPA:.3f}", "МПа")
+  f"{gas_ejector.ejector_head_no_diff / PA_TO_MPA:.3f}", "МПа")
 
 _minor_header("ГАЗОДИНАМИЧЕСКИЕ ПАРАМЕТРЫ")
 p("Газовая постоянная активной среды R_a:", f"{R_active:.2f}", "Дж/(кг·К)")
@@ -140,70 +140,70 @@ p("Удельная теплоёмкость активной среды Cp_a:",
   f"{Cp_active:.2f}", "Дж/(кг·К)")
 p("Удельная теплоёмкость пассивной среды Cp_n:",
   f"{Cp_passive:.2f}", "Дж/(кг·К)")
-p("Показатель адиабаты k:", f"{ejector.adiabatic_index:.4f}")
+p("Показатель адиабаты k:", f"{gas_ejector.adiabatic_index:.4f}")
 p("Критическое отношение давлений β:",
-  f"{ejector.critical_pressure_ratio:.6f}")
+  f"{gas_ejector.critical_pressure_ratio:.6f}")
 
 _minor_header("ДАВЛЕНИЯ")
 p("Динамический напор на выходе из сопла (I-I):",
-  f"{ejector.dynamic_head_nozzle_exit / PA_TO_MPA:.3f}", "МПа")
+  f"{gas_ejector.dynamic_head_nozzle_exit / PA_TO_MPA:.3f}", "МПа")
 p("Напор эжектора без диффузора:",
-  f"{ejector.ejector_head_no_diff / PA_TO_MPA:.3f}", "МПа")
+  f"{gas_ejector.ejector_head_no_diff / PA_TO_MPA:.3f}", "МПа")
 p("Критическое давление P_кр:",
-  f"{ejector.pressure_critical / PA_TO_MPA:.3f}", "МПа")
+  f"{gas_ejector.pressure_critical / PA_TO_MPA:.3f}", "МПа")
 p("Давление в конце цилиндрического участка (III-III):",
-  f"{ejector.pressure_cyl_section_exit / PA_TO_MPA:.3f}", "МПа")
+  f"{gas_ejector.pressure_cyl_section_exit / PA_TO_MPA:.3f}", "МПа")
 p("Давление за диффузором:",
-  f"{ejector.pressure_ejector_outlet / PA_TO_MPA:.3f}", "МПа")
+  f"{gas_ejector.pressure_ejector_outlet / PA_TO_MPA:.3f}", "МПа")
 
 _minor_header("СКОРОСТИ")
 p("Скорость активной среды в трубопроводе:",
-  f"{ejector.velocity_active_inlet:.2f}", "м/с")
+  f"{gas_ejector.velocity_active_inlet:.2f}", "м/с")
 p("Скорость пассивной среды в трубопроводе:",
-  f"{ejector.velocity_passive_inlet:.2f}", "м/с")
+  f"{gas_ejector.velocity_passive_inlet:.2f}", "м/с")
 p("Скорость истечения газа из сопла (w1):",
-  f"{ejector.velocity_nozzle_exit:.2f}", "м/с")
+  f"{gas_ejector.velocity_nozzle_exit:.2f}", "м/с")
 p("Скорость газа в конце смесительного участка (w3):",
-  f"{ejector.velocity_cyl_section_exit:.2f}", "м/с")
+  f"{gas_ejector.velocity_cyl_section_exit:.2f}", "м/с")
 p("Скорость на выходе из эжектора (w4):",
-  f"{ejector.velocity_ejector_outlet:.2f}", "м/с")
+  f"{gas_ejector.velocity_ejector_outlet:.2f}", "м/с")
 
 _minor_header("ТЕМПЕРАТУРЫ")
 p("Температура в критическом сечении сопла (t1):",
-  f"{ejector.temperature_nozzle_exit:.2f} К "
-  f"({ejector.temperature_nozzle_exit - KELVIN_TO_CELSIUS:.0f} °C)")
+  f"{gas_ejector.temperature_nozzle_exit:.2f} К "
+  f"({gas_ejector.temperature_nozzle_exit - KELVIN_TO_CELSIUS:.0f} °C)")
 p("Температура в конце цилиндрического участка (t3):",
-  f"{ejector.temperature_cyl_section_exit:.2f} К "
-  f"({ejector.temperature_cyl_section_exit - KELVIN_TO_CELSIUS:.0f} °C)")
+  f"{gas_ejector.temperature_cyl_section_exit:.2f} К "
+  f"({gas_ejector.temperature_cyl_section_exit - KELVIN_TO_CELSIUS:.0f} °C)")
 p("Температура на выходе из диффузора (t4):",
-  f"{ejector.temperature_diffuser_exit:.2f} К "
-  f"({ejector.temperature_diffuser_exit - KELVIN_TO_CELSIUS:.0f} °C)")
+  f"{gas_ejector.temperature_diffuser_exit:.2f} К "
+  f"({gas_ejector.temperature_diffuser_exit - KELVIN_TO_CELSIUS:.0f} °C)")
 
 _minor_header("ГЕОМЕТРИЧЕСКИЕ РАЗМЕРЫ")
 p("Площадь выходного сечения сопла F1:",
-  f"{ejector.nozzle_exit_area:.4f}", "м²")
+  f"{gas_ejector.nozzle_exit_area:.4f}", "м²")
 p("Диаметр выходного сечения сопла D1:",
-  f"{ejector.nozzle_exit_diameter * M_TO_MM:.2f}", "мм")
+  f"{gas_ejector.nozzle_exit_diameter * M_TO_MM:.2f}", "мм")
 p("Площадь узкой части сопла Fкр:",
-  f"{ejector.nozzle_throat_area:.4f}", "м²")
+  f"{gas_ejector.nozzle_throat_area:.4f}", "м²")
 p("Диаметр узкой части сопла Dкр:",
-  f"{ejector.nozzle_throat_diameter * M_TO_MM:.2f}", "мм")
+  f"{gas_ejector.nozzle_throat_diameter * M_TO_MM:.2f}", "мм")
 p("Площадь сечения смесительного участка F3:",
-  f"{ejector.mixing_section_area:.4f}", "м²")
+  f"{gas_ejector.mixing_section_area:.4f}", "м²")
 p("Диаметр смесительного участка D3:",
-  f"{ejector.mixing_section_diameter * M_TO_MM:.2f}", "мм")
+  f"{gas_ejector.mixing_section_diameter * M_TO_MM:.2f}", "мм")
 p("Площадь конечного сечения диффузора F4:",
-  f"{ejector.diffuser_exit_area:.4f}", "м²")
+  f"{gas_ejector.diffuser_exit_area:.4f}", "м²")
 p("Длина струи Lx'':",
-  f"{ejector.jet_length * M_TO_MM:.2f}", "мм")
+  f"{gas_ejector.jet_length * M_TO_MM:.2f}", "мм")
 p("Длина смесительного участка Lсм:",
-  f"{ejector.mixing_section_length * M_TO_MM:.2f}", "мм")
+  f"{gas_ejector.mixing_section_length * M_TO_MM:.2f}", "мм")
 p("Расстояние от сопла до цилиндрического участка L1:",
-  f"{ejector.nozzle_to_inlet_distance * M_TO_MM:.2f}", "мм")
+  f"{gas_ejector.nozzle_to_inlet_distance * M_TO_MM:.2f}", "мм")
 p("Длина цилиндрического участка L2:",
-  f"{ejector.cylinder_length * M_TO_MM:.2f}", "мм")
+  f"{gas_ejector.cylinder_length * M_TO_MM:.2f}", "мм")
 p("Длина диффузора L3:",
-  f"{ejector.diffuser_length * M_TO_MM:.2f}", "мм")
+  f"{gas_ejector.diffuser_length * M_TO_MM:.2f}", "мм")
 
 _minor_header("НАГНЕТАТЕЛЬНЫЙ ТРУБОПРОВОД")
-p("Число Рейнольдса Re:", f"{ejector.reynolds_number:.0f}")
+p("Число Рейнольдса Re:", f"{gas_ejector.reynolds_number:.0f}")

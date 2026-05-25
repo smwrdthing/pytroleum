@@ -50,8 +50,8 @@ common = CommonParams(
     outlet_diameter=0.325
 )
 
-ejector = GasEjector(active, passive, common)
-ejector.calculate(
+gas_ejector = GasEjector(active, passive, common)
+gas_ejector.calculate(
     s=2,
     mixture_density=56.05,
     pressure_recovery_coefficient=0.8,
@@ -69,23 +69,23 @@ labels = ['0', '1', '3', '4']
 
 pressures = [
     active.inlet_pressure / PA_TO_MPA,
-    ejector.pressure_critical / PA_TO_MPA,
-    ejector.pressure_cyl_section_exit / PA_TO_MPA,
-    ejector.pressure_ejector_outlet / PA_TO_MPA,
+    gas_ejector.pressure_critical / PA_TO_MPA,
+    gas_ejector.pressure_cyl_section_exit / PA_TO_MPA,
+    gas_ejector.pressure_ejector_outlet / PA_TO_MPA,
 ]
 
 temperatures = [
     active.temperature - KELVIN_TO_CELSIUS,
-    ejector.temperature_nozzle_exit - KELVIN_TO_CELSIUS,
-    ejector.temperature_cyl_section_exit - KELVIN_TO_CELSIUS,
-    ejector.temperature_diffuser_exit - KELVIN_TO_CELSIUS,
+    gas_ejector.temperature_nozzle_exit - KELVIN_TO_CELSIUS,
+    gas_ejector.temperature_cyl_section_exit - KELVIN_TO_CELSIUS,
+    gas_ejector.temperature_diffuser_exit - KELVIN_TO_CELSIUS,
 ]
 
 velocities = [
-    ejector.velocity_active_inlet,
-    ejector.velocity_nozzle_exit,
-    ejector.velocity_cyl_section_exit,
-    ejector.velocity_ejector_outlet,
+    gas_ejector.velocity_active_inlet,
+    gas_ejector.velocity_nozzle_exit,
+    gas_ejector.velocity_cyl_section_exit,
+    gas_ejector.velocity_ejector_outlet,
 ]
 
 # ============================================================
