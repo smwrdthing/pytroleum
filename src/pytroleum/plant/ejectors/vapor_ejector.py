@@ -99,7 +99,8 @@ class VaporEjector(BaseEjector):
                                      entrainment_ratios: list[float],
                                      pressure_recovery_coefficient: float,
                                      mach_number: float,
-                                     enthalpies_cyl_exit: list[float]) -> None:
+                                     enthalpies_cyl_exit: list[float],
+                                     pressure_delta: float) -> None:
         """Расчёт основного геометрического параметра ступени."""
         self.stage_entrainment_ratios = entrainment_ratios
         self.pressure_recovery_coefficient = pressure_recovery_coefficient
@@ -115,6 +116,7 @@ class VaporEjector(BaseEjector):
         self.stage_mixture_velocities = []       # w(3), м/с
         self.stage_specific_volumes = []         # v(3), м³/кг
         self.stage_geometric_params = []         # m, основной геометрический параметр
+        self.stage_mixture_pressures = []  # p(3)
 
         gas_constant_active = calculate_gas_constant(
             self.active.molecular_mass)
@@ -186,6 +188,15 @@ class VaporEjector(BaseEjector):
                 (self.specific_volume_nozzle_exit * mixture_velocity)
             )
 
+            # Давление смеси
+            pressure_mixture = (
+                self.pressure_nozzle_exit +
+                2 * self.dynamic_head_nozzle *
+                (pressure_delta - (1 + entrainment_ratio) *
+                 mixture_velocity / self.velocity_nozzle_exit) /
+                geometric_param
+            )
+
             self.stage_adiabatic_indices.append(adiabatic_index_mixture)
             self.stage_pressures_cyl_exit.append(pressure_cyl_exit)
             self.stage_partial_pressures_active.append(partial_pressure_active)
@@ -195,3 +206,4 @@ class VaporEjector(BaseEjector):
             self.stage_mixture_velocities.append(mixture_velocity)
             self.stage_specific_volumes.append(specific_volume)
             self.stage_geometric_params.append(geometric_param)
+            self.stage_mixture_pressures.append(pressure_mixture)

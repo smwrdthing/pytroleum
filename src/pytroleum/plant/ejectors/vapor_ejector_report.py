@@ -64,6 +64,7 @@ ejector.calculate_mixture_parameters(
     enthalpies_cyl_exit=[980.00 * KCAL_TO_J,
                          990.00 * KCAL_TO_J,
                          985.00 * KCAL_TO_J],
+    pressure_delta=0.78
 )
 
 
@@ -215,3 +216,8 @@ _minor_divider()
 print("Основной геометрический параметр ступени m:")
 for i, m in enumerate(ejector.stage_geometric_params, 1):
     p(f"m({i}):", f"{m:.2f}")
+
+_minor_divider()
+print("Расчёт давления смеси")
+for i, p3 in enumerate(ejector.stage_mixture_pressures, 1):
+    p(f"p(3){i}:", f"{p3 / PA_TO_MPA:.3f}", "МПа")
