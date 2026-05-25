@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+from pytroleum.plant.ejectors.equations import (calculate_gas_constant,
+                                                calculate_specific_heat_capacity)
 
 from pytroleum.plant.ejectors.vapor_ejector import VaporEjector
 from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
@@ -115,6 +117,21 @@ p("Количество ступеней:", f"{common.num_stages}", "шт.")
 p("Давление на выходе:", f"{common.outlet_pressure / PA_TO_MPA:.3f}", "МПа")
 p("Диаметр выходного трубопровода:",
   f"{common.outlet_diameter * M_TO_MM:.0f}", "мм")
+
+_minor_header("ГАЗОДИНАМИЧЕСКИЕ ПАРАМЕТРЫ")
+R_active = calculate_gas_constant(active.molecular_mass)
+R_passive = calculate_gas_constant(passive.molecular_mass)
+Cp_active = calculate_specific_heat_capacity(
+    active.heat_capacity, active.molecular_mass)
+Cp_passive = calculate_specific_heat_capacity(
+    passive.heat_capacity, passive.molecular_mass)
+
+p("Газовая постоянная активной среды R_a:", f"{R_active:.2f}", "Дж/(кг·К)")
+p("Газовая постоянная пассивной среды R_n:", f"{R_passive:.2f}", "Дж/(кг·К)")
+p("Удельная теплоёмкость активной среды Cp_a:",
+  f"{Cp_active:.2f}", "Дж/(кг·К)")
+p("Удельная теплоёмкость пассивной среды Cp_n:",
+  f"{Cp_passive:.2f}", "Дж/(кг·К)")
 
 _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СОПЛА")
 
