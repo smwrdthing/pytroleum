@@ -224,3 +224,31 @@ class VaporEjector(BaseEjector):
                         textcoords='offset points', xytext=(0, 10), ha='center')
         ax.set_ylim(7, 9)
         plt.tight_layout()
+
+    def calculate_geometry(self,
+                           nozzle_expansion_ratio: float,
+                           psi: float) -> None:
+        """Расчёт геометрических параметров сопла пароструйного эжектора."""
+        # Расчётная площадь выходного сечения сопла F1*, м²
+        self.nozzle_exit_area_theoretical = (
+            self.active.mass_flow * self.specific_volume_nozzle_exit /
+            self.velocity_nozzle_exit
+        )
+
+        # Площадь критического сечения сопла Fкр, м²
+        self.nozzle_throat_area = calculate_nozzle_throat_area(
+            self.active, psi)
+
+        # Диаметр критического сечения (без учёта погранслоя), м
+        self.nozzle_throat_diameter = calculate_circle_diameter(
+            self.nozzle_throat_area)
+
+        # Диаметр критического сечения с учётом пограничного слоя, м
+        self.nozzle_throat_diameter_corrected = self.nozzle_throat_diameter * 1.3
+
+        # Действительная площадь выходного сечения сопла F1, м²
+        self.nozzle_exit_area = nozzle_expansion_ratio * self.nozzle_exit_area_theoretical
+
+        # Действительный диаметр выходного сечения сопла D1, м
+        self.nozzle_exit_diameter = calculate_circle_diameter(
+            self.nozzle_exit_area)
