@@ -118,7 +118,10 @@ p("Давление на выходе:", f"{common.outlet_pressure / PA_TO_MPA:.
 p("Диаметр выходного трубопровода:",
   f"{common.outlet_diameter * M_TO_MM:.0f}", "мм")
 
-_minor_header("ГАЗОДИНАМИЧЕСКИЕ ПАРАМЕТРЫ")
+_minor_header("ПАРАМЕТРЫ ЭЖЕКЦИИ")
+p("Степень сжатия:", f"{vapor_ejector.compression_ratio:.4f}")
+p("Коэффициент эжекции:", f"{vapor_ejector.entrainment_ratio:.4f}")
+
 R_active = calculate_gas_constant(active.molecular_mass)
 R_passive = calculate_gas_constant(passive.molecular_mass)
 Cp_active = calculate_specific_heat_capacity(
@@ -132,6 +135,11 @@ p("Удельная теплоёмкость активной среды Cp_a:",
   f"{Cp_active:.2f}", "Дж/(кг·К)")
 p("Удельная теплоёмкость пассивной среды Cp_n:",
   f"{Cp_passive:.2f}", "Дж/(кг·К)")
+
+p("Скорость активной среды в трубопроводе:",
+  f"{vapor_ejector.velocity_active_inlet:.2f}", "м/с")
+p("Скорость пассивной среды в трубопроводе:",
+  f"{vapor_ejector.velocity_passive_inlet:.2f}", "м/с")
 
 _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА СОПЛА")
 

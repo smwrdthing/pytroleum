@@ -23,6 +23,18 @@ class BaseEjector:
         # Коэффициент эжекции
         self.entrainment_ratio = passive.mass_flow / active.mass_flow
 
+        # Скорость активной среды в трубопроводе w(a)
+        self.velocity_active_inlet = calculate_gas_outflow_velocity(
+            self.active.mass_flow, self.active.temperature,
+            self.active.inlet_pressure, self.active.inlet_diameter,
+            self.active.molecular_mass)
+
+        # Скорость пассивной среды в трубопроводе w(n)
+        self.velocity_passive_inlet = calculate_gas_outflow_velocity(
+            self.passive.mass_flow, self.passive.temperature,
+            self.passive.inlet_pressure, self.passive.inlet_diameter,
+            self.passive.molecular_mass)
+
         # Показатель адиабаты
         self.adiabatic_index = calculate_adiabatic_index(
             active, passive, self.entrainment_ratio)
@@ -104,17 +116,6 @@ class GasEjector(BaseEjector):
     def calculate_velocity_params(self, mixture_density: float,
                                   s: float) -> None:
         """Скорости по сечениям эжектора"""
-        # Скорость активной среды в трубопроводе w(a)
-        self.velocity_active_inlet = calculate_gas_outflow_velocity(
-            self.active.mass_flow, self.active.temperature,
-            self.active.inlet_pressure, self.active.inlet_diameter,
-            self.active.molecular_mass)
-
-        # Скорость пассивной среды в трубопроводе w(n)
-        self.velocity_passive_inlet = calculate_gas_outflow_velocity(
-            self.passive.mass_flow, self.passive.temperature,
-            self.passive.inlet_pressure, self.passive.inlet_diameter,
-            self.passive.molecular_mass)
 
         # Скорость истечения газа из сопла (w1)
         nozzle_exit_pressure = self.active.inlet_pressure / 1.1
