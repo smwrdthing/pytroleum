@@ -132,3 +132,6 @@ for s, val in zip(sections, velocities):
 ax3.set_ylim(0, 450)
 
 plt.show()
+
+# NOTE код с конкретными расчётами лучше кидать либо в подпапку examples в ejectors
+# NOTE либо в examples всей библиотеки

@@ -3,6 +3,14 @@ import numpy as np
 from pytroleum.plant.ejectors.inputs import ActiveMediumData, PassiveMediumData
 from pytroleum.plant.ejectors.utils import UNIVERSAL_GAS_CONSTANT, ATMOSPHERIC_PRESSURE
 
+# NOTE многое в этом модуле может быть заменено расчётами "на месте" с использованием
+# NOTE CoolProp, в функции следует выносить то, что часто/много повторяется/имеет сложную
+# NOTE логику и хорошо выделяется в отдельный независимый блок кода
+# NOTE
+# NOTE Те функции, которые следует оставить, можно переписать так, чтобы они принимали на
+# NOTE вход интерфейс уравнения состояния от CoolProp
+
+
 THERMAL_EQUIVALENT_OF_WORK = 0.982   # Дж/Дж
 
 
@@ -13,6 +21,23 @@ def calculate_gas_constant(molecular_mass: float) -> float:
         где: R_u — универсальная газовая постоянная, Дж/(моль·К),
         M — молекулярная масса среды, кг/моль
     """
+
+    # NOTE газовую постоянную можно считать через интерфейс к уравнению состояния
+    # NOTE из CoolProp, универасльную можно взять из scipy или завести файл под константы
+    # NOTE и определить там
+    # NOTE
+    # NOTE from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
+    # NOTE или
+    # NOTE from pytroleum.plant.ejector.constants import UNIVERSAL_GAS_CONSTANT
+    # NOTE
+    # NOTE дальше если где-то есть
+    # NOTE eos = AbstractState("HEOS", <смесь>)
+    # NOTE то газовая постоянная будет
+    # NOTE UNIVERSAL_GAS_CONSTANT/eos.molar_mass()
+    # NOTE
+    # NOTE В CoolProp молярные массы в СИ, поэтому газовая постоянная должна быть
+    # NOTE записана как 8.314... Дж/К/моль, если определяем сами
+
     return UNIVERSAL_GAS_CONSTANT / molecular_mass
 
 
@@ -24,6 +49,9 @@ def calculate_specific_heat_capacity(heat_capacity: float,
         где: Cp_mol — молярная теплоёмкость, Дж/(моль·К)
         M — молекулярная масса среды, кг/моль
     """
+
+    # NOTE можно считать на месте через CoolProp
+
     return heat_capacity / molecular_mass
 
 
@@ -34,6 +62,9 @@ def calculate_specific_weight(density: float) -> float:
         где: g — ускорение свободного падения, м/с²
         ρ  — плотность среды, кг/м³
     """
+
+    # NOTE можно считать на месте через CoolProp
+
     return g * density
 
 
@@ -51,6 +82,10 @@ def calculate_gas_outflow_velocity(mass_flow: float, temperature: float,
         P_atm — атмосферное давление, Па
         D — диаметр трубопровода, м
     """
+
+    # NOTE Эта функция работает с избыточным давлением, лучше в этом случае работать с
+    # NOTE абсолютным - можно пользоваться значением от CoolProp "из коробки"
+
     return (4 * mass_flow * calculate_gas_constant(molecular_mass) * temperature /
             ((pressure + ATMOSPHERIC_PRESSURE) * np.pi * diameter ** 2))
 
@@ -77,6 +112,45 @@ def calculate_adiabatic_index(active: ActiveMediumData,
         active.heat_capacity, active.molecular_mass)
     Cp_passive = calculate_specific_heat_capacity(
         passive.heat_capacity, passive.molecular_mass)
+
+    # NOTE можно считать "на месте" через CoolProp
+    # NOTE показатель адиабаты по опрелелению c_p(T)/c_v(T),
+    # NOTE если состояние известно, то можно из eos сразу взять
+    # NOTE теплоёмкости
+    # NOTE
+    # NOTE ещё по процессам, адиабатичнеский процесс - изоэнтропный
+    # NOTE чтобы не считать его "руками" можно также пользоваться
+    # NOTE CoolProp, достаточно обновлять состояние по энтропии (она постоянная) и
+    # NOTE какому-то второму параметру
+    # NOTE
+    # NOTE Пример
+    # NOTE from CoolProp.CoolProp import AbstractState
+    # NOTE from CoolProp.constants import PT_INPUTS, SmassT_INPUTS, PSmass_INPUTS
+    # NOTE
+    # NOTE P1, T1 = 1e5, 15+273.15
+    # NOTE eos = AbstractState("HEOS",<жидкость/газ>)
+    # NOTE eos.update(PT_INPUTS,P1,T1)
+    # NOTE S1 = eos.smass() # записываем энтропию
+    # NOTE # Адиабатное сжатие до 2 бар
+    # NOTE P2 = 2e5
+    # NOTE eos.update(PSmass_INPUTS, P2, S1)
+    # NOTE Читаем температуру
+    # NOTE T2 = eos.T()
+    # NOTE
+    # NOTE Код выше сработает только для чистых веществ в CoolProp, интерфейс смесей
+    # NOTE допускает обновление состояния только через пару PQ или QT в двухфазном регионе
+    # NOTE (давление-качество пара или качество пара-температура) или через пару PT в
+    # NOTE однофазном. Это можно обойти, если дописать собственную функцию, которая будет
+    # NOTE решать нелиненйое уравнение вида S(P2,T) - S1 = 0
+    # NOTE
+    # NOTE При прочих равных считать по формуле будет быстрее, так что она может
+    # NOTE быть уместна, код из заметки можно использовать для проверки, либо когда
+    # NOTE этот расчёт не выполняется в больших количествах и выводить формулу заново
+    # NOTE или где-то её искать накладнее + при её переписывании легко ошибиться
+    # NOTE
+    # NOTE Дополнительно : k на самом деле зависит от температуры, чаще всего слабо,
+    # NOTE но может проявляться для больших перепадов температур/некоторых веществ
+
     return 1 / (1 - THERMAL_EQUIVALENT_OF_WORK *
                 (entrainment_ratio * R_passive + R_active) /
                 (Cp_passive * entrainment_ratio + Cp_active))
@@ -92,6 +166,19 @@ def calculate_critical_pressure_ratio(adiabatic_index: float) -> float:
     return (2 / (adiabatic_index + 1)) ** (adiabatic_index / (adiabatic_index - 1))
 
 
+# NOTE пример как переписать функцию выше
+# NOTE def critical_pressure_ratio(eos):
+# NOTE     # Считаем, что нужное состояние уже установлено в eos
+# NOTE     k = eos.cpmass()/eos.cvmass() # adiabatic index
+# NOTE     beta_crit = (2/(k+1))**(k/(k-1))
+# NOTE     return beta_crit
+# NOTE
+# NOTE Иногда выгодно давать переменным "плохие" имена, как в данном случае:
+# NOTE В функции можно обозвать переменную как k - у неё непродолжительное время жизни,
+# NOTE функция маленькая и модульная, из контекста и комментария понятно, что это
+# NOTE показатель адиабаты + выражение больше похоже на математическую формулу
+
+
 def calculate_critical_pressure(critical_pressure_ratio: float,
                                 active_inlet_pressure: float) -> float:
     """Давление в критическом сечении сопла, Па.
@@ -101,6 +188,11 @@ def calculate_critical_pressure(critical_pressure_ratio: float,
         β — критическое отношение давлений
         P_a — давление активной среды на входе, Па
     """
+
+    # NOTE если это нужно считать 1-2-3 раза лучше не заводить функцию, а считать
+    # NOTE "на месте":
+    # NOTE critical_pressure = critical_pressure_ratio(eos)*eos.p() # <- вместо функции
+
     return critical_pressure_ratio * active_inlet_pressure
 
 
@@ -115,6 +207,9 @@ def calculate_critical_temperature(active_temperature: float,
         β — критическое отношение давлений
         k — показатель адиабаты
     """
+
+    # NOTE То же, что и для критического давления
+
     return active_temperature * critical_pressure_ratio ** ((adiabatic_index - 1) / adiabatic_index)
 
 
@@ -172,6 +267,13 @@ def calculate_reynolds_number(density: float,
         g — ускорение свободного падения, м/с²
         η — динамическая вязкость, Па·с
     """
+
+    # NOTE Число Рейнольдса можно считать без удельного веса
+    # NOTE
+    # NOTE В целом на мой взгляд лучше уйти в уравнениях от удельного веса/силовых единиц
+    # NOTE и пользоваться более привычными формами записи и единицами для напоров,
+    # NOTE расходов и т.д.
+
     return (calculate_specific_weight(density) * velocity * diameter /
             (g * dynamic_viscosity))
 
@@ -187,6 +289,18 @@ def calculate_nozzle_throat_area(active: ActiveMediumData,
         P_a — давление активной среды, Па
         v_a — удельный объём активной среды, м³/кг
     """
+    # NOTE в докстрингах пишем тольок обозначения из сигнатуры вызова функций,
+    # NOTE всё остальное описывается при необходимости комментариями
+
+    # NOTE g в формуле быть не должно по размерности
+    # NOTE
+    # NOTE в excel взяли давление в кгс/м^2, а не в Па, эти единицы измерения связаны
+    # NOTE межд собой множителем, который примерно равен g, поэтому при делении на g
+    # NOTE получиось так же, как и в excel (внутри формулы перевели Паскали в кгс/cм^2)
+    # NOTE
+    # NOTE вероятнее всего в excel ошибка, так как удельный объём берут в м^3/кг, чтобы в
+    # NOTE итоге получить размерность площади - давление должно быть в Паскалях,
+    # NOTE на g делить не нужно
     return active.mass_flow / (psi * np.sqrt(active.inlet_pressure/g / active.specific_volume))
 
 

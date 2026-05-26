@@ -34,6 +34,15 @@ class BaseEjector:
             self.passive.inlet_pressure, self.passive.inlet_diameter,
             self.passive.molecular_mass)
 
+        # NOTE расчёт скорости здесь должен быть верный, так как он использует определение
+        # NOTE массового расхода через среднюю скорость в сечении и уравнение состояния
+        # NOTE идеального газа
+        # NOTE
+        # NOTE С CoolProp будет точнее, т.к. для высоких давлений уравнение состояния
+        # NOTE идеального газа работает хуже
+        # NOTE
+        # NOTE Происхождение формулы из таблицы в excel остаётся неизвестным
+
         # Показатель адиабаты
         self.adiabatic_index = calculate_adiabatic_index(
             active, passive, self.entrainment_ratio)

@@ -2,10 +2,17 @@ import numpy as np
 from scipy.constants import g
 
 from pytroleum.plant.ejectors.equations import *
+# NOTE лучше не импортировать всё из подпакета через *, это может быть удобно,
+# NOTE но можно случайно  столкнуться с коллизией имён
+# NOTE (когда у разных вещей в коде одинаковые имена) и получить трудноуловимые ошибки
 from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
                                              PassiveMediumData,
                                              CommonParams)
 from pytroleum.plant.ejectors.base_ejector import BaseEjector
+
+# NOTE как и в других местах - я бы предпочёл уйти от силовых единиц расхода и удельного
+# NOTE веса и пользоваться вместо этого обычными единицами измерения оасхода и плотностью
+# NOTE во всех расчётных формулах
 
 
 class GasEjector(BaseEjector):
@@ -83,6 +90,7 @@ class GasEjector(BaseEjector):
 
         # Скорость истечения газа из сопла (w1)
         nozzle_exit_pressure = self.active.inlet_pressure / 1.1
+        # NOTE напор будет "head", чтобы не путаться со статическим давлением
         self.velocity_nozzle_exit = np.sqrt(
             2 * g * nozzle_exit_pressure /
             calculate_specific_weight(self.active.density))
@@ -101,6 +109,7 @@ class GasEjector(BaseEjector):
         """Давления по сечениям эжектора"""
         # Динамический напор эжектирующей струи на выходе из сопла (сечение I-I)
         self.dynamic_head_nozzle_exit = self.active.inlet_pressure / 1.1
+        # NOTE дважды считаем одно и то же (см. функцию выше)
 
         # Напор, создаваемый эжектором без диффузора
         self.ejector_head_no_diff = self.dynamic_head_nozzle_exit / self.m
