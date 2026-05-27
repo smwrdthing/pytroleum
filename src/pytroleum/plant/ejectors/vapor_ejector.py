@@ -3,7 +3,15 @@ from scipy.constants import g
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 
-from pytroleum.plant.ejectors.equations import *
+from pytroleum.plant.ejectors.equations import (calculate_critical_pressure,
+                                                calculate_critical_temperature,
+                                                calculate_gas_constant,
+                                                calculate_specific_heat_capacity,
+                                                calculate_adiabatic_index,
+                                                THERMAL_EQUIVALENT_OF_WORK,
+                                                calculate_nozzle_throat_area,
+                                                calculate_circle_diameter,
+                                                )
 from pytroleum.plant.ejectors.base_ejector import BaseEjector
 from pytroleum.plant.ejectors.utils import PA_TO_MPA, KCAL_TO_J
 
@@ -154,14 +162,13 @@ class VaporEjector(BaseEjector):
             def heat_balance(temperature_cyl_exit_guess: np.ndarray) -> list[float]:
                 T3 = temperature_cyl_exit_guess[0]
                 return [
-                    self.active.enthalpy
-                    + entrainment_ratio * specific_heat_capacity_passive * self.passive.temperature
-                    - entrainment_ratio * specific_heat_capacity_passive * T3
-                    - enthalpy_cyl_exit
-                    - THERMAL_EQUIVALENT_OF_WORK
-                    * (adiabatic_index_mixture * mach_number ** 2 / 2)
-                    * (gas_constant_active + entrainment_ratio * gas_constant_passive)
-                    * T3
+                    self.active.enthalpy + entrainment_ratio *
+                    specific_heat_capacity_passive * self.passive.temperature -
+                    entrainment_ratio * specific_heat_capacity_passive * T3 -
+                    enthalpy_cyl_exit - THERMAL_EQUIVALENT_OF_WORK *
+                    (adiabatic_index_mixture * mach_number ** 2 / 2) *
+                    (gas_constant_active + entrainment_ratio * gas_constant_passive) *
+                    T3
                 ]
 
             t3_initial_guess = self.passive.temperature
@@ -219,7 +226,8 @@ class VaporEjector(BaseEjector):
         ax.grid(True, linestyle='--', alpha=0.5)
         for entrainment_ratio, pressure in zip(self.stage_entrainment_ratios,
                                                self.stage_mixture_pressures):
-            ax.annotate(f'{pressure / PA_TO_MPA:.2f}', xy=(entrainment_ratio, pressure / PA_TO_MPA),
+            ax.annotate(f'{pressure / PA_TO_MPA:.2f}',
+                        xy=(entrainment_ratio, pressure / PA_TO_MPA),
                         textcoords='offset points', xytext=(0, 10), ha='center')
         ax.set_ylim(7, 9)
         plt.tight_layout()

@@ -210,7 +210,8 @@ def calculate_critical_temperature(active_temperature: float,
 
     # NOTE То же, что и для критического давления
 
-    return active_temperature * critical_pressure_ratio ** ((adiabatic_index - 1) / adiabatic_index)
+    return (active_temperature *
+            critical_pressure_ratio ** ((adiabatic_index - 1) / adiabatic_index))
 
 
 def calculate_section_temperature(inlet_temperature: float,
@@ -229,7 +230,8 @@ def calculate_section_temperature(inlet_temperature: float,
         k — показатель адиабаты
     """
     return (inlet_temperature *
-            (outlet_pressure / inlet_pressure) ** ((adiabatic_index - 1) / adiabatic_index))
+            (outlet_pressure / inlet_pressure) ** ((adiabatic_index - 1) /
+                                                   adiabatic_index))
 
 
 def calculate_circle_area(diameter: float) -> float:
@@ -301,7 +303,8 @@ def calculate_nozzle_throat_area(active: ActiveMediumData,
     # NOTE вероятнее всего в excel ошибка, так как удельный объём берут в м^3/кг, чтобы в
     # NOTE итоге получить размерность площади - давление должно быть в Паскалях,
     # NOTE на g делить не нужно
-    return active.mass_flow / (psi * np.sqrt(active.inlet_pressure/g / active.specific_volume))
+    return (active.mass_flow / (psi * np.sqrt(active.inlet_pressure/g /
+                                              active.specific_volume)))
 
 
 def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,

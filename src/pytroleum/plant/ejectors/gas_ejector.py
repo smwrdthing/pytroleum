@@ -1,10 +1,18 @@
 import numpy as np
 from scipy.constants import g
 
-from pytroleum.plant.ejectors.equations import *
-# NOTE лучше не импортировать всё из подпакета через *, это может быть удобно,
-# NOTE но можно случайно  столкнуться с коллизией имён
-# NOTE (когда у разных вещей в коде одинаковые имена) и получить трудноуловимые ошибки
+from pytroleum.plant.ejectors.equations import (calculate_circle_area,
+                                                calculate_section_area,
+                                                calculate_circle_diameter,
+                                                calculate_nozzle_throat_area,
+                                                calculate_diffuser_length,
+                                                calculate_specific_weight,
+                                                calculate_section_velocity,
+                                                calculate_critical_pressure,
+                                                calculate_critical_temperature,
+                                                calculate_section_temperature,
+                                                calculate_reynolds_number)
+
 from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
                                              PassiveMediumData,
                                              CommonParams)

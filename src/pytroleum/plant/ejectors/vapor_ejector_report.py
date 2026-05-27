@@ -195,7 +195,7 @@ for i, q in enumerate(vapor_ejector.stage_entrainment_ratios, 1):
     p(f"q({i}):", f"{q:.1f}")
 
 _minor_divider()
-print("Рассчитываем показатель адиабаты смеси в конце цилиндрического участка (сечение III)")
+print("Показатель адиабаты смеси в конце цилиндрического участка (сечение III)")
 print("каждого коэффициента эжекции:")
 for i, k3 in enumerate(vapor_ejector.stage_adiabatic_indices, 1):
     p(f"k3({i}):", f"{k3:.3f}")
