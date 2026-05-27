@@ -5,10 +5,6 @@ from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              ACTIVE, PASSIVE)
 from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
 
-# NOTE Те функции, которые следует оставить, можно переписать так, чтобы они принимали на
-# NOTE вход интерфейс уравнения состояния от CoolProp
-
-
 THERMAL_EQUIVALENT_OF_WORK = 0.982   # Дж/Дж
 
 
