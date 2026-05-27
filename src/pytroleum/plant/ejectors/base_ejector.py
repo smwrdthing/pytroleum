@@ -23,15 +23,13 @@ class BaseEjector:
 
         # Скорость активной среды в трубопроводе w(a)
         self.velocity_active_inlet = calculate_gas_outflow_velocity(
-            conditions.mass_flow_rate[ACTIVE], conditions.temperature[ACTIVE],
-            conditions.pressure[ACTIVE], req.active_inlet_diameter,
-            conditions.phase[ACTIVE].molar_mass())
+            conditions.mass_flow_rate[ACTIVE], req.active_inlet_diameter,
+            conditions.phase[ACTIVE])
 
         # Скорость пассивной среды в трубопроводе w(n)
         self.velocity_passive_inlet = calculate_gas_outflow_velocity(
-            conditions.mass_flow_rate[PASSIVE], conditions.temperature[PASSIVE],
-            conditions.pressure[PASSIVE], req.passive_inlet_diameter,
-            conditions.phase[PASSIVE].molar_mass())
+            conditions.mass_flow_rate[PASSIVE], req.passive_inlet_diameter,
+            conditions.phase[PASSIVE])
 
         # Показатель адиабаты
         self.adiabatic_index = calculate_adiabatic_index(

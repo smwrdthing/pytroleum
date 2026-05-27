@@ -17,10 +17,6 @@ from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              ACTIVE, PASSIVE)
 from pytroleum.plant.ejectors.base_ejector import BaseEjector
 
-# NOTE как и в других местах - я бы предпочёл уйти от силовых единиц расхода и удельного
-# NOTE веса и пользоваться вместо этого обычными единицами измерения расхода и плотностью
-# NOTE во всех расчётных формулах
-
 
 class GasEjector(BaseEjector):
 

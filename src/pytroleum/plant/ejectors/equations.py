@@ -1,6 +1,7 @@
 from scipy.constants import g
 import numpy as np
 from pytroleum.plant.ejectors.inputs import (OperationConditions,
+                                             EOSInterface,
                                              ACTIVE, PASSIVE)
 from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
 from pytroleum.plant.ejectors.utils import ATMOSPHERIC_PRESSURE
@@ -39,25 +40,17 @@ def calculate_gas_constant(molar_mass: float) -> float:
     return UNIVERSAL_GAS_CONSTANT / molar_mass
 
 
-def calculate_gas_outflow_velocity(mass_flow: float, temperature: float,
-                                   pressure: float, diameter: float,
-                                   molar_mass: float) -> float:
+def calculate_gas_outflow_velocity(mass_flow: float, diameter: float,
+                                   eos: EOSInterface) -> float:
     """Скорость истечения газа в газопроводе, м/с.
 
-        w = 4 · G · R · T / (P · π · D²)
+        w = G / (ρ · π · D² / 4)
 
         где: G — массовый расход, кг/с
-        R — газовая постоянная среды, Дж/(кг·К)
-        T — температура, К
-        P — избыточное давление, Па
+        ρ — плотность среды, кг/м³
         D — диаметр трубопровода, м
     """
-
-    # NOTE Эта функция работает с избыточным давлением, лучше в этом случае работать с
-    # NOTE абсолютным - можно пользоваться значением от CoolProp "из коробки"
-
-    return (4 * mass_flow * calculate_gas_constant(molar_mass) * temperature /
-            (pressure * np.pi * diameter ** 2))
+    return mass_flow / eos.rhomass() / (np.pi * diameter ** 2 / 4)
 
 
 def calculate_adiabatic_index(conditions: OperationConditions,
