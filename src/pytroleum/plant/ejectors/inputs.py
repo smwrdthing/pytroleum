@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 
-# Все исходные данные берутся с ТЗ или же с Aspen Hysys
-
 
 @dataclass
 class BaseMediumData:
@@ -52,6 +50,3 @@ class CommonParams:
     # NOTE     active_phase_eos: EquationOfState,
     # NOTE     passive_phase_eos: EquationOfState) -> Ejector
     # NOTE а может даже сделать уравнения состояния частью req
-
-# После схождения результатов с экселем,
-# можно будет применить, что написано в tdyna
