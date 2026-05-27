@@ -126,24 +126,6 @@ def calculate_critical_pressure_ratio(eos: EOSInterface) -> float:
     return (2 / (k + 1)) ** (k / (k - 1))
 
 
-def calculate_critical_temperature(active_temperature: float,
-                                   critical_pressure_ratio: float,
-                                   adiabatic_index: float) -> float:
-    """Температура в критическом сечении сопла, К.
-
-        T_кр = T_a · β ^ ((k - 1) / k)
-        где:
-        T_a — температура активной среды, К
-        β — критическое отношение давлений
-        k — показатель адиабаты
-    """
-
-    # NOTE То же, что и для критического давления
-
-    return (active_temperature *
-            critical_pressure_ratio ** ((adiabatic_index - 1) / adiabatic_index))
-
-
 def calculate_section_temperature(inlet_temperature: float,
                                   outlet_pressure: float,
                                   inlet_pressure: float,

@@ -7,7 +7,6 @@ from pytroleum.plant.ejectors.equations import (calculate_circle_area,
                                                 calculate_nozzle_throat_area,
                                                 calculate_diffuser_length,
                                                 calculate_section_velocity,
-                                                calculate_critical_temperature,
                                                 calculate_section_temperature,
                                                 calculate_reynolds_number)
 
@@ -133,9 +132,10 @@ class GasEjector(BaseEjector):
     def calculate_temperature_params(self) -> None:
         """Температуры по сечениям эжектора"""
         # Температура в критическом сечении сопла (T1)
-        self.temperature_nozzle_exit = calculate_critical_temperature(
-            self.conditions.temperature[ACTIVE], self.critical_pressure_ratio,
-            self.adiabatic_index)
+        self.temperature_nozzle_exit = (
+            self.conditions.phase[ACTIVE].T() *
+            self.critical_pressure_ratio **
+            ((self.adiabatic_index - 1) / self.adiabatic_index))
 
         # Температура в конце цилиндрического участка (T3)
         self.temperature_cyl_section_exit = calculate_section_temperature(
