@@ -1,6 +1,3 @@
-# Физические константы
-ATMOSPHERIC_PRESSURE = 101325    # Па
-
 # Коэффициенты перевода единиц измерения
 PA_TO_MPA = 1e6
 KELVIN_TO_CELSIUS = 273.15

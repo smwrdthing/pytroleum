@@ -4,7 +4,6 @@ from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              EOSInterface,
                                              ACTIVE, PASSIVE)
 from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
-from pytroleum.plant.ejectors.utils import ATMOSPHERIC_PRESSURE
 
 # NOTE Те функции, которые следует оставить, можно переписать так, чтобы они принимали на
 # NOTE вход интерфейс уравнения состояния от CoolProp
