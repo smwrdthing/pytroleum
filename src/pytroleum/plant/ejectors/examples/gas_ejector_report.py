@@ -10,7 +10,7 @@ from pytroleum.plant.ejectors.utils import (_major_header, _minor_header,
                                             PA_TO_MPA, KELVIN_TO_CELSIUS,
                                             KGS_S_M2_TO_PA_S,
                                             KG_PER_MOL_TO_G_PER_MOL,
-                                            J_TO_KJ, M_TO_MM,
+                                            M_TO_MM,
                                             )
 
 # ============================================================

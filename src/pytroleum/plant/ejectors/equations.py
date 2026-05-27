@@ -1,4 +1,3 @@
-from scipy.constants import g
 import numpy as np
 from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              EOSInterface,

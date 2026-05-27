@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.constants import g
 
 from pytroleum.plant.ejectors.equations import (calculate_circle_area,
                                                 calculate_section_area,
