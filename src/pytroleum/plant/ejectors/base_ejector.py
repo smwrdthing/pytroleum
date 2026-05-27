@@ -37,4 +37,4 @@ class BaseEjector:
 
         # Критическое отношение давлений
         self.critical_pressure_ratio = calculate_critical_pressure_ratio(
-            self.adiabatic_index)
+            conditions.phase[ACTIVE])

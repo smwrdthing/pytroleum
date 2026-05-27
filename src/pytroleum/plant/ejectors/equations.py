@@ -115,27 +115,15 @@ def calculate_adiabatic_index(conditions: OperationConditions,
                 (Cp_passive * entrainment_ratio + Cp_active))
 
 
-def calculate_critical_pressure_ratio(adiabatic_index: float) -> float:
+def calculate_critical_pressure_ratio(eos: EOSInterface) -> float:
     """Критическое отношение давлений.
 
         β = (2 / (k + 1)) ^ (k / (k - 1))
         где:
-        k — показатель адиабаты
+        k — показатель адиабаты (cp/cv) при текущем состоянии eos
     """
-    return (2 / (adiabatic_index + 1)) ** (adiabatic_index / (adiabatic_index - 1))
-
-
-# NOTE пример как переписать функцию выше
-# NOTE def critical_pressure_ratio(eos):
-# NOTE     # Считаем, что нужное состояние уже установлено в eos
-# NOTE     k = eos.cpmass()/eos.cvmass() # adiabatic index
-# NOTE     beta_crit = (2/(k+1))**(k/(k-1))
-# NOTE     return beta_crit
-# NOTE
-# NOTE Иногда выгодно давать переменным "плохие" имена, как в данном случае:
-# NOTE В функции можно обозвать переменную как k - у неё непродолжительное время жизни,
-# NOTE функция маленькая и модульная, из контекста и комментария понятно, что это
-# NOTE показатель адиабаты + выражение больше похоже на математическую формулу
+    k = eos.cpmass() / eos.cvmass()
+    return (2 / (k + 1)) ** (k / (k - 1))
 
 
 def calculate_critical_pressure(critical_pressure_ratio: float,
