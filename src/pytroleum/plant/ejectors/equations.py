@@ -112,7 +112,8 @@ def calculate_reynolds_number(density: float,
 def calculate_nozzle_throat_area(conditions: OperationConditions,
                                  psi: float) -> float:
     """Площадь сечения узкой части сопла, м²."""
-    # psi = 2,14 для газов и psi = 2,03 для перегретого и насыщенного водяного пара
+    # psi = 2,14 для газов и psi = 2,03 для перегретого и насыщенного
+    # водяного пара
     return (conditions.mass_flow_rate[ACTIVE] /
             (psi * np.sqrt(conditions.pressure[ACTIVE] *
                            conditions.phase[ACTIVE].rhomass())))
