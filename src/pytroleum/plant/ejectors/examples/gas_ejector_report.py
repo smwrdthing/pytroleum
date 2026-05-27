@@ -1,7 +1,6 @@
 from CoolProp import constants as CoolConst
 
-from pytroleum.plant.ejectors.equations import (calculate_gas_constant,
-                                                calculate_specific_heat_capacity)
+from pytroleum.plant.ejectors.equations import calculate_gas_constant
 from pytroleum.plant.ejectors.gas_ejector import GasEjector
 from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              Requirements,

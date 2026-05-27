@@ -39,20 +39,6 @@ def calculate_gas_constant(molar_mass: float) -> float:
     return UNIVERSAL_GAS_CONSTANT / molar_mass
 
 
-def calculate_specific_heat_capacity(heat_capacity: float,
-                                     molar_mass: float) -> float:
-    """Удельная теплоёмкость среды, Дж/(кг·К).
-
-        Cp = Cp_mol / M
-        где: Cp_mol — молярная теплоёмкость, Дж/(моль·К)
-        M — молярная масса среды, кг/моль
-    """
-
-    # NOTE можно считать на месте через CoolProp
-
-    return heat_capacity / molar_mass
-
-
 def calculate_specific_weight(density: float) -> float:
     """Удельный вес, кг/(с²·м²).
 
