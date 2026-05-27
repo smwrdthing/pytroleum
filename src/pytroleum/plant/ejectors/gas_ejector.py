@@ -6,7 +6,6 @@ from pytroleum.plant.ejectors.equations import (calculate_circle_area,
                                                 calculate_circle_diameter,
                                                 calculate_nozzle_throat_area,
                                                 calculate_diffuser_length,
-                                                calculate_specific_weight,
                                                 calculate_section_velocity,
                                                 calculate_critical_pressure,
                                                 calculate_critical_temperature,
@@ -99,8 +98,7 @@ class GasEjector(BaseEjector):
         nozzle_exit_pressure = self.conditions.pressure[ACTIVE] / 1.1
         # NOTE напор будет "head", чтобы не путаться со статическим давлением
         self.velocity_nozzle_exit = np.sqrt(
-            2 * g * nozzle_exit_pressure /
-            calculate_specific_weight(self.conditions.phase[ACTIVE].rhomass()))
+            2 * nozzle_exit_pressure / self.conditions.phase[ACTIVE].rhomass())
 
         # Скорость газа в конце смесительного участка (w3)
         self.velocity_cyl_section_exit = (
@@ -134,8 +132,8 @@ class GasEjector(BaseEjector):
         self.pressure_ejector_outlet = (
             self.pressure_cyl_section_exit +
             pressure_recovery_coefficient *
-            (calculate_specific_weight(mixture_density) *
-             self.velocity_cyl_section_exit ** 2) / (2 * g))
+            (mixture_density *
+             self.velocity_cyl_section_exit ** 2) / 2)
 
     def calculate_temperature_params(self) -> None:
         """Температуры по сечениям эжектора"""

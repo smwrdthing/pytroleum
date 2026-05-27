@@ -39,19 +39,6 @@ def calculate_gas_constant(molar_mass: float) -> float:
     return UNIVERSAL_GAS_CONSTANT / molar_mass
 
 
-def calculate_specific_weight(density: float) -> float:
-    """Удельный вес, кг/(с²·м²).
-
-        γ = g · ρ
-        где: g — ускорение свободного падения, м/с²
-        ρ  — плотность среды, кг/м³
-    """
-
-    # NOTE можно считать на месте через CoolProp
-
-    return g * density
-
-
 def calculate_gas_outflow_velocity(mass_flow: float, temperature: float,
                                    pressure: float, diameter: float,
                                    molar_mass: float) -> float:
@@ -241,36 +228,27 @@ def calculate_reynolds_number(density: float,
                               dynamic_viscosity: float) -> float:
     """Число Рейнольдса.
 
-        Re = γ · w · D / (g · η)
+        Re = ρ · w · D / η
         где:
         Re — число Рейнольдса
-        γ — удельный вес среды, кг/(с²·м²)
+        ρ — плотность, кг/м³
         w — скорость потока, м/с
         D — диаметр трубопровода, м
-        g — ускорение свободного падения, м/с²
         η — динамическая вязкость, Па·с
     """
-
-    # NOTE Число Рейнольдса можно считать без удельного веса
-    # NOTE
-    # NOTE В целом на мой взгляд лучше уйти в уравнениях от удельного веса/силовых единиц
-    # NOTE и пользоваться более привычными формами записи и единицами для напоров,
-    # NOTE расходов и т.д.
-
-    return (calculate_specific_weight(density) * velocity * diameter /
-            (g * dynamic_viscosity))
+    return (density * velocity * diameter / dynamic_viscosity)
 
 
 def calculate_nozzle_throat_area(conditions: OperationConditions,
                                  psi: float) -> float:
     """Площадь сечения узкой части сопла, м².
 
-        F_кр = G_a / (ψ · √(P_a / v_a))
+        F_кр = G_a / (ψ · √(P_a · ρ_a))
         где:
         G_a — массовый расход активной среды, кг/с
         ψ = 2,14 для газов и ψ = 2,03 для перегретого и насыщенного водяного пара
         P_a — давление активной среды, Па
-        v_a — удельный объём активной среды, м³/кг
+        ρ_a — плотность активной среды, м³/кг
     """
     # NOTE в докстрингах пишем только обозначения из сигнатуры вызова функций,
     # NOTE всё остальное описывается при необходимости комментариями
