@@ -44,13 +44,12 @@ def calculate_gas_outflow_velocity(mass_flow: float, temperature: float,
                                    molar_mass: float) -> float:
     """Скорость истечения газа в газопроводе, м/с.
 
-        w = 4 · G · R · T / ((P + P_atm) · π · D²)
+        w = 4 · G · R · T / (P · π · D²)
 
         где: G — массовый расход, кг/с
         R — газовая постоянная среды, Дж/(кг·К)
         T — температура, К
         P — избыточное давление, Па
-        P_atm — атмосферное давление, Па
         D — диаметр трубопровода, м
     """
 
@@ -58,7 +57,7 @@ def calculate_gas_outflow_velocity(mass_flow: float, temperature: float,
     # NOTE абсолютным - можно пользоваться значением от CoolProp "из коробки"
 
     return (4 * mass_flow * calculate_gas_constant(molar_mass) * temperature /
-            ((pressure + ATMOSPHERIC_PRESSURE) * np.pi * diameter ** 2))
+            (pressure * np.pi * diameter ** 2))
 
 
 def calculate_adiabatic_index(conditions: OperationConditions,
