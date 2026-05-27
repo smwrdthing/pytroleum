@@ -126,23 +126,6 @@ def calculate_critical_pressure_ratio(eos: EOSInterface) -> float:
     return (2 / (k + 1)) ** (k / (k - 1))
 
 
-def calculate_critical_pressure(critical_pressure_ratio: float,
-                                active_inlet_pressure: float) -> float:
-    """Давление в критическом сечении сопла, Па.
-
-        P_кр = β · P_a
-        где:
-        β — критическое отношение давлений
-        P_a — давление активной среды на входе, Па
-    """
-
-    # NOTE если это нужно считать 1-2-3 раза лучше не заводить функцию, а считать
-    # NOTE "на месте":
-    # NOTE critical_pressure = critical_pressure_ratio(eos)*eos.p() # <- вместо функции
-
-    return critical_pressure_ratio * active_inlet_pressure
-
-
 def calculate_critical_temperature(active_temperature: float,
                                    critical_pressure_ratio: float,
                                    adiabatic_index: float) -> float:

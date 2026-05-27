@@ -7,7 +7,6 @@ from pytroleum.plant.ejectors.equations import (calculate_circle_area,
                                                 calculate_nozzle_throat_area,
                                                 calculate_diffuser_length,
                                                 calculate_section_velocity,
-                                                calculate_critical_pressure,
                                                 calculate_critical_temperature,
                                                 calculate_section_temperature,
                                                 calculate_reynolds_number)
@@ -121,8 +120,8 @@ class GasEjector(BaseEjector):
                                           self.conditions.pressure[PASSIVE])
 
         # Давление в критическом сечении сопла
-        self.pressure_critical = calculate_critical_pressure(
-            self.critical_pressure_ratio, self.conditions.pressure[ACTIVE])
+        self.pressure_critical = (self.critical_pressure_ratio *
+                                  self.conditions.phase[ACTIVE].p())
 
         # Давление за диффузором
         self.pressure_ejector_outlet = (
