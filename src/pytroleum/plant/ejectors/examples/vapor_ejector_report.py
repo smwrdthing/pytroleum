@@ -5,7 +5,7 @@ from pytroleum.plant.ejectors.equations import (calculate_gas_constant,
 from pytroleum.plant.ejectors.vapor_ejector import VaporEjector
 from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
                                              PassiveMediumData,
-                                             CommonParams)
+                                             Requirements)
 
 from pytroleum.plant.ejectors.utils import (_major_header, _minor_header,
                                             print_row as p,
@@ -47,13 +47,13 @@ passive = PassiveMediumData(
     heat_capacity=11.64 * KCAL_PER_KMOL_TO_J_PER_MOL
 )
 
-common = CommonParams(
+req = Requirements(
     num_stages=1,
     outlet_pressure=4e6,
     outlet_diameter=0.325
 )
 
-vapor_ejector = VaporEjector(active, passive, common)
+vapor_ejector = VaporEjector(active, passive, req)
 vapor_ejector.calculate_nozzle_params(
     entropy_lower_boundary=-0.34 * KCAL_TO_J,
     entropy_upper_boundary=2.39 * KCAL_TO_J,
@@ -113,10 +113,10 @@ p("Теплоёмкость:",
   f"{passive.heat_capacity / KCAL_PER_KMOL_TO_J_PER_MOL:.2f}", "ккал/(кмоль·°С)")
 
 _minor_header("ОБЩИЕ ПАРАМЕТРЫ")
-p("Количество ступеней:", f"{common.num_stages}", "шт.")
-p("Давление на выходе:", f"{common.outlet_pressure / PA_TO_MPA:.3f}", "МПа")
+p("Количество ступеней:", f"{req.num_stages}", "шт.")
+p("Давление на выходе:", f"{req.outlet_pressure / PA_TO_MPA:.3f}", "МПа")
 p("Диаметр выходного трубопровода:",
-  f"{common.outlet_diameter * M_TO_MM:.0f}", "мм")
+  f"{req.outlet_diameter * M_TO_MM:.0f}", "мм")
 
 _minor_header("ПАРАМЕТРЫ ЭЖЕКЦИИ")
 p("Степень сжатия:", f"{vapor_ejector.compression_ratio:.4f}")

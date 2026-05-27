@@ -4,7 +4,7 @@ from pytroleum.plant.ejectors.gas_ejector import GasEjector
 
 from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
                                              PassiveMediumData,
-                                             CommonParams)
+                                             Requirements)
 
 from pytroleum.plant.ejectors.utils import (
     KCAL_TO_J, KCAL_PER_KMOL_TO_J_PER_MOL,
@@ -44,13 +44,13 @@ passive = PassiveMediumData(
     heat_capacity=11.64 * KCAL_PER_KMOL_TO_J_PER_MOL
 )
 
-common = CommonParams(
+req = Requirements(
     num_stages=1,
     outlet_pressure=4e6,
     outlet_diameter=0.325
 )
 
-gas_ejector = GasEjector(active, passive, common)
+gas_ejector = GasEjector(active, passive, req)
 gas_ejector.calculate(
     s=2,
     mixture_density=56.05,

@@ -3,20 +3,20 @@ from pytroleum.plant.ejectors.equations import (calculate_adiabatic_index,
                                                 calculate_gas_outflow_velocity)
 from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
                                              PassiveMediumData,
-                                             CommonParams)
+                                             Requirements)
 
 
 class BaseEjector:
 
     def __init__(self, active: ActiveMediumData,
                  passive: PassiveMediumData,
-                 common_params: CommonParams):
+                 req: Requirements):
         self.active = active
         self.passive = passive
-        self.common_params = common_params
+        self.req = req
 
         # Степень сжатия установки
-        self.compression_ratio = (common_params.outlet_pressure /
+        self.compression_ratio = (req.outlet_pressure /
                                   passive.inlet_pressure)
 
         # Коэффициент эжекции

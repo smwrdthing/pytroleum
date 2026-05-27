@@ -149,7 +149,7 @@ class VaporEjector(BaseEjector):
 
             # Давление смеси в конце цилиндрического участка (сечение III)
             pressure_cyl_exit = (
-                self.common_params.outlet_pressure /
+                self.req.outlet_pressure /
                 (1 + pressure_recovery_coefficient *
                  adiabatic_index_mixture * mach_number ** 2 / 2))
 

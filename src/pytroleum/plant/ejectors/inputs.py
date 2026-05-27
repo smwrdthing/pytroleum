@@ -34,7 +34,7 @@ class PassiveMediumData(BaseMediumData):
 
 
 @dataclass
-class CommonParams:
+class Requirements:
     """Общие входные параметры"""
     num_stages: int
     outlet_pressure: float  # Па

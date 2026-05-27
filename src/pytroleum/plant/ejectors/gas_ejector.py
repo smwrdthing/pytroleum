@@ -15,7 +15,7 @@ from pytroleum.plant.ejectors.equations import (calculate_circle_area,
 
 from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
                                              PassiveMediumData,
-                                             CommonParams)
+                                             Requirements)
 from pytroleum.plant.ejectors.base_ejector import BaseEjector
 
 # NOTE как и в других местах - я бы предпочёл уйти от силовых единиц расхода и удельного
@@ -27,8 +27,8 @@ class GasEjector(BaseEjector):
 
     def __init__(self, active: ActiveMediumData,
                  passive: PassiveMediumData,
-                 common_params: CommonParams):
-        super().__init__(active, passive, common_params)
+                 req: Requirements):
+        super().__init__(active, passive, req)
 
         # Основное уравнение эжекции для участка струи от сопла до места
         # соприкосновения со стенкой
@@ -45,7 +45,7 @@ class GasEjector(BaseEjector):
         """Геометрические размеры эжектора"""
         # Площадь конечного сечения диффузора
         self.diffuser_exit_area = calculate_circle_area(
-            self.common_params.outlet_diameter)
+            self.req.outlet_diameter)
 
         # Площадь сечения цилиндрического смесительного участка
         self.mixing_section_area = calculate_section_area(
@@ -88,7 +88,7 @@ class GasEjector(BaseEjector):
 
         # Длина диффузора
         self.diffuser_length = calculate_diffuser_length(
-            self.common_params.outlet_diameter,
+            self.req.outlet_diameter,
             self.mixing_section_diameter,
             opening_angle)
 
@@ -168,4 +168,4 @@ class GasEjector(BaseEjector):
         # Число Рейнольдса в нагнетательном трубопроводе за диффузором
         self.reynolds_number = calculate_reynolds_number(
             mixture_density, self.velocity_ejector_outlet,
-            self.common_params.outlet_diameter, mixture_dynamic_viscosity)
+            self.req.outlet_diameter, mixture_dynamic_viscosity)
