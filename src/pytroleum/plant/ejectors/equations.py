@@ -12,33 +12,6 @@ from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
 THERMAL_EQUIVALENT_OF_WORK = 0.982   # Дж/Дж
 
 
-def calculate_gas_constant(molar_mass: float) -> float:
-    """Газовая постоянная среды, Дж/(кг*K).
-
-        R = R_u / M
-        где: R_u — универсальная газовая постоянная, Дж/(моль·К),
-        M — молярная масса среды, кг/моль
-    """
-
-    # NOTE газовую постоянную можно считать через интерфейс к уравнению состояния
-    # NOTE из CoolProp, универасльную можно взять из scipy или завести файл под константы
-    # NOTE и определить там
-    # NOTE
-    # NOTE from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
-    # NOTE или
-    # NOTE from pytroleum.plant.ejector.constants import UNIVERSAL_GAS_CONSTANT
-    # NOTE
-    # NOTE дальше если где-то есть
-    # NOTE eos = AbstractState("HEOS", <смесь>)
-    # NOTE то газовая постоянная будет
-    # NOTE UNIVERSAL_GAS_CONSTANT/eos.molar_mass()
-    # NOTE
-    # NOTE В CoolProp молярные массы в СИ, поэтому газовая постоянная должна быть
-    # NOTE записана как 8.314... Дж/К/моль, если определяем сами
-
-    return UNIVERSAL_GAS_CONSTANT / molar_mass
-
-
 def calculate_gas_outflow_velocity(mass_flow: float, diameter: float,
                                    eos: EOSInterface) -> float:
     """Скорость истечения газа в газопроводе, м/с.
@@ -67,8 +40,8 @@ def calculate_adiabatic_index(conditions: OperationConditions,
         Cp_a — удельная теплоёмкость активной среды, Дж/(кг·К)
         Cp_n — удельная теплоёмкость пассивной среды, Дж/(кг·К)
     """
-    R_active = calculate_gas_constant(conditions.phase[ACTIVE].molar_mass())
-    R_passive = calculate_gas_constant(conditions.phase[PASSIVE].molar_mass())
+    R_active = UNIVERSAL_GAS_CONSTANT / conditions.phase[ACTIVE].molar_mass()
+    R_passive = UNIVERSAL_GAS_CONSTANT / conditions.phase[PASSIVE].molar_mass()
     Cp_active = conditions.phase[ACTIVE].cpmass()
     Cp_passive = conditions.phase[PASSIVE].cpmass()
 

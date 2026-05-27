@@ -1,6 +1,6 @@
 from CoolProp import constants as CoolConst
 
-from pytroleum.plant.ejectors.equations import calculate_gas_constant
+from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
 from pytroleum.plant.ejectors.gas_ejector import GasEjector
 from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              Requirements,
@@ -93,8 +93,8 @@ p("Диаметр выходного трубопровода:",
 
 _major_header("РЕЗУЛЬТАТЫ РАСЧЁТА ЭЖЕКТОРА")
 
-R_active = calculate_gas_constant(conditions.phase[ACTIVE].molar_mass())
-R_passive = calculate_gas_constant(conditions.phase[PASSIVE].molar_mass())
+R_active = UNIVERSAL_GAS_CONSTANT / conditions.phase[ACTIVE].molar_mass()
+R_passive = UNIVERSAL_GAS_CONSTANT / conditions.phase[PASSIVE].molar_mass()
 Cp_active = conditions.phase[ACTIVE].cpmass()
 Cp_passive = conditions.phase[PASSIVE].cpmass()
 
