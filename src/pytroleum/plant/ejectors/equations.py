@@ -11,10 +11,6 @@ THERMAL_EQUIVALENT_OF_WORK = 0.982   # Дж/Дж
 def calculate_gas_outflow_velocity(mass_flow: float, diameter: float,
                                    eos: EOSInterface) -> float:
     """Скорость истечения газа в газопроводе, м/с."""
-    # w = G / (ρ · π · D² / 4)
-    # где: G — массовый расход, кг/с
-    # ρ — плотность среды, кг/м³
-    # D — диаметр трубопровода, м
     return mass_flow / eos.rhomass() / (np.pi * diameter ** 2 / 4)
 
 
@@ -81,8 +77,6 @@ def calculate_adiabatic_index(conditions: OperationConditions,
 
 def calculate_critical_pressure_ratio(eos: EOSInterface) -> float:
     """Критическое отношение давлений."""
-    # β = (2 / (k + 1)) ^ (k / (k - 1))
-    # где: k — показатель адиабаты
     k = eos.cpmass() / eos.cvmass()
     return (2 / (k + 1)) ** (k / (k - 1))
 
@@ -92,13 +86,6 @@ def calculate_section_temperature(inlet_temperature: float,
                                   inlet_pressure: float,
                                   adiabatic_index: float) -> float:
     """Температура в сечении через адиабатный процесс, К."""
-    # T_вых = T_вх · (P_вых / P_вх) ^ ((k - 1) / k)
-    # где:
-    # T_вых — температура на выходе, К
-    # T_вх — температура на входе, К
-    # P_вых — давление на выходе, Па
-    # P_вх — давление на входе, Па
-    # k — показатель адиабаты
     return (inlet_temperature *
             (outlet_pressure / inlet_pressure) ** ((adiabatic_index - 1) /
                                                    adiabatic_index))
@@ -119,25 +106,13 @@ def calculate_reynolds_number(density: float,
                               diameter: float,
                               dynamic_viscosity: float) -> float:
     """Число Рейнольдса."""
-    # Re = ρ · w · D / η
-    # где:
-    # Re — число Рейнольдса
-    # ρ — плотность, кг/м³
-    # w — скорость потока, м/с
-    # D — диаметр трубопровода, м
-    # η — динамическая вязкость, Па·с
     return (density * velocity * diameter / dynamic_viscosity)
 
 
 def calculate_nozzle_throat_area(conditions: OperationConditions,
                                  psi: float) -> float:
     """Площадь сечения узкой части сопла, м²."""
-    # F_кр = G_a / (ψ · √(P_a · ρ_a))
-    # где:
-    # G_a — массовый расход активной среды, кг/с
-    # ψ = 2,14 для газов и ψ = 2,03 для перегретого и насыщенного водяного пара
-    # P_a — давление активной среды, Па
-    # ρ_a — плотность активной среды, м³/кг
+    # psi = 2,14 для газов и psi = 2,03 для перегретого и насыщенного водяного пара
     return (conditions.mass_flow_rate[ACTIVE] /
             (psi * np.sqrt(conditions.pressure[ACTIVE] *
                            conditions.phase[ACTIVE].rhomass())))
@@ -146,31 +121,18 @@ def calculate_nozzle_throat_area(conditions: OperationConditions,
 def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,
                               opening_angle: float) -> float:
     """Длина диффузора, м."""
-    # L_диф = (D_вых - D_вх) / (2 · tan(α / 2))
-    # где:
-    # D_вых — диаметр выходного сечения диффузора, м
-    # D_вх  — диаметр входного сечения диффузора, м
-    # α — угол раскрытия диффузора, °
-    # (рекомендовано 6°, допустимо 2°–13°; при α > 14° поток
-    # не заполняет сечения равномерно, усиливается вихреобразование
-    # вдоль стенок, возникают обратные токи, коэффициент φ резко падает)
+    # opening_angle — угол раскрытия диффузора, ° (рекомендовано 6°,
+    # допустимо 2°–13°; при α > 14° поток не заполняет сечения равномерно,
+    # усиливается вихреобразование вдоль стенок, возникают обратные токи,
+    # коэффициент φ резко падает)
     return (diameter_exit - diameter_inlet) / (2 * np.tan(np.radians(opening_angle / 2)))
 
 
 def calculate_section_area(area: float, ratio: float) -> float:
     """Площадь сечения через отношение площадей, м²."""
-    # F = area / ratio
-    # где:
-    # area  — заданная площадь, м²
-    # ratio — отношение площадей
     return area / ratio
 
 
 def calculate_section_velocity(velocity: float, ratio: float) -> float:
     """Скорость потока через отношение площадей сечений, м/с."""
-    # w = velocity / ratio
-    # где:
-    # w — скорость в искомом сечении, м/с
-    # velocity — скорость в исходном сечении, м/с
-    # ratio — отношение площадей сечений
     return velocity / ratio
