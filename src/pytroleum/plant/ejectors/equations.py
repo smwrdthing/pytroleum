@@ -1,12 +1,10 @@
 from scipy.constants import g
 import numpy as np
-from pytroleum.plant.ejectors.inputs import ActiveMediumData, PassiveMediumData
-from pytroleum.plant.ejectors.utils import UNIVERSAL_GAS_CONSTANT, ATMOSPHERIC_PRESSURE
+from pytroleum.plant.ejectors.inputs import (OperationConditions,
+                                             ACTIVE, PASSIVE)
+from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
+from pytroleum.plant.ejectors.utils import ATMOSPHERIC_PRESSURE
 
-# NOTE многое в этом модуле может быть заменено расчётами "на месте" с использованием
-# NOTE CoolProp, в функции следует выносить то, что часто/много повторяется/имеет сложную
-# NOTE логику и хорошо выделяется в отдельный независимый блок кода
-# NOTE
 # NOTE Те функции, которые следует оставить, можно переписать так, чтобы они принимали на
 # NOTE вход интерфейс уравнения состояния от CoolProp
 
@@ -14,12 +12,12 @@ from pytroleum.plant.ejectors.utils import UNIVERSAL_GAS_CONSTANT, ATMOSPHERIC_P
 THERMAL_EQUIVALENT_OF_WORK = 0.982   # Дж/Дж
 
 
-def calculate_gas_constant(molecular_mass: float) -> float:
+def calculate_gas_constant(molar_mass: float) -> float:
     """Газовая постоянная среды, Дж/(кг*K).
 
         R = R_u / M
         где: R_u — универсальная газовая постоянная, Дж/(моль·К),
-        M — молекулярная масса среды, кг/моль
+        M — молярная масса среды, кг/моль
     """
 
     # NOTE газовую постоянную можно считать через интерфейс к уравнению состояния
@@ -38,21 +36,21 @@ def calculate_gas_constant(molecular_mass: float) -> float:
     # NOTE В CoolProp молярные массы в СИ, поэтому газовая постоянная должна быть
     # NOTE записана как 8.314... Дж/К/моль, если определяем сами
 
-    return UNIVERSAL_GAS_CONSTANT / molecular_mass
+    return UNIVERSAL_GAS_CONSTANT / molar_mass
 
 
 def calculate_specific_heat_capacity(heat_capacity: float,
-                                     molecular_mass: float) -> float:
+                                     molar_mass: float) -> float:
     """Удельная теплоёмкость среды, Дж/(кг·К).
 
         Cp = Cp_mol / M
         где: Cp_mol — молярная теплоёмкость, Дж/(моль·К)
-        M — молекулярная масса среды, кг/моль
+        M — молярная масса среды, кг/моль
     """
 
     # NOTE можно считать на месте через CoolProp
 
-    return heat_capacity / molecular_mass
+    return heat_capacity / molar_mass
 
 
 def calculate_specific_weight(density: float) -> float:
@@ -70,7 +68,7 @@ def calculate_specific_weight(density: float) -> float:
 
 def calculate_gas_outflow_velocity(mass_flow: float, temperature: float,
                                    pressure: float, diameter: float,
-                                   molecular_mass: float) -> float:
+                                   molar_mass: float) -> float:
     """Скорость истечения газа в газопроводе, м/с.
 
         w = 4 · G · R · T / ((P + P_atm) · π · D²)
@@ -86,12 +84,11 @@ def calculate_gas_outflow_velocity(mass_flow: float, temperature: float,
     # NOTE Эта функция работает с избыточным давлением, лучше в этом случае работать с
     # NOTE абсолютным - можно пользоваться значением от CoolProp "из коробки"
 
-    return (4 * mass_flow * calculate_gas_constant(molecular_mass) * temperature /
+    return (4 * mass_flow * calculate_gas_constant(molar_mass) * temperature /
             ((pressure + ATMOSPHERIC_PRESSURE) * np.pi * diameter ** 2))
 
 
-def calculate_adiabatic_index(active: ActiveMediumData,
-                              passive: PassiveMediumData,
+def calculate_adiabatic_index(conditions: OperationConditions,
                               entrainment_ratio: float) -> float:
     """Показатель адиабаты смеси активной и пассивной сред.
 
@@ -106,19 +103,17 @@ def calculate_adiabatic_index(active: ActiveMediumData,
         Cp_a — удельная теплоёмкость активной среды, Дж/(кг·К)
         Cp_n — удельная теплоёмкость пассивной среды, Дж/(кг·К)
     """
-    R_active = calculate_gas_constant(active.molecular_mass)
-    R_passive = calculate_gas_constant(passive.molecular_mass)
-    Cp_active = calculate_specific_heat_capacity(
-        active.heat_capacity, active.molecular_mass)
-    Cp_passive = calculate_specific_heat_capacity(
-        passive.heat_capacity, passive.molecular_mass)
+    R_active = calculate_gas_constant(conditions.phase[ACTIVE].molar_mass())
+    R_passive = calculate_gas_constant(conditions.phase[PASSIVE].molar_mass())
+    Cp_active = conditions.phase[ACTIVE].cpmass()
+    Cp_passive = conditions.phase[PASSIVE].cpmass()
 
     # NOTE можно считать "на месте" через CoolProp
-    # NOTE показатель адиабаты по опрелелению c_p(T)/c_v(T),
+    # NOTE показатель адиабаты по определению c_p(T)/c_v(T),
     # NOTE если состояние известно, то можно из eos сразу взять
     # NOTE теплоёмкости
     # NOTE
-    # NOTE ещё по процессам, адиабатичнеский процесс - изоэнтропный
+    # NOTE ещё по процессам, адиабатический процесс - изоэнтропный
     # NOTE чтобы не считать его "руками" можно также пользоваться
     # NOTE CoolProp, достаточно обновлять состояние по энтропии (она постоянная) и
     # NOTE какому-то второму параметру
@@ -141,7 +136,7 @@ def calculate_adiabatic_index(active: ActiveMediumData,
     # NOTE допускает обновление состояния только через пару PQ или QT в двухфазном регионе
     # NOTE (давление-качество пара или качество пара-температура) или через пару PT в
     # NOTE однофазном. Это можно обойти, если дописать собственную функцию, которая будет
-    # NOTE решать нелиненйое уравнение вида S(P2,T) - S1 = 0
+    # NOTE решать нелинейное уравнение вида S(P2,T) - S1 = 0
     # NOTE
     # NOTE При прочих равных считать по формуле будет быстрее, так что она может
     # NOTE быть уместна, код из заметки можно использовать для проверки, либо когда
@@ -280,7 +275,7 @@ def calculate_reynolds_number(density: float,
             (g * dynamic_viscosity))
 
 
-def calculate_nozzle_throat_area(active: ActiveMediumData,
+def calculate_nozzle_throat_area(conditions: OperationConditions,
                                  psi: float) -> float:
     """Площадь сечения узкой части сопла, м².
 
@@ -291,20 +286,12 @@ def calculate_nozzle_throat_area(active: ActiveMediumData,
         P_a — давление активной среды, Па
         v_a — удельный объём активной среды, м³/кг
     """
-    # NOTE в докстрингах пишем тольок обозначения из сигнатуры вызова функций,
+    # NOTE в докстрингах пишем только обозначения из сигнатуры вызова функций,
     # NOTE всё остальное описывается при необходимости комментариями
 
-    # NOTE g в формуле быть не должно по размерности
-    # NOTE
-    # NOTE в excel взяли давление в кгс/м^2, а не в Па, эти единицы измерения связаны
-    # NOTE межд собой множителем, который примерно равен g, поэтому при делении на g
-    # NOTE получиось так же, как и в excel (внутри формулы перевели Паскали в кгс/cм^2)
-    # NOTE
-    # NOTE вероятнее всего в excel ошибка, так как удельный объём берут в м^3/кг, чтобы в
-    # NOTE итоге получить размерность площади - давление должно быть в Паскалях,
-    # NOTE на g делить не нужно
-    return (active.mass_flow / (psi * np.sqrt(active.inlet_pressure/g /
-                                              active.specific_volume)))
+    return (conditions.mass_flow_rate[ACTIVE] /
+            (psi * np.sqrt(conditions.pressure[ACTIVE] *
+                           conditions.phase[ACTIVE].rhomass())))
 
 
 def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,

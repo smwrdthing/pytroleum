@@ -1,56 +1,39 @@
 import matplotlib.pyplot as plt
+from CoolProp import constants as CoolConst
 
 from pytroleum.plant.ejectors.gas_ejector import GasEjector
-
-from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
-                                             PassiveMediumData,
-                                             Requirements)
-
+from pytroleum.plant.ejectors.inputs import (OperationConditions,
+                                             Requirements,
+                                             ACTIVE, PASSIVE)
 from pytroleum.plant.ejectors.utils import (
-    KCAL_TO_J, KCAL_PER_KMOL_TO_J_PER_MOL,
-    KGS_S_M2_TO_PA_S, KG_PER_KMOL_TO_KG_PER_MOL,
-    PA_TO_MPA, KELVIN_TO_CELSIUS,
+    KGS_S_M2_TO_PA_S, PA_TO_MPA, KELVIN_TO_CELSIUS,
 )
 
 # ============================================================
 # Исходные данные
 # ============================================================
 
-active = ActiveMediumData(
-    mass_flow=36.25,
-    temperature=248,
-    inlet_pressure=7e6,
-    enthalpy=1045.91 * KCAL_TO_J,
-    entropy=1.73 * KCAL_TO_J,
-    specific_volume=0.01,
-    density=98.89,
-    dynamic_viscosity=0.00000099 * KGS_S_M2_TO_PA_S,
-    inlet_diameter=0.33,
-    molecular_mass=18.70 * KG_PER_KMOL_TO_KG_PER_MOL,
-    heat_capacity=16.23 * KCAL_PER_KMOL_TO_J_PER_MOL
-)
+conditions = OperationConditions()
 
-passive = PassiveMediumData(
-    mass_flow=6.52,
-    temperature=289,
-    inlet_pressure=2.5e6,
-    enthalpy=927.89 * KCAL_TO_J,
-    entropy=1.69 * KCAL_TO_J,
-    specific_volume=0.04,
-    density=26.18,
-    dynamic_viscosity=0.00000116 * KGS_S_M2_TO_PA_S,
-    inlet_diameter=0.11,
-    molecular_mass=22.18 * KG_PER_KMOL_TO_KG_PER_MOL,
-    heat_capacity=11.64 * KCAL_PER_KMOL_TO_J_PER_MOL
-)
+conditions.update_state(
+    (CoolConst.PT_INPUTS, 7e6, 248),
+    index=ACTIVE, upd_containers=True)
+conditions.mass_flow_rate[ACTIVE] = 36.25       # кг/с
+
+conditions.update_state(
+    (CoolConst.PT_INPUTS, 2.5e6, 289),
+    index=PASSIVE, upd_containers=True)
+conditions.mass_flow_rate[PASSIVE] = 6.52       # кг/с
 
 req = Requirements(
     num_stages=1,
-    outlet_pressure=4e6,
-    outlet_diameter=0.325
+    outlet_pressure=4e6,                        # Па
+    outlet_diameter=0.325,                      # м
+    active_inlet_diameter=0.33,                 # м
+    passive_inlet_diameter=0.11,                # м
 )
 
-gas_ejector = GasEjector(active, passive, req)
+gas_ejector = GasEjector(conditions, req)
 gas_ejector.calculate(
     s=2,
     mixture_density=56.05,
@@ -68,14 +51,14 @@ sections = [0, 1, 2, 3]
 labels = ['0', '1', '3', '4']
 
 pressures = [
-    active.inlet_pressure / PA_TO_MPA,
+    conditions.pressure[ACTIVE] / PA_TO_MPA,
     gas_ejector.pressure_critical / PA_TO_MPA,
     gas_ejector.pressure_cyl_section_exit / PA_TO_MPA,
     gas_ejector.pressure_ejector_outlet / PA_TO_MPA,
 ]
 
 temperatures = [
-    active.temperature - KELVIN_TO_CELSIUS,
+    conditions.temperature[ACTIVE] - KELVIN_TO_CELSIUS,
     gas_ejector.temperature_nozzle_exit - KELVIN_TO_CELSIUS,
     gas_ejector.temperature_cyl_section_exit - KELVIN_TO_CELSIUS,
     gas_ejector.temperature_diffuser_exit - KELVIN_TO_CELSIUS,
@@ -116,7 +99,6 @@ ax2.grid(True, linestyle='--', alpha=0.5)
 for s, val in zip(sections, temperatures):
     ax2.annotate(f'{val:.1f}', (s, val),
                  textcoords='offset points', xytext=(0, 10), ha='center')
-ax2.set_ylim(-50, 0)
 
 fig3, ax3 = plt.subplots(figsize=(8, 5))
 ax3.plot(sections, velocities, marker='o')

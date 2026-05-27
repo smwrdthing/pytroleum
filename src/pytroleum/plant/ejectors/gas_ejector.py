@@ -13,22 +13,21 @@ from pytroleum.plant.ejectors.equations import (calculate_circle_area,
                                                 calculate_section_temperature,
                                                 calculate_reynolds_number)
 
-from pytroleum.plant.ejectors.inputs import (ActiveMediumData,
-                                             PassiveMediumData,
-                                             Requirements)
+from pytroleum.plant.ejectors.inputs import (OperationConditions,
+                                             Requirements,
+                                             ACTIVE, PASSIVE)
 from pytroleum.plant.ejectors.base_ejector import BaseEjector
 
 # NOTE как и в других местах - я бы предпочёл уйти от силовых единиц расхода и удельного
-# NOTE веса и пользоваться вместо этого обычными единицами измерения оасхода и плотностью
+# NOTE веса и пользоваться вместо этого обычными единицами измерения расхода и плотностью
 # NOTE во всех расчётных формулах
 
 
 class GasEjector(BaseEjector):
 
-    def __init__(self, active: ActiveMediumData,
-                 passive: PassiveMediumData,
+    def __init__(self, conditions: OperationConditions,
                  req: Requirements):
-        super().__init__(active, passive, req)
+        super().__init__(conditions, req)
 
         # Основное уравнение эжекции для участка струи от сопла до места
         # соприкосновения со стенкой
@@ -65,7 +64,7 @@ class GasEjector(BaseEjector):
 
         # Площадь сечения узкой части сопла
         self.nozzle_throat_area = calculate_nozzle_throat_area(
-            self.active, psi)
+            self.conditions, psi)
 
         # Диаметр сечения узкой части сопла
         self.nozzle_throat_diameter = calculate_circle_diameter(
@@ -97,15 +96,16 @@ class GasEjector(BaseEjector):
         """Скорости по сечениям эжектора"""
 
         # Скорость истечения газа из сопла (w1)
-        nozzle_exit_pressure = self.active.inlet_pressure / 1.1
+        nozzle_exit_pressure = self.conditions.pressure[ACTIVE] / 1.1
         # NOTE напор будет "head", чтобы не путаться со статическим давлением
         self.velocity_nozzle_exit = np.sqrt(
             2 * g * nozzle_exit_pressure /
-            calculate_specific_weight(self.active.density))
+            calculate_specific_weight(self.conditions.phase[ACTIVE].rhomass()))
 
         # Скорость газа в конце смесительного участка (w3)
         self.velocity_cyl_section_exit = (
-            (self.active.mass_flow + self.passive.mass_flow) /
+            (self.conditions.mass_flow_rate[ACTIVE] +
+             self.conditions.mass_flow_rate[PASSIVE]) /
             (mixture_density * self.mixing_section_area))
 
         # Скорость на выходе из эжектора (w4)
@@ -116,7 +116,7 @@ class GasEjector(BaseEjector):
                                   pressure_recovery_coefficient: float) -> None:
         """Давления по сечениям эжектора"""
         # Динамический напор эжектирующей струи на выходе из сопла (сечение I-I)
-        self.dynamic_head_nozzle_exit = self.active.inlet_pressure / 1.1
+        self.dynamic_head_nozzle_exit = self.conditions.pressure[ACTIVE] / 1.1
         # NOTE дважды считаем одно и то же (см. функцию выше)
 
         # Напор, создаваемый эжектором без диффузора
@@ -124,11 +124,11 @@ class GasEjector(BaseEjector):
 
         # Давление в конце цилиндрического участка (сечение III-III)
         self.pressure_cyl_section_exit = (self.ejector_head_no_diff +
-                                          self.passive.inlet_pressure)
+                                          self.conditions.pressure[PASSIVE])
 
         # Давление в критическом сечении сопла
         self.pressure_critical = calculate_critical_pressure(
-            self.critical_pressure_ratio, self.active.inlet_pressure)
+            self.critical_pressure_ratio, self.conditions.pressure[ACTIVE])
 
         # Давление за диффузором
         self.pressure_ejector_outlet = (
@@ -141,7 +141,7 @@ class GasEjector(BaseEjector):
         """Температуры по сечениям эжектора"""
         # Температура в критическом сечении сопла (T1)
         self.temperature_nozzle_exit = calculate_critical_temperature(
-            self.active.temperature, self.critical_pressure_ratio,
+            self.conditions.temperature[ACTIVE], self.critical_pressure_ratio,
             self.adiabatic_index)
 
         # Температура в конце цилиндрического участка (T3)

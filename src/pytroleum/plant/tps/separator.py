@@ -108,7 +108,8 @@ class Separator:
         )
         return abs(velocity) * self.transit_time(phase)
 
-    def capacity(self, fill_coeffs: tuple[float, ...] = FILL_COEFFS) -> tuple[float, float]:
+    def capacity(self,
+                 fill_coeffs: tuple[float, ...] = FILL_COEFFS) -> tuple[float, float]:
         """Пропускная способность сепаратора по жидкости для каждой секции, м³/с.
 
         Q_доп = V_сек * к_зап / τ_пр
