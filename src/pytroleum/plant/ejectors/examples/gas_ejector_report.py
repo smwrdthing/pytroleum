@@ -207,6 +207,3 @@ p("Длина диффузора L3:",
 
 _minor_header("НАГНЕТАТЕЛЬНЫЙ ТРУБОПРОВОД")
 p("Число Рейнольдса Re:", f"{gas_ejector.reynolds_number:.0f}")
-
-# NOTE код с конкретными расчётами лучше кидать либо в подпапку examples в ejectors
-# NOTE либо в examples всей библиотеки
