@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.constants import g
 
 from pytroleum.plant.ejectors.equations import (calculate_circle_area,
                                                 calculate_section_area,
@@ -30,6 +31,12 @@ class GasEjector(BaseEjector):
 
         # Отношение геометрических параметров
         self.n = self.m / self.m1
+
+        # Динамический напор эжектирующей струи на выходе из сопла (сечение I-I)
+        self.dynamic_head_nozzle_exit = self.conditions.pressure[ACTIVE] / 1.1
+
+        # Напор, создаваемый эжектором без диффузора
+        self.ejector_head_no_diff = self.dynamic_head_nozzle_exit / self.m
 
     def calculate_geometry_params(self, psi: float, opening_angle: float,
                                   s: float) -> None:
@@ -86,13 +93,9 @@ class GasEjector(BaseEjector):
     def calculate_velocity_params(self, mixture_density: float,
                                   s: float) -> None:
         """Скорости по сечениям эжектора"""
-
-        # NOTE напор будет "head", чтобы не путаться со статическим давлением
-        nozzle_exit_pressure = self.conditions.pressure[ACTIVE] / 1.1
-
         # Скорость истечения газа из сопла (w1)
         self.velocity_nozzle_exit = np.sqrt(
-            2 * nozzle_exit_pressure / self.conditions.phase[ACTIVE].rhomass())
+            2 * self.dynamic_head_nozzle_exit / self.conditions.phase[ACTIVE].rhomass())
 
         # Скорость газа в конце смесительного участка (w3)
         self.velocity_cyl_section_exit = (
@@ -107,14 +110,6 @@ class GasEjector(BaseEjector):
     def calculate_pressure_params(self, mixture_density: float,
                                   pressure_recovery_coefficient: float) -> None:
         """Давления по сечениям эжектора"""
-        # Динамический напор эжектирующей струи на выходе из сопла (сечение I-I)
-        self.dynamic_head_nozzle_exit = self.conditions.pressure[ACTIVE] / 1.1
-
-        # NOTE дважды считаем одно и то же (см. функцию выше)
-
-        # Напор, создаваемый эжектором без диффузора
-        self.ejector_head_no_diff = self.dynamic_head_nozzle_exit / self.m
-
         # Давление в конце цилиндрического участка (сечение III-III)
         self.pressure_cyl_section_exit = (self.ejector_head_no_diff +
                                           self.conditions.pressure[PASSIVE])
