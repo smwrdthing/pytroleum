@@ -87,9 +87,10 @@ class GasEjector(BaseEjector):
                                   s: float) -> None:
         """Скорости по сечениям эжектора"""
 
-        # Скорость истечения газа из сопла (w1)
-        nozzle_exit_pressure = self.conditions.pressure[ACTIVE] / 1.1
         # NOTE напор будет "head", чтобы не путаться со статическим давлением
+        nozzle_exit_pressure = self.conditions.pressure[ACTIVE] / 1.1
+
+        # Скорость истечения газа из сопла (w1)
         self.velocity_nozzle_exit = np.sqrt(
             2 * nozzle_exit_pressure / self.conditions.phase[ACTIVE].rhomass())
 
@@ -108,6 +109,7 @@ class GasEjector(BaseEjector):
         """Давления по сечениям эжектора"""
         # Динамический напор эжектирующей струи на выходе из сопла (сечение I-I)
         self.dynamic_head_nozzle_exit = self.conditions.pressure[ACTIVE] / 1.1
+
         # NOTE дважды считаем одно и то же (см. функцию выше)
 
         # Напор, создаваемый эжектором без диффузора
