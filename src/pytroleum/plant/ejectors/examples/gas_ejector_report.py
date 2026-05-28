@@ -67,7 +67,6 @@ p("Динамическая вязкость:",
 p("Диаметр трубопровода:", f"{req.active_inlet_diameter * M_TO_MM:.0f}", "мм")
 p("Молярная масса:",
   f"{conditions.phase[ACTIVE].molar_mass() * KG_PER_MOL_TO_G_PER_MOL:.2f}", "г/моль")
-p("Теплоёмкость:", f"{conditions.phase[ACTIVE].cpmass():.2f}", "Дж/(кг·К)")
 
 _minor_header("ПАССИВНАЯ СРЕДА (Эжектируемая)")
 p("Массовый расход:", f"{conditions.mass_flow_rate[PASSIVE]:.2f}", "кг/с")
@@ -83,7 +82,6 @@ p("Динамическая вязкость:",
 p("Диаметр трубопровода:", f"{req.passive_inlet_diameter * M_TO_MM:.0f}", "мм")
 p("Молярная масса:",
   f"{conditions.phase[PASSIVE].molar_mass() * KG_PER_MOL_TO_G_PER_MOL:.2f}", "г/моль")
-p("Теплоёмкость:", f"{conditions.phase[PASSIVE].cpmass():.2f}", "Дж/(кг·К)")
 
 _minor_header("ОБЩИЕ ПАРАМЕТРЫ")
 p("Количество ступеней:", f"{req.num_stages}", "шт.")
