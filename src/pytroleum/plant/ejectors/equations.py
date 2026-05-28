@@ -16,15 +16,6 @@ def calculate_gas_outflow_velocity(mass_flow: float, diameter: float,
 def calculate_adiabatic_index(conditions: OperationConditions,
                               entrainment_ratio: float) -> float:
     """Показатель адиабаты смеси активной и пассивной сред."""
-    # k = 1 / (1 - A · (q · R_n + R_a) / (Cp_n · q + Cp_a))
-    # где:
-    # k — показатель адиабаты
-    # A — тепловой эквивалент работы, Дж/Дж
-    # q — коэффициент эжекции
-    # R_a  — газовая постоянная активной среды, Дж/(кг·К)
-    # R_n  — газовая постоянная пассивной среды, Дж/(кг·К)
-    # Cp_a — удельная теплоёмкость активной среды, Дж/(кг·К)
-    # Cp_n — удельная теплоёмкость пассивной среды, Дж/(кг·К)
 
     R_active = UNIVERSAL_GAS_CONSTANT / conditions.phase[ACTIVE].molar_mass()
     R_passive = UNIVERSAL_GAS_CONSTANT / conditions.phase[PASSIVE].molar_mass()
