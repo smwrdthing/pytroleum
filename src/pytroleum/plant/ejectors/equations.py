@@ -16,49 +16,10 @@ def calculate_gas_outflow_velocity(mass_flow: float, diameter: float,
 def calculate_adiabatic_index(conditions: OperationConditions,
                               entrainment_ratio: float) -> float:
     """Показатель адиабаты смеси активной и пассивной сред."""
-
     R_active = UNIVERSAL_GAS_CONSTANT / conditions.phase[ACTIVE].molar_mass()
     R_passive = UNIVERSAL_GAS_CONSTANT / conditions.phase[PASSIVE].molar_mass()
     Cp_active = conditions.phase[ACTIVE].cpmass()
     Cp_passive = conditions.phase[PASSIVE].cpmass()
-
-    # NOTE можно считать "на месте" через CoolProp
-    # NOTE показатель адиабаты по определению c_p(T)/c_v(T),
-    # NOTE если состояние известно, то можно из eos сразу взять
-    # NOTE теплоёмкости
-    # NOTE
-    # NOTE ещё по процессам, адиабатический процесс - изоэнтропный
-    # NOTE чтобы не считать его "руками" можно также пользоваться
-    # NOTE CoolProp, достаточно обновлять состояние по энтропии (она постоянная) и
-    # NOTE какому-то второму параметру
-    # NOTE
-    # NOTE Пример
-    # NOTE from CoolProp.CoolProp import AbstractState
-    # NOTE from CoolProp.constants import PT_INPUTS, SmassT_INPUTS, PSmass_INPUTS
-    # NOTE
-    # NOTE P1, T1 = 1e5, 15+273.15
-    # NOTE eos = AbstractState("HEOS",<жидкость/газ>)
-    # NOTE eos.update(PT_INPUTS,P1,T1)
-    # NOTE S1 = eos.smass() # записываем энтропию
-    # NOTE # Адиабатное сжатие до 2 бар
-    # NOTE P2 = 2e5
-    # NOTE eos.update(PSmass_INPUTS, P2, S1)
-    # NOTE Читаем температуру
-    # NOTE T2 = eos.T()
-    # NOTE
-    # NOTE Код выше сработает только для чистых веществ в CoolProp, интерфейс смесей
-    # NOTE допускает обновление состояния только через пару PQ или QT в двухфазном регионе
-    # NOTE (давление-качество пара или качество пара-температура) или через пару PT в
-    # NOTE однофазном. Это можно обойти, если дописать собственную функцию, которая будет
-    # NOTE решать нелинейное уравнение вида S(P2,T) - S1 = 0
-    # NOTE
-    # NOTE При прочих равных считать по формуле будет быстрее, так что она может
-    # NOTE быть уместна, код из заметки можно использовать для проверки, либо когда
-    # NOTE этот расчёт не выполняется в больших количествах и выводить формулу заново
-    # NOTE или где-то её искать накладнее + при её переписывании легко ошибиться
-    # NOTE
-    # NOTE Дополнительно : k на самом деле зависит от температуры, чаще всего слабо,
-    # NOTE но может проявляться для больших перепадов температур/некоторых веществ
 
     return 1 / (1 - THERMAL_EQUIVALENT_OF_WORK *
                 (entrainment_ratio * R_passive + R_active) /
