@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.constants import g
 from scipy.optimize import fsolve
 from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
 
@@ -241,9 +242,6 @@ class VaporEjector(BaseEjector):
         self.entropy_lower_boundary = entropy_lower_boundary
         self.entropy_upper_boundary = entropy_upper_boundary
         self.enthalpy_lower_boundary = enthalpy_lower_boundary
-
-        # Скоростной коэффициент сопла
-        self.phi = phi  # NOTE какое-нибудь значение по умолчанию будет кстати
 
         # Температура активной среды в сопле
         self.temperature_nozzle_exit = (0.5045 *  # NOTE магическая константа
