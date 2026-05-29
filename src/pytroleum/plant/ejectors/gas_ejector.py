@@ -15,6 +15,9 @@ from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              ACTIVE, PASSIVE)
 from pytroleum.plant.ejectors.base_ejector import BaseEjector
 
+# NOTE можно не разделять классы эжектроров по файлам, базовый класс и классы
+# NOTE для газового и парвого эжектора вполне могут жить в одном файлу ejector.py
+
 
 class GasEjector(BaseEjector):
 
@@ -25,6 +28,10 @@ class GasEjector(BaseEjector):
         # Основное уравнение эжекции для участка струи от сопла до места
         # соприкосновения со стенкой
         self.m1 = 2 * (1 + self.entrainment_ratio) ** 2
+        # NOTE атрибутам лучше давать говорящие имена, так как это часть публичного
+        # NOTE интерфейса
+        # NOTE (то, что видит пользователь, в том числе с помощью автодополнения)
+        # NOTE говорящее имя = проще пользоваться
 
         # Основной геометрический параметр эжектора m
         self.m = self.m1 / (1 + (2 * self.entrainment_ratio ** 2) / self.m1)
@@ -37,6 +44,13 @@ class GasEjector(BaseEjector):
 
         # Напор, создаваемый эжектором без диффузора
         self.ejector_head_no_diff = self.dynamic_head_nozzle_exit / self.m
+
+    # NOTE Объект класса GasEjector должен содержать в себе атрибуты самого эжектора
+    # NOTE а не рабочих условий и технических требований, эжектор может существовать
+    # NOTE сам по себе, без них, тут в конструктор надо передавать размеры эжектора
+    # NOTE
+    # NOTE Проектный расчёт под конкретные условия уже требует ТЗ/рабочих условий, туда
+    # NOTE эти объекты и нужно будет передавать
 
     def calculate_geometry_params(self, psi: float, opening_angle: float,
                                   s: float) -> None:

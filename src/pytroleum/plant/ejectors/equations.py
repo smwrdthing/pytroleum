@@ -21,6 +21,9 @@ def calculate_adiabatic_index(conditions: OperationConditions,
     Cp_active = conditions.phase[ACTIVE].cpmass()
     Cp_passive = conditions.phase[PASSIVE].cpmass()
 
+    # NOTE Тоже можно через CoolProp посчитать, в целом, если есть состав смеси
+    # NOTE и температура с давлением известны
+
     return 1 / (1 - THERMAL_EQUIVALENT_OF_WORK *
                 (entrainment_ratio * R_passive + R_active) /
                 (Cp_passive * entrainment_ratio + Cp_active))
@@ -82,9 +85,11 @@ def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,
 
 def calculate_section_area(area: float, ratio: float) -> float:
     """Площадь сечения через отношение площадей, м²."""
+    # NOTE эта функция просто делит два чсила, можно без неё
     return area / ratio
 
 
 def calculate_section_velocity(velocity: float, ratio: float) -> float:
     """Скорость потока через отношение площадей сечений, м/с."""
+    # NOTE эта функция просто делит два чсила, можно без неё
     return velocity / ratio

@@ -43,21 +43,25 @@ class VaporEjector(BaseEjector):
                                       при давлении газа в конце сопла
             phi                     — скоростной коэффициент сопла (0.95
                                       для сопел с большой степенью расширения)
+
         """
+
+        # NOTE Возможно энтропии выйдет снимать через CoolProp, не нужно будет искать
+        # NOTE табличные значения для данных условий
         # Табличные значения при давлении p1
         self.entropy_lower_boundary = entropy_lower_boundary
         self.entropy_upper_boundary = entropy_upper_boundary
         self.enthalpy_lower_boundary = enthalpy_lower_boundary
 
         # Скоростной коэффициент сопла
-        self.phi = phi
+        self.phi = phi  # NOTE какое-нибудь значение по умолчанию будет кстати
 
         # Температура активной среды в сопле
-        self.temperature_nozzle_exit = (0.5045 *
+        self.temperature_nozzle_exit = (0.5045 *  # NOTE магическая константа
                                         self.conditions.temperature[ACTIVE])
 
         # Давление газа в конце сопла p1
-        self.pressure_nozzle_exit = (0.68 *
+        self.pressure_nozzle_exit = (0.68 *  # NOTE магическая константа
                                      self.conditions.pressure[ACTIVE])
 
         # Степень льдистости газа в выходном сечении сопла
@@ -68,6 +72,7 @@ class VaporEjector(BaseEjector):
         # Скрытая степень льдистого газа в выходном сечении сопла
         # в зависимости от давления газа в конце сопла p1
         self.latent_heat_nozzle_exit = 0.986 * active_enthalpy
+        # NOTE магическая константа
 
         # Энтальпия расширившейся в сопле среды
         self.enthalpy_nozzle_exit = (enthalpy_lower_boundary +
@@ -75,7 +80,7 @@ class VaporEjector(BaseEjector):
                                      self.ice_quality_nozzle_exit)
 
         # Действительная скорость истечения газа из сопла
-        self.velocity_nozzle_exit = (91.5 * phi *
+        self.velocity_nozzle_exit = (91.5 * phi *  # NOTE магическая константа
                                      np.sqrt(active_enthalpy / KCAL_TO_J -
                                              self.enthalpy_nozzle_exit / KCAL_TO_J))
 
@@ -126,6 +131,10 @@ class VaporEjector(BaseEjector):
                                      enthalpies_cyl_exit: list[float],
                                      pressure_delta: float) -> None:
         """Расчёт основного геометрического параметра ступени."""
+
+        # NOTE функция очень большая, обычно это означает, что мы пытаемся сделать
+        # NOTE в ней слишком много всего и сразу, надо разбить на отдельные функции
+
         self.stage_entrainment_ratios = entrainment_ratios
         self.pressure_recovery_coefficient = pressure_recovery_coefficient
         self.mach_number = mach_number
@@ -233,6 +242,10 @@ class VaporEjector(BaseEjector):
 
     def plot_mixture_pressure_vs_entrainment(self) -> None:
         """График — зависимость давления смеси p(3) от коэффициента эжекции q."""
+
+        # NOTE функцию для построения графика не следует делать частью класса,
+        # NOTE который описывает эжектор
+
         fig, ax = plt.subplots(figsize=(8, 5))
         ax.plot(self.stage_entrainment_ratios,
                 [p / PA_TO_MPA for p in self.stage_mixture_pressures],
