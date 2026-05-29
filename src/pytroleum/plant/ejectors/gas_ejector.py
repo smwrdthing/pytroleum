@@ -2,11 +2,9 @@ import numpy as np
 from scipy.constants import g
 
 from pytroleum.plant.ejectors.equations import (calculate_circle_area,
-                                                calculate_section_area,
                                                 calculate_circle_diameter,
                                                 calculate_nozzle_throat_area,
                                                 calculate_diffuser_length,
-                                                calculate_section_velocity,
                                                 calculate_section_temperature,
                                                 calculate_reynolds_number)
 
@@ -60,16 +58,14 @@ class GasEjector(BaseEjector):
             self.req.outlet_diameter)
 
         # Площадь сечения цилиндрического смесительного участка
-        self.mixing_section_area = calculate_section_area(
-            self.diffuser_exit_area, s)
+        self.mixing_section_area = self.diffuser_exit_area / s
 
         # Диаметр сечения цилиндрического смесительного участка
         self.mixing_section_diameter = calculate_circle_diameter(
             self.mixing_section_area)
 
         # Площадь выходного сечения сопла
-        self.nozzle_exit_area = calculate_section_area(
-            self.mixing_section_area, self.m)
+        self.nozzle_exit_area = self.mixing_section_area / self.m
 
         # Диаметр выходного сечения сопла
         self.nozzle_exit_diameter = calculate_circle_diameter(
@@ -118,8 +114,7 @@ class GasEjector(BaseEjector):
             (mixture_density * self.mixing_section_area))
 
         # Скорость на выходе из эжектора (w4)
-        self.velocity_ejector_outlet = calculate_section_velocity(
-            self.velocity_cyl_section_exit, s)
+        self.velocity_ejector_outlet = self.velocity_cyl_section_exit / s
 
     def calculate_pressure_params(self, mixture_density: float,
                                   pressure_recovery_coefficient: float) -> None:

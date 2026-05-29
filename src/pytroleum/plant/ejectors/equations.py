@@ -81,15 +81,3 @@ def calculate_diffuser_length(diameter_exit: float, diameter_inlet: float,
     # усиливается вихреобразование вдоль стенок, возникают обратные токи,
     # коэффициент φ резко падает)
     return (diameter_exit - diameter_inlet) / (2 * np.tan(np.radians(opening_angle / 2)))
-
-
-def calculate_section_area(area: float, ratio: float) -> float:
-    """Площадь сечения через отношение площадей, м²."""
-    # NOTE эта функция просто делит два чсила, можно без неё
-    return area / ratio
-
-
-def calculate_section_velocity(velocity: float, ratio: float) -> float:
-    """Скорость потока через отношение площадей сечений, м/с."""
-    # NOTE эта функция просто делит два чсила, можно без неё
-    return velocity / ratio
