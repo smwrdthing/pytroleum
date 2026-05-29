@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from CoolProp import constants as CoolConst
 
-from pytroleum.plant.ejectors.gas_ejector import GasEjector
+from pytroleum.plant.ejectors.ejector import GasEjector
 from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              Requirements,
                                              ACTIVE, PASSIVE)

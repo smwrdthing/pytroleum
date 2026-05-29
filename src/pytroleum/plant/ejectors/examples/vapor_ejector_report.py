@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from CoolProp import constants as CoolConst
 
-from pytroleum.plant.ejectors.vapor_ejector import VaporEjector
+from pytroleum.plant.ejectors.ejector import VaporEjector
 from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              Requirements,
                                              ACTIVE, PASSIVE)
@@ -9,8 +9,7 @@ from pytroleum.plant.ejectors.utils import (_major_header, _minor_header,
                                             _minor_divider,
                                             print_row as p,
                                             PA_TO_MPA, KELVIN_TO_CELSIUS,
-                                            KCAL_TO_J, KCAL_PER_KMOL_TO_J_PER_MOL,
-                                            KGS_S_M2_TO_PA_S,
+                                            KCAL_TO_J,
                                             M_TO_MM, M2_TO_MM2)
 
 # ============================================================

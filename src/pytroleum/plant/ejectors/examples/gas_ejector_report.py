@@ -1,7 +1,7 @@
 from CoolProp import constants as CoolConst
 
 from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
-from pytroleum.plant.ejectors.gas_ejector import GasEjector
+from pytroleum.plant.ejectors.ejector import GasEjector
 from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              Requirements,
                                              ACTIVE, PASSIVE)
@@ -9,7 +9,6 @@ from pytroleum.plant.ejectors.utils import (_major_header, _minor_header,
                                             print_row as p,
                                             PA_TO_MPA, KELVIN_TO_CELSIUS,
                                             KGS_S_M2_TO_PA_S,
-                                            KG_PER_MOL_TO_G_PER_MOL,
                                             M_TO_MM,
                                             )
 
