@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.optimize import fsolve
 from scipy.constants import R as UNIVERSAL_GAS_CONSTANT
-import matplotlib.pyplot as plt
 
 from pytroleum.plant.ejectors.equations import (calculate_adiabatic_index,
                                                 calculate_critical_pressure_ratio,
@@ -16,7 +15,7 @@ from pytroleum.plant.ejectors.equations import (calculate_adiabatic_index,
 from pytroleum.plant.ejectors.inputs import (OperationConditions,
                                              Requirements,
                                              ACTIVE, PASSIVE)
-from pytroleum.plant.ejectors.utils import PA_TO_MPA, KCAL_TO_J
+from pytroleum.plant.ejectors.utils import KCAL_TO_J
 
 NOZZLE_VELOCITY_COEFF = 0.95
 
@@ -429,27 +428,6 @@ class VaporEjector(BaseEjector):
             self.stage_specific_volumes.append(specific_volume)
             self.stage_geometric_params.append(geometric_param)
             self.stage_mixture_pressures.append(pressure_mixture)
-
-    def plot_mixture_pressure_vs_entrainment(self) -> None:
-        """График — зависимость давления смеси p(3) от коэффициента эжекции q."""
-
-        # NOTE функцию для построения графика не следует делать частью класса,
-        # NOTE который описывает эжектор
-
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.plot(self.stage_entrainment_ratios,
-                [p / PA_TO_MPA for p in self.stage_mixture_pressures],
-                marker='o')
-        ax.set_xlabel('Коэффициент эжекции q')
-        ax.set_ylabel('Давление смеси p(3), МПа')
-        ax.grid(True, linestyle='--', alpha=0.5)
-        for entrainment_ratio, pressure in zip(self.stage_entrainment_ratios,
-                                               self.stage_mixture_pressures):
-            ax.annotate(f'{pressure / PA_TO_MPA:.2f}',
-                        xy=(entrainment_ratio, pressure / PA_TO_MPA),
-                        textcoords='offset points', xytext=(0, 10),
-                        ha='center')
-        plt.tight_layout()
 
     def calculate_geometry(self,
                            nozzle_expansion_ratio: float,

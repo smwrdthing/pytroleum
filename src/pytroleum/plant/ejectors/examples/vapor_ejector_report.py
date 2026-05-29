@@ -232,8 +232,6 @@ print("Давление смеси p(3):")
 for i, p3 in enumerate(vapor_ejector.stage_mixture_pressures, 1):
     p(f"  p(3)({i}):", f"{p3 / PA_TO_MPA:.3f}", "МПа")
 
-vapor_ejector.plot_mixture_pressure_vs_entrainment()
-plt.show()
 
 _major_header("ГЕОМЕТРИЧЕСКИЕ ПАРАМЕТРЫ СОПЛА")
 
