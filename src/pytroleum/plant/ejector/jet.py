@@ -193,3 +193,15 @@ def equation(design: Ejector, conditions: OperationConditions):
 
 def design(req: Requirements) -> Ejector:
     raise NotImplementedError("WIP")
+
+
+def _isentropic_mixure_jump_residual(mix: AbstractState, p, T, smass):
+    mix.update(PT_INPUTS, p, T)
+    return mix.smass()-smass
+
+
+def _isentropic_mixture_jump(mix: AbstractState, p, smass):
+    T_original = mix.T()
+    T_goal = fsolve(
+        lambda T: _isentropic_mixure_jump_residual(mix, p, T, smass), T_original)[0]
+    mix.update(PT_INPUTS, p, T_goal)
