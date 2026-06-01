@@ -57,6 +57,8 @@ class Requirements:
     # for pure fluids, extension to mixtures is possible, but requieres
     # additional consideration
     phase: list[AbstractState]
+    head: float
+    carry_flow_rate: np.ndarray
 
     def __post_init__(self):
         self._validate()
