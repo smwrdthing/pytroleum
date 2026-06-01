@@ -161,7 +161,7 @@ class Ejector:
 
 
 def equation(design: Ejector, conditions: OperationConditions):
-    """Main ejector equation derived from mass balance in implicit form, suitable to set
+    """Main ejector equation in implicit form derived from mass balance, suitable to set
     up optimization problem with appropriate wrapper"""
 
     # Equation is written in non-dimensional form
