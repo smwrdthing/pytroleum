@@ -173,9 +173,9 @@ def equation(design: Ejector, conditions: OperationConditions):
     dp = conditions.pressure[MIX, AFTERMIX] - conditions.pressure[MIX, INLET]
     hj = conditions.velocity_head[JET, INLET]
 
-    # ------------------------------ !WARNING! -------------------------------
-    # we must ensure proper state for each phase before we read density values,
-    # code below is incomplete
+    # We want to read densities in the cross-section after mixing region, so we jump there
+    # isentropically
+    conditions.isentropic_jump(AFTERMIX)
 
     # use eos to get density ratios
     jet_density = conditions.phase[J].rhomass()
