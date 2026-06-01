@@ -98,6 +98,26 @@ class OperationConditions:
         self.phase[MIX].set_mass_fractions(
             self.flow_rate[:MIX]/self.flow_rate[MIX])
 
+    def isentropic_jump(self, to_loc, from_loc=LOBBY):
+
+        # Jump to origin state with PT first
+        entropy = []
+        for idx, eos in enumerate(self.phase):
+            eos.update(PT_INPUTS,
+                       self.pressure[idx, from_loc],
+                       self.temperature[idx, from_loc])
+            entropy.append(eos.smass())
+
+        # Jump to other location isentropically
+        for idx, eos in enumerate(self.phase[:MIX]):
+            eos.update(PSmass_INPUTS, self.pressure[to_loc], entropy[idx])
+
+        # Mixture requires special treatment, because CoolProp would not allow
+        # PSmass-jump for mixture backend, we must set up optimisation problems using
+        # PT-jumps
+        _isentropic_mixture_jump(
+            self.phase[MIX], self.pressure[MIX, LOBBY], entropy[MIX])
+
 
 class Ejector:
 
