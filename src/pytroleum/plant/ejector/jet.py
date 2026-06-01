@@ -8,9 +8,10 @@ if TYPE_CHECKING:
     from pytroleum.tdyna.CoolStub import AbstractState  # type: ignore
 else:
     from CoolProp import AbstractState
-from CoolProp.constants import PT_INPUTS
+from CoolProp.constants import PT_INPUTS, PSmass_INPUTS
 
 import numpy as np
+from scipy.optimize import fsolve
 
 # Indices with shortcuts to access data corresponding to specific location in ejector,
 # if grows above 5-6 consider using Enum/IntEnum
