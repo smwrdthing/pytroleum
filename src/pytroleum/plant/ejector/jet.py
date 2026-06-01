@@ -192,7 +192,26 @@ def equation(design: Ejector, conditions: OperationConditions):
 
 
 def design(req: Requirements) -> Ejector:
-    raise NotImplementedError("WIP")
+    """Function to generate main design parameters of the ejector that would
+    satisfy given requirements"""
+
+    flow_rates = np.ones(CARRY)
+    flow_rates[CARRY] = req.carry_flow_rate
+    flow_rates[JET] = req.carry_flow_rate/JET_COEFF
+
+    conditions = OperationConditions(req.phase, flow_rates)
+
+    ...
+    # And so on, until we eventually can set up optimisation task, something like
+    # m = fsolve(
+    #       lambda area_ratio: equation(
+    #       Ejector(...), conditions), INITIAL_M
+    #       )
+    # And then derive actual parameters of the design with value of m
+    ...
+
+    # dummy return just for example
+    return Ejector(CONTAINER.copy(), CONTAINER.copy())
 
 
 def _isentropic_mixure_jump_residual(mix: AbstractState, p, T, smass):
