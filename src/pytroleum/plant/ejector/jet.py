@@ -109,12 +109,22 @@ class Ejector:
         self._infer_area()
 
     def _infer_angle(self):
-        """Auxiliary method to compute angles of elements in ejector."""
+        """Auxiliary method to compute inclination angles of elements in ejector."""
 
         # here we take advantage of ejector 3-section structure,
         # more complex geometry would require more general approach
-        slope = (self.diameter[AM]-self.diameter)/self.length
-        self.angle = np.arctan(slope)
+        self.angle = CONTAINER.copy()
+
+        # Straight part, no incline
+        self.angle[:, AFTERMIX] = self.angle[:, PREMIX] = 0
+
+        # First & last section cones
+        self.angle[:, LOBBY] = np.arctan(
+            0.5*(self.diameter[ANY, LOBBY]-self.diameter[ANY, PREMIX]) /
+            self.length[ANY, LOBBY])
+        self.angle[:, DRAIN] = np.arctan(
+            0.5*(self.diameter[ANY, DRAIN] - self.diameter[ANY, AFTERMIX]) /
+            self.length[ANY, DRAIN])
 
     def _infer_area(self):
         """Auxiliary method to compute areas of elements in ejector."""
