@@ -170,14 +170,14 @@ def equation(design: Ejector, conditions: OperationConditions):
     n = design.area[ANY, AFTERMIX]/design.area[CARRY, INLET]
     q = conditions.flow_rate[CARRY]/conditions.flow_rate[JET]
 
-    dp = conditions.pressure[JET, AFTERMIX] - conditions.pressure[INLET]
+    dp = conditions.pressure[MIX, AFTERMIX] - conditions.pressure[MIX, INLET]
     hj = conditions.velocity_head[JET, INLET]
 
     # ------------------------------ !WARNING! -------------------------------
     # we must ensure proper state for each phase before we read density values,
     # code below is incomplete
 
-    # use eos to get density ratios after mixture
+    # use eos to get density ratios
     jet_density = conditions.phase[J].rhomass()
     carry_density = conditions.phase[C].rhomass()
     mix_density = conditions.phase[M].rhomass()
