@@ -24,7 +24,9 @@ D = DRAIN = 4
 J = JET = 0
 C = CARRY = 1
 M = MIX = 2
-A = ANY = -1  # used when phase index is not relevant
+A = ANY = -1
+# ANY is used for access when phase index is not relevant, when assigning a value
+# slicing with ":" will result in imposing value for all phases
 
 # Used for container initialization later on, nan is imposed, so when data is not
 # relevent somewhere for some reason we will be explicit about it
@@ -37,11 +39,15 @@ CONTAINER = np.full(_SHAPE, np.nan)
 # and location indices correspond to columns
 #
 # So, for example, pressure of jet phase in entry would be accessed like follows:
-# pressure[JET, ENTRY], for arbitrary container it will be
-# <container>[JET, ENTRY]
+# pressure[JET, ENTRY], for arbitrary container, phase and location in ejector it will be:
+#                       <container>[<phase>, <location>]
 #
 # There are exceptions, like flow rate - in steady state flow rate will be same over
 # all sections, so it is not relevant to keep flow rate in different locations
+
+# For example purposes only, actual design procedure should not rely on imposed
+# coefficients like that
+JET_COEFF = 3
 
 
 @dataclass
