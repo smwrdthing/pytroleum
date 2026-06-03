@@ -31,8 +31,8 @@ A = ANY = -1
 
 # Used for container initialization later on, nan is imposed, so when data is not
 # relevent somewhere for some reason we will be explicit about it
-_LAST_PHASE = M
-_LAST_LOC = D
+_LAST_PHASE = M+1
+_LAST_LOC = D+1
 _SHAPE = (_LAST_PHASE, _LAST_LOC)
 CONTAINER = np.full(_SHAPE, np.nan)
 
@@ -170,7 +170,7 @@ def equation(design: Ejector, conditions: OperationConditions):
     n = design.area[ANY, AFTERMIX]/design.area[CARRY, INLET]
     q = conditions.flow_rate[CARRY]/conditions.flow_rate[JET]
 
-    dp = conditions.pressure[MIX, AFTERMIX] - conditions.pressure[MIX, INLET]
+    dp = conditions.pressure[MIX, AFTERMIX] - conditions.pressure[JET, INLET]
     hj = conditions.velocity_head[JET, INLET]
 
     # We want to read densities in the cross-section after mixing region, so we jump there
