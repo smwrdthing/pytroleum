@@ -105,7 +105,8 @@ class EjectorDesign:
 def solve_dimensions(
         req: Requirements, area_jet_inlet: float,
         s: float = S, alpha: float = ALPHA) -> EjectorDesign:
-    """Solve ejector equation for design dimensions with known requirements and jet nozzle area"""
+    """Solve ejector equation for design dimensions with known
+    requirements and jet nozzle area"""
 
     q = req.flow_rate[CARRY] / req.flow_rate[JET]
     dp = req.pressure[MIX, AFTERMIX] - req.pressure[JET, INLET]
@@ -127,8 +128,8 @@ def solve_dimensions(
     )
 
     # find m: m = 2·(1+q)²·ρj/ρm − q²·n·ρj/ρc
-    m = (2 * (1 + q) ** 2 * jet_density / mix_density
-         - q ** 2 * n * jet_density / carry_density)
+    m = (2 * (1 + q) ** 2 * jet_density / mix_density -
+         q ** 2 * n * jet_density / carry_density)
 
     # remaining areas and diameters from m and n
     area_mix_aftermix = m * area_jet_inlet
@@ -149,8 +150,8 @@ def solve_dimensions(
     phi = 1.0 - (epsilon_tr + epsilon_r + epsilon_out)
 
     pressure_mix_drain = (
-        req.pressure[MIX, AFTERMIX]
-        + phi * mix_density * velocity_mix_aftermix ** 2 / 2
+        req.pressure[MIX, AFTERMIX] +
+        phi * mix_density * velocity_mix_aftermix ** 2 / 2
     )
 
     return EjectorDesign(
@@ -256,7 +257,8 @@ def _isentropic_mixture_jump(
     T_guess = T_original + dSdP / dSdT * (p - p_original)
 
     T_goal = fsolve(
-        lambda T: _isentropic_mixture_jump_residual(mix, p, T, smass),
+        lambda T: _isentropic_mixture_jump_residual(
+            mix, p, T, smass),  # type: ignore
         T_guess,
     )[0]
 
