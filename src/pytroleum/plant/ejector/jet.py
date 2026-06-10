@@ -97,6 +97,7 @@ class EjectorDesign:
     # Full (phase × location) matrices, nan where not computed
     diameter: np.ndarray
     area: np.ndarray
+    length: np.ndarray
 
     # Diffuser outlet pressure [Pa]
     pressure_mix_drain: float
@@ -140,6 +141,11 @@ def solve_dimensions(
     diameter[MIX, PREMIX] = diameter[MIX, AFTERMIX]
     diameter[MIX, DRAIN] = _diameter(area[MIX, DRAIN])
 
+    # lengths
+    length = CONTAINER.copy()
+    length[MIX, DRAIN] = (diameter[MIX, DRAIN] -
+                          diameter[MIX, AFTERMIX]) / (2 * np.tan(alpha))
+
     # diffuser pressure
     velocity_mix_aftermix = req.flow_rate[MIX] / \
         (mix_density * area[MIX, AFTERMIX])
@@ -160,6 +166,7 @@ def solve_dimensions(
         n=n,
         diameter=diameter,
         area=area,
+        length=length,
         pressure_mix_drain=pressure_mix_drain,
     )
 
@@ -209,6 +216,28 @@ def report(design: EjectorDesign, conditions: OperationConditions) -> None:
         f"Drain    : {design.area[J, D]*_M2_TO_CM2:.2f}"
         f" / {design.area[C, D]*_M2_TO_CM2:.2f}"
         f" / {design.area[M, D]*_M2_TO_CM2:.2f} [cm²]")
+    print()
+    print("lengths")
+    print(
+        f"Inlet    : {design.length[J, I]*_M_TO_MM:.2f}"
+        f" / {design.length[C, I]*_M_TO_MM:.2f}"
+        f" / {design.length[M, I]*_M_TO_MM:.2f} [mm]")
+    print(
+        f"Lobby    : {design.length[J, L]*_M_TO_MM:.2f}"
+        f" / {design.length[C, L]*_M_TO_MM:.2f}"
+        f" / {design.length[M, L]*_M_TO_MM:.2f} [mm]")
+    print(
+        f"Premix   : {design.length[J, PM]*_M_TO_MM:.2f}"
+        f" / {design.length[C, PM]*_M_TO_MM:.2f}"
+        f" / {design.length[M, PM]*_M_TO_MM:.2f} [mm]")
+    print(
+        f"Aftermix : {design.length[J, AM]*_M_TO_MM:.2f}"
+        f" / {design.length[C, AM]*_M_TO_MM:.2f}"
+        f" / {design.length[M, AM]*_M_TO_MM:.2f} [mm]")
+    print(
+        f"Drain    : {design.length[J, D]*_M_TO_MM:.2f}"
+        f" / {design.length[C, D]*_M_TO_MM:.2f}"
+        f" / {design.length[M, D]*_M_TO_MM:.2f} [mm]")
     print()
     print("flow rates")
     print(
