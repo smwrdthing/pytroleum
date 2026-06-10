@@ -128,6 +128,7 @@ def solve_dimensions(
     area = CONTAINER.copy()
     area[JET, INLET] = area_jet_inlet
     area[MIX, AFTERMIX] = m * area[JET, INLET]
+    area[MIX, PREMIX] = area[MIX, AFTERMIX]
     area[CARRY, INLET] = area[MIX, AFTERMIX] / n
 
     # diameters
@@ -135,6 +136,7 @@ def solve_dimensions(
     diameter[JET, INLET] = _diameter(area[JET, INLET])
     diameter[CARRY, INLET] = _diameter(area[CARRY, INLET])
     diameter[MIX, AFTERMIX] = _diameter(area[MIX, AFTERMIX])
+    diameter[MIX, PREMIX] = diameter[MIX, AFTERMIX]
 
     # diffuser pressure
     velocity_mix_aftermix = req.flow_rate[MIX] / \
