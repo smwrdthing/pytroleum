@@ -12,6 +12,12 @@ from CoolProp.constants import PT_INPUTS, iSmass, iP, iT
 import numpy as np
 from scipy.optimize import fsolve
 
+
+_M_TO_MM = 1e3
+_M2_TO_CM2 = 1e4
+_PA_TO_BAR = 1e-5
+
+
 # Location indices
 I = INLET = 0  # noqa: E741
 L = LOBBY = 1
@@ -88,15 +94,9 @@ class EjectorDesign:
     m: float   # area[MIX, AM] / area[JET, I]
     n: float   # area[MIX, AM] / area[CARRY, I]
 
-    # Cross-sectional areas [m²]
-    area_jet_inlet: float
-    area_carry_inlet: float
-    area_mix_aftermix: float
-
-    # Diameters [m]
-    diameter_jet_inlet: float
-    diameter_carry_inlet: float
-    diameter_mix_aftermix: float
+    # Full (phase × location) matrices, nan where not computed
+    diameter: np.ndarray
+    area: np.ndarray
 
     # Diffuser outlet pressure [Pa]
     pressure_mix_drain: float
@@ -124,17 +124,21 @@ def solve_dimensions(
     m = (2 * (1 + q) ** 2 * jet_density / mix_density -
          q ** 2 * n * jet_density / carry_density)
 
-    # areas and diameters from m and n
-    area_mix_aftermix = m * area_jet_inlet
-    area_carry_inlet = area_mix_aftermix / n
+    # areas
+    area = CONTAINER.copy()
+    area[JET, INLET] = area_jet_inlet
+    area[MIX, AFTERMIX] = m * area[JET, INLET]
+    area[CARRY, INLET] = area[MIX, AFTERMIX] / n
 
-    diameter_jet_inlet = _diameter(area_jet_inlet)
-    diameter_mix_aftermix = _diameter(area_mix_aftermix)
-    diameter_carry_inlet = _diameter(area_carry_inlet)
+    # diameters
+    diameter = CONTAINER.copy()
+    diameter[JET, INLET] = _diameter(area[JET, INLET])
+    diameter[CARRY, INLET] = _diameter(area[CARRY, INLET])
+    diameter[MIX, AFTERMIX] = _diameter(area[MIX, AFTERMIX])
 
-    # diffuser pressure:
+    # diffuser pressure
     velocity_mix_aftermix = req.flow_rate[MIX] / \
-        (mix_density * area_mix_aftermix)
+        (mix_density * area[MIX, AFTERMIX])
 
     friction_coeff = 0.002 / np.sin(alpha / 2) * (s ** 2 - 1) / s
     expansion_coeff = np.sin(alpha) * ((s - 1) / s) ** 2
@@ -150,48 +154,43 @@ def solve_dimensions(
     return EjectorDesign(
         m=m,
         n=n,
-        area_jet_inlet=area_jet_inlet,
-        area_carry_inlet=area_carry_inlet,
-        area_mix_aftermix=area_mix_aftermix,
-        diameter_jet_inlet=diameter_jet_inlet,
-        diameter_carry_inlet=diameter_carry_inlet,
-        diameter_mix_aftermix=diameter_mix_aftermix,
+        diameter=diameter,
+        area=area,
         pressure_mix_drain=pressure_mix_drain,
     )
 
 
-def report_design(design: EjectorDesign) -> None:
+def report(design: EjectorDesign) -> None:
     print("         jet / carry / mix")
     print("diameters")
     print(
-        f"Inlet    : {design.diameter_jet_inlet * 1e3:.2f}"
-        f" / {design.diameter_carry_inlet * 1e3:.2f}"
-        f" / nan [mm]")
+        f"Inlet    : {design.diameter[J, I]*_M_TO_MM:.2f}"
+        f" / {design.diameter[C, I]*_M_TO_MM:.2f}"
+        f" / {design.diameter[M, I]*_M_TO_MM:.2f} [mm]")
     print(
-        f"Aftermix : nan"
-        f" / nan"
-        f" / {design.diameter_mix_aftermix * 1e3:.2f} [mm]")
+        f"Aftermix : {design.diameter[J, AM]*_M_TO_MM:.2f}"
+        f" / {design.diameter[C, AM]*_M_TO_MM:.2f}"
+        f" / {design.diameter[M, AM]*_M_TO_MM:.2f} [mm]")
     print()
     print("areas")
     print(
-        f"Inlet    : {design.area_jet_inlet * 1e4:.4f}"
-        f" / {design.area_carry_inlet * 1e4:.4f}"
-        f" / nan [cm²]")
+        f"Inlet    : {design.area[J, I]*_M2_TO_CM2:.2f}"
+        f" / {design.area[C, I]*_M2_TO_CM2:.2f}"
+        f" / {design.area[M, I]*_M2_TO_CM2:.2f} [cm²]")
     print(
-        f"Aftermix : nan"
-        f" / nan"
-        f" / {design.area_mix_aftermix * 1e4:.4f} [cm²]")
+        f"Aftermix : {design.area[J, AM]*_M2_TO_CM2:.2f}"
+        f" / {design.area[C, AM]*_M2_TO_CM2:.2f}"
+        f" / {design.area[M, AM]*_M2_TO_CM2:.2f} [cm²]")
     print()
     print("area ratios")
-    print(f"m (area[MIX,AM] / area[JET,I])   = {design.m:.4f}")
-    print(f"n (area[MIX,AM] / area[CARRY,I]) = {design.n:.4f}")
+    print(f"m (area[MIX, AM] / area[JET,   I]) = {design.m:.2f}")
+    print(f"n (area[MIX, AM] / area[CARRY, I]) = {design.n:.2f}")
     print()
     print("pressure")
-    print(
-        f"Drain    : nan / nan / {design.pressure_mix_drain / 1e5:.4f} [bar]")
-
+    print(f"Drain    : {design.pressure_mix_drain*_PA_TO_BAR:.2f} [bar]")
 
 # auxiliary functions // should be moved to separate module
+
 
 def _diameter(area: float) -> float:
     return np.sqrt(4 * area / np.pi)
@@ -202,6 +201,7 @@ def _get_densities(
 ) -> tuple[float, float, float]:
     """Return (jet, carry, mix) mass densities [kg/m³]."""
 
+    # jet phase
     conditions.phase[JET].update(
         PT_INPUTS,
         conditions.pressure[JET, INLET],
@@ -209,6 +209,7 @@ def _get_densities(
     )
     jet_density = conditions.phase[JET].rhomass()
 
+    # carried phase
     conditions.phase[CARRY].update(
         PT_INPUTS,
         conditions.pressure[CARRY, INLET],
@@ -216,6 +217,10 @@ def _get_densities(
     )
     carry_density = conditions.phase[CARRY].rhomass()
 
+    # mixture
+
+    # We need mixture density in the section after mixing. We jump here isentropically
+    # from conditions in the lobby
     conditions.phase[MIX].update(
         PT_INPUTS,
         conditions.pressure[MIX, LOBBY],
@@ -231,20 +236,19 @@ def _get_densities(
 
 
 def _isentropic_mixture_jump_residual(
-    mix: AbstractState, p: np.ndarray, T: np.ndarray, smass: float
-) -> float:
+        mix: AbstractState, p: np.ndarray, T: np.ndarray, smass: float) -> float:
     p, T = np.atleast_1d(p), np.atleast_1d(T)
     mix.update(PT_INPUTS, p[0], T[0])
     return mix.smass() - smass
 
 
 def _isentropic_mixture_jump(
-    mix: AbstractState, p: float, smass: float
-) -> AbstractState:
+        mix: AbstractState, p: float, smass: float) -> AbstractState:
     """Update *mix* state isentropically to pressure *p*."""
     T_original = mix.T()
-    p_original = mix.p()
 
+    # Use linear approximation as an initial guesse
+    p_original = mix.p()
     dSdP = mix.first_partial_deriv(iSmass, iP, iT)
     dSdT = mix.first_partial_deriv(iSmass, iT, iP)
     T_guess = T_original + dSdP / dSdT * (p - p_original)
@@ -260,21 +264,24 @@ def _isentropic_mixture_jump(
 
 
 if __name__ == "__main__":
+
+    # Phases and parameters sepcification
     jet_phase = AbstractState("HEOS", "N2")
     carry_phase = AbstractState("HEOS", "CH4")
 
     q = 2.0
-    G_carry = 0.07  # kg/s
+    carried_phase_flow_rate = 0.07  # kg/s
 
     requirements = OperationConditions(
         phase=[jet_phase, carry_phase],
-        flow_rate=np.array([G_carry / q, G_carry]),
+        flow_rate=np.array(
+            [carried_phase_flow_rate / q, carried_phase_flow_rate]),
     )
 
-    # Boundary conditions — задаём давления и температуры
-    requirements.pressure[JET, INLET] = 3e5       # Pa  — задано
-    requirements.pressure[CARRY, INLET] = 3e5     # Pa
-    requirements.pressure[MIX, AFTERMIX] = 1.1e5  # Pa  — задано
+    # Boundary conditions
+    requirements.pressure[JET, INLET] = 3e5       # Pa
+    requirements.pressure[CARRY, INLET] = 3e5       # Pa
+    requirements.pressure[MIX, AFTERMIX] = 1.1e5    # Pa
     requirements.temperature[:, INLET] = 25 + 273.15  # K
 
     # Initial mixture state for isentropic jump
@@ -285,4 +292,4 @@ if __name__ == "__main__":
     requirements.velocity_head[JET, INLET] = 5000.0  # Pa
 
     design = solve_dimensions(requirements)
-    report_design(design)
+    report(design)
