@@ -103,35 +103,28 @@ class EjectorDesign:
 
 
 def solve_dimensions(
-        req: Requirements, area_jet_inlet: float,
+        req: Requirements,
         s: float = S, alpha: float = ALPHA) -> EjectorDesign:
-    """Solve ejector equation for design dimensions with known
-    requirements and jet nozzle area"""
+    """Solve ejector equation for design dimensions with known requirements."""
 
     q = req.flow_rate[CARRY] / req.flow_rate[JET]
     dp = req.pressure[MIX, AFTERMIX] - req.pressure[JET, INLET]
 
     jet_density, carry_density, mix_density = _get_densities(req)
 
-    # hj from given nozzle area — same approach as in the analysis problem
-    req.velocity[JET, INLET] = req.flow_rate[JET] / \
-        (jet_density * area_jet_inlet)
-    req.velocity_head[JET, INLET] = jet_density * \
-        req.velocity[JET, INLET] ** 2 / 2
     hj = req.velocity_head[JET, INLET]
+    u_jet_inlet = np.sqrt(2 * hj / jet_density)
+    area_jet_inlet = req.flow_rate[JET] / (jet_density * u_jet_inlet)
+    req.velocity[JET, INLET] = u_jet_inlet
 
-    # find n from ejector momentum equation:
-    # dp/hj = 1/2 * 1 / [(1+q)²·ρj/ρm − q²·n·ρj/ρc]
-    # → (1+q)²·ρj/ρm − q²·n·ρj/ρc = hj/(2·dp)
     n = ((1 + q) ** 2 * jet_density / mix_density - hj / (2 * dp)) / (
         q ** 2 * jet_density / carry_density
     )
 
-    # find m: m = 2·(1+q)²·ρj/ρm − q²·n·ρj/ρc
     m = (2 * (1 + q) ** 2 * jet_density / mix_density -
          q ** 2 * n * jet_density / carry_density)
 
-    # remaining areas and diameters from m and n
+    # areas and diameters from m and n
     area_mix_aftermix = m * area_jet_inlet
     area_carry_inlet = area_mix_aftermix / n
 
@@ -139,19 +132,19 @@ def solve_dimensions(
     diameter_mix_aftermix = _diameter(area_mix_aftermix)
     diameter_carry_inlet = _diameter(area_carry_inlet)
 
-    # diffuser pressure recovery: p_drain = p_am + φ·ρ_mix·u_mix²/2
-    # φ = 1 − (ε_tr + ε_r + ε_out)
+    # diffuser pressure:
     velocity_mix_aftermix = req.flow_rate[MIX] / \
         (mix_density * area_mix_aftermix)
 
-    epsilon_tr = 0.002 / np.sin(alpha / 2) * (s ** 2 - 1) / s
-    epsilon_r = np.sin(alpha) * (s - 1) / s ** 2
-    epsilon_out = 1.0 / s ** 2
-    phi = 1.0 - (epsilon_tr + epsilon_r + epsilon_out)
+    friction_coeff = 0.002 / np.sin(alpha / 2) * (s ** 2 - 1) / s
+    expansion_coeff = np.sin(alpha) * ((s - 1) / s) ** 2
+    outlet_coeff = 1.0 / s ** 2
+    pressure_recovery_coeff = 1.0 - \
+        (friction_coeff + expansion_coeff + outlet_coeff)
 
     pressure_mix_drain = (
         req.pressure[MIX, AFTERMIX] +
-        phi * mix_density * velocity_mix_aftermix ** 2 / 2
+        pressure_recovery_coeff * mix_density * velocity_mix_aftermix ** 2 / 2
     )
 
     return EjectorDesign(
@@ -288,9 +281,8 @@ if __name__ == "__main__":
     requirements.pressure[MIX, LOBBY] = requirements.pressure[JET, INLET]
     requirements.temperature[MIX, LOBBY] = requirements.temperature[JET, INLET]
 
-    # Jet nozzle diameter — задан
-    diameter_jet_inlet = 15e-3  # m
-    area_jet_inlet = np.pi * diameter_jet_inlet ** 2 / 4
+    # Скоростной напор на входе в сопло — задан как требование
+    requirements.velocity_head[JET, INLET] = 5000.0  # Pa
 
-    design = solve_dimensions(requirements, area_jet_inlet)
+    design = solve_dimensions(requirements)
     report_design(design)
