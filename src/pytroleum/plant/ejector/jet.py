@@ -160,7 +160,7 @@ def solve_dimensions(
     )
 
 
-def report(design: EjectorDesign) -> None:
+def report(design: EjectorDesign, conditions: OperationConditions) -> None:
     print("         jet / carry / mix")
     print("diameters")
     print(
@@ -168,9 +168,21 @@ def report(design: EjectorDesign) -> None:
         f" / {design.diameter[C, I]*_M_TO_MM:.2f}"
         f" / {design.diameter[M, I]*_M_TO_MM:.2f} [mm]")
     print(
+        f"Lobby    : {design.diameter[J, L]*_M_TO_MM:.2f}"
+        f" / {design.diameter[C, L]*_M_TO_MM:.2f}"
+        f" / {design.diameter[M, L]*_M_TO_MM:.2f} [mm]")
+    print(
+        f"Premix   : {design.diameter[J, PM]*_M_TO_MM:.2f}"
+        f" / {design.diameter[C, PM]*_M_TO_MM:.2f}"
+        f" / {design.diameter[M, PM]*_M_TO_MM:.2f} [mm]")
+    print(
         f"Aftermix : {design.diameter[J, AM]*_M_TO_MM:.2f}"
         f" / {design.diameter[C, AM]*_M_TO_MM:.2f}"
         f" / {design.diameter[M, AM]*_M_TO_MM:.2f} [mm]")
+    print(
+        f"Drain    : {design.diameter[J, D]*_M_TO_MM:.2f}"
+        f" / {design.diameter[C, D]*_M_TO_MM:.2f}"
+        f" / {design.diameter[M, D]*_M_TO_MM:.2f} [mm]")
     print()
     print("areas")
     print(
@@ -178,19 +190,78 @@ def report(design: EjectorDesign) -> None:
         f" / {design.area[C, I]*_M2_TO_CM2:.2f}"
         f" / {design.area[M, I]*_M2_TO_CM2:.2f} [cm²]")
     print(
+        f"Lobby    : {design.area[J, L]*_M2_TO_CM2:.2f}"
+        f" / {design.area[C, L]*_M2_TO_CM2:.2f}"
+        f" / {design.area[M, L]*_M2_TO_CM2:.2f} [cm²]")
+    print(
+        f"Premix   : {design.area[J, PM]*_M2_TO_CM2:.2f}"
+        f" / {design.area[C, PM]*_M2_TO_CM2:.2f}"
+        f" / {design.area[M, PM]*_M2_TO_CM2:.2f} [cm²]")
+    print(
         f"Aftermix : {design.area[J, AM]*_M2_TO_CM2:.2f}"
         f" / {design.area[C, AM]*_M2_TO_CM2:.2f}"
         f" / {design.area[M, AM]*_M2_TO_CM2:.2f} [cm²]")
+    print(
+        f"Drain    : {design.area[J, D]*_M2_TO_CM2:.2f}"
+        f" / {design.area[C, D]*_M2_TO_CM2:.2f}"
+        f" / {design.area[M, D]*_M2_TO_CM2:.2f} [cm²]")
+    print()
+    print("flow rates")
+    print(
+        f"         : {conditions.flow_rate[J]*_M_TO_MM:.2f}"
+        f" / {conditions.flow_rate[C]*_M_TO_MM:.2f}"
+        f" / {conditions.flow_rate[M]*_M_TO_MM:.2f} [g/s]")
+    print()
+    print("temperatures")
+    print(
+        f"Inlet    : {conditions.temperature[J, I]-273.15:.2f}"
+        f" / {conditions.temperature[C, I]-273.15:.2f}"
+        f" / {conditions.temperature[M, I]-273.15:.2f} [C]")
+    print(
+        f"Lobby    : {conditions.temperature[J, L]-273.15:.2f}"
+        f" / {conditions.temperature[C, L]-273.15:.2f}"
+        f" / {conditions.temperature[M, L]-273.15:.2f} [C]")
+    print(
+        f"Premix   : {conditions.temperature[J, PM]-273.15:.2f}"
+        f" / {conditions.temperature[C, PM]-273.15:.2f}"
+        f" / {conditions.temperature[M, PM]-273.15:.2f} [C]")
+    print(
+        f"Aftermix : {conditions.temperature[J, AM]-273.15:.2f}"
+        f" / {conditions.temperature[C, AM]-273.15:.2f}"
+        f" / {conditions.temperature[M, AM]-273.15:.2f} [C]")
+    print(
+        f"Drain    : {conditions.temperature[J, D]-273.15:.2f}"
+        f" / {conditions.temperature[C, D]-273.15:.2f}"
+        f" / {conditions.temperature[M, D]-273.15:.2f} [C]")
+    print()
+    print("pressure")
+    print(
+        f"Inlet    : {conditions.pressure[J, I]*_PA_TO_BAR:.2f}"
+        f" / {conditions.pressure[C, I]*_PA_TO_BAR:.2f}"
+        f" / {conditions.pressure[M, I]*_PA_TO_BAR:.2f} [bar]")
+    print(
+        f"Lobby    : {conditions.pressure[J, L]*_PA_TO_BAR:.2f}"
+        f" / {conditions.pressure[C, L]*_PA_TO_BAR:.2f}"
+        f" / {conditions.pressure[M, L]*_PA_TO_BAR:.2f} [bar]")
+    print(
+        f"Premix   : {conditions.pressure[J, PM]*_PA_TO_BAR:.2f}"
+        f" / {conditions.pressure[C, PM]*_PA_TO_BAR:.2f}"
+        f" / {conditions.pressure[M, PM]*_PA_TO_BAR:.2f} [bar]")
+    print(
+        f"Aftermix : {conditions.pressure[J, AM]*_PA_TO_BAR:.2f}"
+        f" / {conditions.pressure[C, AM]*_PA_TO_BAR:.2f}"
+        f" / {conditions.pressure[M, AM]*_PA_TO_BAR:.2f} [bar]")
+    print(
+        f"Drain    : {conditions.pressure[J, D]*_PA_TO_BAR:.2f}"
+        f" / {conditions.pressure[C, D]*_PA_TO_BAR:.2f}"
+        f" / {design.pressure_mix_drain*_PA_TO_BAR:.2f} [bar]")
     print()
     print("area ratios")
     print(f"m (area[MIX, AM] / area[JET,   I]) = {design.m:.2f}")
     print(f"n (area[MIX, AM] / area[CARRY, I]) = {design.n:.2f}")
-    print()
-    print("pressure")
-    print(f"Drain    : {design.pressure_mix_drain*_PA_TO_BAR:.2f} [bar]")
 
-# auxiliary functions // should be moved to separate module
 
+# auxiliary functions
 
 def _diameter(area: float) -> float:
     return np.sqrt(4 * area / np.pi)
@@ -247,7 +318,7 @@ def _isentropic_mixture_jump(
     """Update *mix* state isentropically to pressure *p*."""
     T_original = mix.T()
 
-    # Use linear approximation as an initial guesse
+    # Use linear approximation as an initial guess
     p_original = mix.p()
     dSdP = mix.first_partial_deriv(iSmass, iP, iT)
     dSdT = mix.first_partial_deriv(iSmass, iT, iP)
@@ -265,7 +336,7 @@ def _isentropic_mixture_jump(
 
 if __name__ == "__main__":
 
-    # Phases and parameters sepcification
+    # Phases and parameters specification
     jet_phase = AbstractState("HEOS", "N2")
     carry_phase = AbstractState("HEOS", "CH4")
 
@@ -279,17 +350,17 @@ if __name__ == "__main__":
     )
 
     # Boundary conditions
-    requirements.pressure[JET, INLET] = 3e5       # Pa
-    requirements.pressure[CARRY, INLET] = 3e5       # Pa
-    requirements.pressure[MIX, AFTERMIX] = 1.1e5    # Pa
+    requirements.pressure[JET, INLET] = 3e5        # Pa
+    requirements.pressure[CARRY, INLET] = 3e5        # Pa
+    requirements.pressure[MIX, AFTERMIX] = 1.1e5      # Pa
     requirements.temperature[:, INLET] = 25 + 273.15  # K
 
     # Initial mixture state for isentropic jump
     requirements.pressure[MIX, LOBBY] = requirements.pressure[JET, INLET]
     requirements.temperature[MIX, LOBBY] = requirements.temperature[JET, INLET]
 
-    # Скоростной напор на входе в сопло — задан как требование
+    # Velocity head at jet inlet — given as a requirement
     requirements.velocity_head[JET, INLET] = 5000.0  # Pa
 
     design = solve_dimensions(requirements)
-    report(design)
+    report(design, requirements)
