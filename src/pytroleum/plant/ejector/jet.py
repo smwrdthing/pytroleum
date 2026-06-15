@@ -179,6 +179,13 @@ def solve_dimensions(
     )
 
     req.pressure[MIX, PREMIX] = req.pressure[MIX, AFTERMIX]
+    req.temperature[MIX, PREMIX] = req.temperature[MIX, AFTERMIX]
+    req.pressure[MIX, DRAIN] = pressure_mix_drain
+
+    mix_entropy_aftermix = req.phase[MIX].smass()
+    _isentropic_mixture_jump(
+        req.phase[MIX], pressure_mix_drain, mix_entropy_aftermix)
+    req.temperature[MIX, DRAIN] = req.phase[MIX].T()
 
     return EjectorDesign(
         m=m,
@@ -345,6 +352,8 @@ def _get_densities(
         conditions.phase[MIX], conditions.pressure[MIX, AFTERMIX], mix_entropy
     )
     mix_density = conditions.phase[MIX].rhomass()
+    # Save the temperature that the isentropic jump already computed.
+    conditions.temperature[MIX, AFTERMIX] = conditions.phase[MIX].T()
 
     return jet_density, carry_density, mix_density
 
