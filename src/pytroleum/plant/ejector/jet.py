@@ -177,6 +177,8 @@ def solve_dimensions(
         pressure_recovery_coeff * mix_density * velocity_mix_aftermix ** 2 / 2
     )
 
+    req.pressure[MIX, PREMIX] = req.pressure[MIX, AFTERMIX]
+
     return EjectorDesign(
         m=m,
         n=n,
