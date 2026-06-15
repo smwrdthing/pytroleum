@@ -16,6 +16,7 @@ from scipy.optimize import fsolve
 _M_TO_MM = 1e3
 _M2_TO_CM2 = 1e4
 _PA_TO_BAR = 1e-5
+_K_TO_C = 273.15
 
 
 # Location indices
@@ -250,31 +251,31 @@ def report(design: EjectorDesign, conditions: OperationConditions) -> None:
     print()
     print("flow rates")
     print(
-        f"         : {conditions.flow_rate[J]*_M_TO_MM:.2f}"
-        f" / {conditions.flow_rate[C]*_M_TO_MM:.2f}"
-        f" / {conditions.flow_rate[M]*_M_TO_MM:.2f} [g/s]")
+        f"         : {conditions.flow_rate[J]:.2f}"
+        f" / {conditions.flow_rate[C]:.2f}"
+        f" / {conditions.flow_rate[M]:.2f} [kg/s]")
     print()
     print("temperatures")
     print(
-        f"Inlet    : {conditions.temperature[J, I]-273.15:.2f}"
-        f" / {conditions.temperature[C, I]-273.15:.2f}"
-        f" / {conditions.temperature[M, I]-273.15:.2f} [C]")
+        f"Inlet    : {conditions.temperature[J, I]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[C, I]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[M, I]-_K_TO_C:.2f} [C]")
     print(
-        f"Lobby    : {conditions.temperature[J, L]-273.15:.2f}"
-        f" / {conditions.temperature[C, L]-273.15:.2f}"
-        f" / {conditions.temperature[M, L]-273.15:.2f} [C]")
+        f"Lobby    : {conditions.temperature[J, L]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[C, L]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[M, L]-_K_TO_C:.2f} [C]")
     print(
-        f"Premix   : {conditions.temperature[J, PM]-273.15:.2f}"
-        f" / {conditions.temperature[C, PM]-273.15:.2f}"
-        f" / {conditions.temperature[M, PM]-273.15:.2f} [C]")
+        f"Premix   : {conditions.temperature[J, PM]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[C, PM]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[M, PM]-_K_TO_C:.2f} [C]")
     print(
-        f"Aftermix : {conditions.temperature[J, AM]-273.15:.2f}"
-        f" / {conditions.temperature[C, AM]-273.15:.2f}"
-        f" / {conditions.temperature[M, AM]-273.15:.2f} [C]")
+        f"Aftermix : {conditions.temperature[J, AM]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[C, AM]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[M, AM]-_K_TO_C:.2f} [C]")
     print(
-        f"Drain    : {conditions.temperature[J, D]-273.15:.2f}"
-        f" / {conditions.temperature[C, D]-273.15:.2f}"
-        f" / {conditions.temperature[M, D]-273.15:.2f} [C]")
+        f"Drain    : {conditions.temperature[J, D]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[C, D]-_K_TO_C:.2f}"
+        f" / {conditions.temperature[M, D]-_K_TO_C:.2f} [C]")
     print()
     print("pressure")
     print(
@@ -395,8 +396,8 @@ if __name__ == "__main__":
     requirements.pressure[JET, INLET] = 3e5        # Pa
     requirements.pressure[CARRY, INLET] = 2e5        # Pa
     requirements.pressure[MIX, AFTERMIX] = 1.1e5      # Pa
-    requirements.temperature[JET, INLET] = 25 + 273.15
-    requirements.temperature[CARRY, INLET] = 25 + 273.15
+    requirements.temperature[JET, INLET] = 25 + _K_TO_C
+    requirements.temperature[CARRY, INLET] = 25 + _K_TO_C
 
     # Initial mixture state for isentropic jump
     requirements.pressure[MIX, LOBBY] = requirements.pressure[JET, INLET]
