@@ -94,10 +94,15 @@ class EjectorDesign:
     m: float   # area[MIX, AM] / area[JET, I]
     n: float   # area[MIX, AM] / area[CARRY, I]
 
-    # Full (phase × location) matrices, nan where not computed
+    # Full (phase x location) matrices, nan where not computed
     diameter: np.ndarray
     area: np.ndarray
-    length: np.ndarray
+
+    # Lengths of each section [m]
+    length_inlet_lobby: float        # jet inlet    -> mix lobby
+    length_lobby_premix: float       # mix lobby    -> mix premix
+    length_premix_aftermix: float    # mix premix   -> mix aftermix
+    length_aftermix_drain: float     # mix aftermix -> mix drain
 
     # Diffuser outlet pressure [Pa]
     pressure_mix_drain: float
@@ -139,12 +144,23 @@ def solve_dimensions(
     diameter[CARRY, INLET] = _diameter(area[CARRY, INLET])
     diameter[MIX, AFTERMIX] = _diameter(area[MIX, AFTERMIX])
     diameter[MIX, PREMIX] = diameter[MIX, AFTERMIX]
+    diameter[MIX, LOBBY] = diameter[MIX, PREMIX] / 0.9
+    area[MIX, LOBBY] = np.pi * diameter[MIX, LOBBY] ** 2 / 4
     diameter[MIX, DRAIN] = _diameter(area[MIX, DRAIN])
 
     # lengths
-    length = CONTAINER.copy()
-    length[MIX, DRAIN] = (diameter[MIX, DRAIN] -
-                          diameter[MIX, AFTERMIX]) / (2 * np.tan(alpha))
+    length_nozzle_to_wall_contact = diameter[JET, INLET] * (4 * (1 + q) - 1.8)
+    length_mixing_chamber = 2.5 * diameter[MIX, AFTERMIX]
+    length_nozzle_to_premix = length_nozzle_to_wall_contact - \
+        0.5 * diameter[MIX, AFTERMIX]
+    length_lobby_premix = (
+        diameter[MIX, LOBBY] - diameter[MIX, PREMIX]) / (2 * np.tan(alpha))
+
+    length_inlet_lobby = length_nozzle_to_premix - length_lobby_premix
+    length_premix_aftermix = length_nozzle_to_wall_contact + \
+        length_mixing_chamber - length_nozzle_to_premix
+    length_aftermix_drain = (
+        diameter[MIX, DRAIN] - diameter[MIX, AFTERMIX]) / (2 * np.tan(alpha))
 
     # diffuser pressure
     velocity_mix_aftermix = req.flow_rate[MIX] / \
@@ -166,7 +182,10 @@ def solve_dimensions(
         n=n,
         diameter=diameter,
         area=area,
-        length=length,
+        length_inlet_lobby=length_inlet_lobby,
+        length_lobby_premix=length_lobby_premix,
+        length_premix_aftermix=length_premix_aftermix,
+        length_aftermix_drain=length_aftermix_drain,
         pressure_mix_drain=pressure_mix_drain,
     )
 
@@ -219,25 +238,13 @@ def report(design: EjectorDesign, conditions: OperationConditions) -> None:
     print()
     print("lengths")
     print(
-        f"Inlet    : {design.length[J, I]*_M_TO_MM:.2f}"
-        f" / {design.length[C, I]*_M_TO_MM:.2f}"
-        f" / {design.length[M, I]*_M_TO_MM:.2f} [mm]")
+        f"jet inlet - mix lobby : {design.length_inlet_lobby*_M_TO_MM:.2f} [mm]")
     print(
-        f"Lobby    : {design.length[J, L]*_M_TO_MM:.2f}"
-        f" / {design.length[C, L]*_M_TO_MM:.2f}"
-        f" / {design.length[M, L]*_M_TO_MM:.2f} [mm]")
+        f"mix lobby - mix premix : {design.length_lobby_premix*_M_TO_MM:.2f} [mm]")
     print(
-        f"Premix   : {design.length[J, PM]*_M_TO_MM:.2f}"
-        f" / {design.length[C, PM]*_M_TO_MM:.2f}"
-        f" / {design.length[M, PM]*_M_TO_MM:.2f} [mm]")
+        f"mix premix - mix aftermix : {design.length_premix_aftermix*_M_TO_MM:.2f} [mm]")
     print(
-        f"Aftermix : {design.length[J, AM]*_M_TO_MM:.2f}"
-        f" / {design.length[C, AM]*_M_TO_MM:.2f}"
-        f" / {design.length[M, AM]*_M_TO_MM:.2f} [mm]")
-    print(
-        f"Drain    : {design.length[J, D]*_M_TO_MM:.2f}"
-        f" / {design.length[C, D]*_M_TO_MM:.2f}"
-        f" / {design.length[M, D]*_M_TO_MM:.2f} [mm]")
+        f"mix aftermix - mix drain : {design.length_aftermix_drain*_M_TO_MM:.2f} [mm]")
     print()
     print("flow rates")
     print(
