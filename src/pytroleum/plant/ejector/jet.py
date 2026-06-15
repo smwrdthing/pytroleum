@@ -88,12 +88,15 @@ class OperationConditions:
 
 
 @dataclass
-class EjectorDesign:
+class EjectorDesign:  # NOTE можно просто Desing, см. ниже
     """Ejector geometry computed by solve_dimensions."""
 
     # Area ratios
     m: float   # area[MIX, AM] / area[JET, I]
     n: float   # area[MIX, AM] / area[CARRY, I]
+
+    # NOTE безразмерные параметры лучше исключить из сигнатуры конструктора,
+    # NOTE передаём тольок размеры, пропорции можно считать внутри __post_init__
 
     # Full (phase x location) matrices, nan where not computed
     diameter: np.ndarray
@@ -104,9 +107,19 @@ class EjectorDesign:
     length_lobby_premix: float       # mix lobby    -> mix premix
     length_premix_aftermix: float    # mix premix   -> mix aftermix
     length_aftermix_drain: float     # mix aftermix -> mix drain
+    # NOTE длины в такую же структуру данных, как и диаметры, площади и т.д.
 
     # Diffuser outlet pressure [Pa]
-    pressure_mix_drain: float
+    pressure_mix_drain: float  # NOTE не часть конструкции эжектора
+
+# NOTE внешний импорт сейчас
+# NOTE >> from pytroleum.plant.ejector import jet
+# NOTE >> ...
+# NOTE >> jet.EjectorDesign(...) <- многословно
+# NOTE
+# NOTE Внешний импорт, если просто Design
+# NOTE >> ...
+# NOTE >> jet.Design(...)
 
 
 def solve_dimensions(
@@ -127,6 +140,7 @@ def solve_dimensions(
     n = ((1 + q) ** 2 * jet_density / mix_density - hj / (2 * dp)) / (
         q ** 2 * jet_density / carry_density
     )
+    # NOTE откуда уравнение для n?
 
     m = (2 * (1 + q) ** 2 * jet_density / mix_density -
          q ** 2 * n * jet_density / carry_density)
@@ -138,6 +152,9 @@ def solve_dimensions(
     area[MIX, PREMIX] = area[MIX, AFTERMIX]
     area[MIX, DRAIN] = s * area[MIX, AFTERMIX]
     area[CARRY, INLET] = area[MIX, AFTERMIX] / n
+
+    # NOTE заполнить только диаметры, площади посчитать как np.pi*diameter**2/4,
+    # NOTE это выражение должно нормально сработать и для np.nan
 
     # diameters
     diameter = CONTAINER.copy()
@@ -167,6 +184,7 @@ def solve_dimensions(
     velocity_mix_aftermix = req.flow_rate[MIX] / \
         (mix_density * area[MIX, AFTERMIX])
 
+    # NOTE можно функцией
     friction_coeff = 0.002 / np.sin(alpha / 2) * (s ** 2 - 1) / s
     expansion_coeff = np.sin(alpha) * ((s - 1) / s) ** 2
     outlet_coeff = 1.0 / s ** 2
@@ -180,6 +198,8 @@ def solve_dimensions(
 
     req.pressure[MIX, PREMIX] = req.pressure[MIX, AFTERMIX]
     req.temperature[MIX, PREMIX] = req.temperature[MIX, AFTERMIX]
+
+    # NOTE сразу можно заполнить поле выше без промежуточной переменной
     req.pressure[MIX, DRAIN] = pressure_mix_drain
 
     mix_entropy_aftermix = req.phase[MIX].smass()
@@ -310,17 +330,30 @@ def report(design: EjectorDesign, conditions: OperationConditions) -> None:
     print(f"m (area[MIX, AM] / area[JET,   I]) = {design.m:.2f}")
     print(f"n (area[MIX, AM] / area[CARRY, I]) = {design.n:.2f}")
 
+    # NOTE разделить функции, которые печатают отчёт для конструкции и рабочих условий,
+    # NOTE внести в соответсвующие классы как методы
 
 # auxiliary functions
+
 
 def _diameter(area: float) -> float:
     return np.sqrt(4 * area / np.pi)
 
 
-def _get_densities(
+def _get_densities(  # NOTE более подробное имя для функции, см. ниже
     conditions: OperationConditions,
 ) -> tuple[float, float, float]:
     """Return (jet, carry, mix) mass densities [kg/m³]."""
+
+    # NOTE эта функция снимает плотности в определённом сечении, то есть мы ещё "прыгаем"
+    # NOTE всеми уравнениями состояния
+    # NOTE
+    # NOTE от _get_densities ожидаешь чего-то такого:
+    # NOTE >> def _get_densities(conditions):
+    # NOTE >>     return [eos.rhomass() for eos in condition.phase]
+    # NOTE
+    # NOTE в нашем случае функция делает больше, поэтоиу лучше отразить это как-то в
+    # NOTE идентификаторе
 
     # jet phase
     conditions.phase[JET].update(
@@ -417,3 +450,9 @@ if __name__ == "__main__":
 
     design = solve_dimensions(requirements)
     report(design, requirements)
+
+    # NOTE надо выводить больше знаков после запятой для расхода, если всё в м^3/ч
+    # NOTE и лучше воспользоваться форматированием с применением научной нотации
+    # NOTE print(f"flow rate : {flow_rate : .5e}") <- пример
+
+    # NOTE потом надо поисктьа ещё литератуту и закрыть пробелы в методике
