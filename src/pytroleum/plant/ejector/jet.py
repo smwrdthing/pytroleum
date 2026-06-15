@@ -391,9 +391,10 @@ if __name__ == "__main__":
 
     # Boundary conditions
     requirements.pressure[JET, INLET] = 3e5        # Pa
-    requirements.pressure[CARRY, INLET] = 3e5        # Pa
+    requirements.pressure[CARRY, INLET] = 2e5        # Pa
     requirements.pressure[MIX, AFTERMIX] = 1.1e5      # Pa
-    requirements.temperature[:, INLET] = 25 + 273.15  # K
+    requirements.temperature[JET, INLET] = 25 + 273.15
+    requirements.temperature[CARRY, INLET] = 25 + 273.15
 
     # Initial mixture state for isentropic jump
     requirements.pressure[MIX, LOBBY] = requirements.pressure[JET, INLET]
