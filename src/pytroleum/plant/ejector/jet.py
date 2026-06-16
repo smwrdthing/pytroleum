@@ -88,19 +88,16 @@ class OperationConditions:
 
 
 @dataclass
-class Desing:
+class Design:
     """Ejector geometry computed by solve_dimensions."""
-
-    # Area ratios
-    m: float   # area[MIX, AM] / area[JET, I]
-    n: float   # area[MIX, AM] / area[CARRY, I]
-
-    # NOTE безразмерные параметры лучше исключить из сигнатуры конструктора,
-    # NOTE передаём тольок размеры, пропорции можно считать внутри __post_init__
 
     # Full (phase x location) matrices, nan where not computed
     diameter: np.ndarray
     area: np.ndarray
+
+    def __post_init__(self) -> None:
+        self.m = self.area[MIX, AFTERMIX] / self.area[JET, INLET]
+        self.n = self.area[MIX, AFTERMIX] / self.area[CARRY, INLET]
 
     # Lengths of each section [m]
     length_inlet_lobby: float        # jet inlet    -> mix lobby
@@ -124,7 +121,7 @@ class Desing:
 
 def solve_dimensions(
         req: Requirements,
-        s: float = S, alpha: float = ALPHA) -> Desing:
+        s: float = S, alpha: float = ALPHA) -> Design:
     """Solve ejector equation for design dimensions with known requirements."""
 
     q = req.flow_rate[CARRY] / req.flow_rate[JET]
@@ -207,9 +204,7 @@ def solve_dimensions(
         req.phase[MIX], pressure_mix_drain, mix_entropy_aftermix)
     req.temperature[MIX, DRAIN] = req.phase[MIX].T()
 
-    return Desing(
-        m=m,
-        n=n,
+    return Design(
         diameter=diameter,
         area=area,
         length_inlet_lobby=length_inlet_lobby,
@@ -220,7 +215,7 @@ def solve_dimensions(
     )
 
 
-def report(design: Desing, conditions: OperationConditions) -> None:
+def report(design: Design, conditions: OperationConditions) -> None:
     print("         jet / carry / mix")
     print("diameters")
     print(
