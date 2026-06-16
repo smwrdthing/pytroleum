@@ -305,8 +305,6 @@ def solve_dimensions(
 
 
 # auxiliary functions
-
-
 def _recovery_coeff(s: float, alpha: float) -> float:
     """Return pressure recovery coefficient for a diffuser."""
     friction_coeff = 0.002 / np.sin(alpha / 2) * (s ** 2 - 1) / s
