@@ -100,9 +100,6 @@ class Design:
         self.m = self.area[MIX, AFTERMIX] / self.area[JET, INLET]
         self.n = self.area[MIX, AFTERMIX] / self.area[CARRY, INLET]
 
-    # Diffuser outlet pressure [Pa]
-    pressure_mix_drain: float  # NOTE не часть конструкции эжектора
-
 
 def solve_dimensions(
         req: Requirements,
@@ -177,27 +174,23 @@ def solve_dimensions(
     pressure_recovery_coeff = 1.0 - \
         (friction_coeff + expansion_coeff + outlet_coeff)
 
-    pressure_mix_drain = (
+    req.pressure[MIX, PREMIX] = req.pressure[MIX, AFTERMIX]
+    req.temperature[MIX, PREMIX] = req.temperature[MIX, AFTERMIX]
+
+    req.pressure[MIX, DRAIN] = (
         req.pressure[MIX, AFTERMIX] +
         pressure_recovery_coeff * mix_density * velocity_mix_aftermix ** 2 / 2
     )
 
-    req.pressure[MIX, PREMIX] = req.pressure[MIX, AFTERMIX]
-    req.temperature[MIX, PREMIX] = req.temperature[MIX, AFTERMIX]
-
-    # NOTE сразу можно заполнить поле выше без промежуточной переменной
-    req.pressure[MIX, DRAIN] = pressure_mix_drain
-
     mix_entropy_aftermix = req.phase[MIX].smass()
     _isentropic_mixture_jump(
-        req.phase[MIX], pressure_mix_drain, mix_entropy_aftermix)
+        req.phase[MIX], req.pressure[MIX, DRAIN], mix_entropy_aftermix)
     req.temperature[MIX, DRAIN] = req.phase[MIX].T()
 
     return Design(
         diameter=diameter,
         area=area,
         length=length,
-        pressure_mix_drain=pressure_mix_drain,
     )
 
 
@@ -317,7 +310,7 @@ def report(design: Design, conditions: OperationConditions) -> None:
     print(
         f"Drain    : {conditions.pressure[J, D]*_PA_TO_BAR:.2f}"
         f" / {conditions.pressure[C, D]*_PA_TO_BAR:.2f}"
-        f" / {design.pressure_mix_drain*_PA_TO_BAR:.2f} [bar]")
+        f" / {conditions.pressure[M, D]*_PA_TO_BAR:.2f} [bar]")
     print()
     print("area ratios")
     print(f"m (area[MIX, AM] / area[JET,   I]) = {design.m:.2f}")
