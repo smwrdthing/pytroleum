@@ -234,7 +234,7 @@ def solve_dimensions(
     q = req.flow_rate[CARRY] / req.flow_rate[JET]
     dp = req.pressure[MIX, AFTERMIX] - req.pressure[JET, INLET]
 
-    jet_density, carry_density, mix_density = _get_densities(req)
+    jet_density, carry_density, mix_density = _update_phases_get_densities(req)
 
     hj = req.velocity_head[JET, INLET]
     req.velocity[JET, INLET] = np.sqrt(2 * hj / jet_density)
@@ -313,20 +313,10 @@ def _recovery_coeff(s: float, alpha: float) -> float:
     return 1.0 - (friction_coeff + expansion_coeff + outlet_coeff)
 
 
-def _get_densities(  # NOTE более подробное имя для функции, см. ниже
-    conditions: OperationConditions,
-) -> tuple[float, float, float]:
-    """Return (jet, carry, mix) mass densities [kg/m³]."""
-
-    # NOTE эта функция снимает плотности в определённом сечении, то есть мы ещё "прыгаем"
-    # NOTE всеми уравнениями состояния
-    # NOTE
-    # NOTE от _get_densities ожидаешь чего-то такого:
-    # NOTE >> def _get_densities(conditions):
-    # NOTE >>     return [eos.rhomass() for eos in condition.phase]
-    # NOTE
-    # NOTE в нашем случае функция делает больше, поэтоиу лучше отразить это как-то в
-    # NOTE идентификаторе
+def _update_phases_get_densities(conditions: OperationConditions,
+                                 ) -> tuple[float, float, float]:
+    """Update each phase EOS to its section conditions
+    and return (jet, carry, mix) mass densities [kg/m³]."""
 
     # jet phase
     conditions.phase[JET].update(
@@ -334,7 +324,6 @@ def _get_densities(  # NOTE более подробное имя для функ
         conditions.pressure[JET, INLET],
         conditions.temperature[JET, INLET],
     )
-    jet_density = conditions.phase[JET].rhomass()
 
     # carried phase
     conditions.phase[CARRY].update(
@@ -342,12 +331,8 @@ def _get_densities(  # NOTE более подробное имя для функ
         conditions.pressure[CARRY, INLET],
         conditions.temperature[CARRY, INLET],
     )
-    carry_density = conditions.phase[CARRY].rhomass()
 
-    # mixture
-
-    # We need mixture density in the section after mixing. We jump here isentropically
-    # from conditions in the lobby
+    # mixture: jump isentropically from lobby to aftermix
     conditions.phase[MIX].update(
         PT_INPUTS,
         conditions.pressure[MIX, LOBBY],
@@ -357,11 +342,11 @@ def _get_densities(  # NOTE более подробное имя для функ
     _isentropic_mixture_jump(
         conditions.phase[MIX], conditions.pressure[MIX, AFTERMIX], mix_entropy
     )
-    mix_density = conditions.phase[MIX].rhomass()
+
     # Save the temperature that the isentropic jump already computed.
     conditions.temperature[MIX, AFTERMIX] = conditions.phase[MIX].T()
 
-    return jet_density, carry_density, mix_density
+    return tuple(eos.rhomass() for eos in conditions.phase)
 
 
 def _isentropic_mixture_jump_residual(
