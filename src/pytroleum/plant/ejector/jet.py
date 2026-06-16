@@ -122,27 +122,18 @@ def solve_dimensions(
     m = (2 * (1 + q) ** 2 * jet_density / mix_density -
          q ** 2 * n * jet_density / carry_density)
 
-    # areas
-    area = CONTAINER.copy()
-    area[JET, INLET] = req.flow_rate[JET] / \
-        (jet_density * req.velocity[JET, INLET])
-    area[MIX, AFTERMIX] = m * area[JET, INLET]
-    area[MIX, PREMIX] = area[MIX, AFTERMIX]
-    area[MIX, DRAIN] = s * area[MIX, AFTERMIX]
-    area[CARRY, INLET] = area[MIX, AFTERMIX] / n
-
-    # NOTE заполнить только диаметры, площади посчитать как np.pi*diameter**2/4,
-    # NOTE это выражение должно нормально сработать и для np.nan
-
     # diameters
     diameter = CONTAINER.copy()
-    diameter[JET, INLET] = _diameter(area[JET, INLET])
-    diameter[CARRY, INLET] = _diameter(area[CARRY, INLET])
-    diameter[MIX, AFTERMIX] = _diameter(area[MIX, AFTERMIX])
+    diameter[JET, INLET] = np.sqrt(
+        4 / np.pi * req.flow_rate[JET] / (jet_density * req.velocity[JET, INLET]))
+    diameter[MIX, AFTERMIX] = diameter[JET, INLET] * np.sqrt(m)
     diameter[MIX, PREMIX] = diameter[MIX, AFTERMIX]
     diameter[MIX, LOBBY] = diameter[MIX, PREMIX] / 0.9
-    area[MIX, LOBBY] = np.pi * diameter[MIX, LOBBY] ** 2 / 4
-    diameter[MIX, DRAIN] = _diameter(area[MIX, DRAIN])
+    diameter[CARRY, INLET] = diameter[MIX, AFTERMIX] / np.sqrt(n)
+    diameter[MIX, DRAIN] = diameter[MIX, AFTERMIX] * np.sqrt(s)
+
+    # areas
+    area = np.pi * diameter ** 2 / 4
 
     # lengths
     length_nozzle_to_wall_contact = diameter[JET, INLET] * (4 * (1 + q) - 1.8)
@@ -319,10 +310,6 @@ def report(design: Design, conditions: OperationConditions) -> None:
     # NOTE внести в соответсвующие классы как методы
 
 # auxiliary functions
-
-
-def _diameter(area: float) -> float:
-    return np.sqrt(4 * area / np.pi)
 
 
 def _get_densities(  # NOTE более подробное имя для функции, см. ниже
