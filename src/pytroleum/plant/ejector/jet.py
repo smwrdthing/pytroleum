@@ -49,7 +49,7 @@ ALPHA = np.radians(6.0)
 class OperationConditions:
 
     phase: list[AbstractState]
-    flow_rate: np.ndarray
+    mass_flow_rate: np.ndarray
 
     pressure: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
     temperature: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
@@ -65,7 +65,8 @@ class OperationConditions:
 
         self._validate_eos()
 
-        self.flow_rate = np.array([*self.flow_rate, np.sum(self.flow_rate)])
+        self.mass_flow_rate = np.array(
+            [*self.mass_flow_rate, np.sum(self.mass_flow_rate)])
 
         # .fluid_names() always returns list, even for pure fluids, we take advantage of
         # that to build string for mixture
@@ -77,7 +78,7 @@ class OperationConditions:
             )
         )
         self.phase[MIX].set_mass_fractions(
-            self.flow_rate[:MIX] / self.flow_rate[MIX])
+            self.mass_flow_rate[:MIX] / self.mass_flow_rate[MIX])
 
     def _validate_eos(self):
         if self.phase[J].backend_name() != self.phase[C].backend_name():
@@ -88,11 +89,11 @@ class OperationConditions:
 
     def report(self) -> None:
         print("         jet / carry / mix")
-        print("flow rates")
+        print("Mass flow rates")
         print(
-            f"         : {self.flow_rate[J]:.2f}"
-            f" / {self.flow_rate[C]:.2f}"
-            f" / {self.flow_rate[M]:.2f} [kg/s]")
+            f"         : {self.mass_flow_rate[J]:.3e}"
+            f" / {self.mass_flow_rate[C]:.3e}"
+            f" / {self.mass_flow_rate[M]:.3e} [kg/s]")
         print()
         print("temperatures")
         print(
@@ -231,7 +232,7 @@ def solve_dimensions(
         s: float = S, alpha: float = ALPHA) -> Design:
     """Solve ejector equation for design dimensions with known requirements."""
 
-    q = req.flow_rate[CARRY] / req.flow_rate[JET]
+    q = req.mass_flow_rate[CARRY] / req.mass_flow_rate[JET]
     dp = req.pressure[MIX, AFTERMIX] - req.pressure[JET, INLET]
 
     jet_density, carry_density, mix_density = _update_phases_get_densities(req)
@@ -250,7 +251,7 @@ def solve_dimensions(
     # diameters
     diameter = CONTAINER.copy()
     diameter[JET, INLET] = np.sqrt(
-        4 / np.pi * req.flow_rate[JET] / (jet_density * req.velocity[JET, INLET]))
+        4 / np.pi * req.mass_flow_rate[JET] / (jet_density * req.velocity[JET, INLET]))
     diameter[MIX, AFTERMIX] = diameter[JET, INLET] * np.sqrt(m)
     diameter[MIX, PREMIX] = diameter[MIX, AFTERMIX]
     diameter[MIX, LOBBY] = diameter[MIX, PREMIX] / 0.9
@@ -279,7 +280,7 @@ def solve_dimensions(
         diameter[MIX, DRAIN] - diameter[MIX, AFTERMIX]) / (2 * np.tan(alpha/2))
 
     # diffuser pressure
-    velocity_mix_aftermix = req.flow_rate[MIX] / \
+    velocity_mix_aftermix = req.mass_flow_rate[MIX] / \
         (mix_density * area[MIX, AFTERMIX])
 
     pressure_recovery_coeff = _recovery_coeff(s, alpha)
@@ -384,12 +385,12 @@ if __name__ == "__main__":
     carry_phase = AbstractState("HEOS", "CH4")
 
     q = 2.0
-    carried_phase_flow_rate = 0.07  # kg/s
+    carried_mass_flow_rate = 0.07  # kg/s
 
     requirements = OperationConditions(
         phase=[jet_phase, carry_phase],
-        flow_rate=np.array(
-            [carried_phase_flow_rate / q, carried_phase_flow_rate]),
+        mass_flow_rate=np.array(
+            [carried_mass_flow_rate / q, carried_mass_flow_rate]),
     )
 
     # Boundary conditions
@@ -409,9 +410,3 @@ if __name__ == "__main__":
     design = solve_dimensions(requirements)
     design.report()
     requirements.report()
-
-    # NOTE надо выводить больше знаков после запятой для расхода, если всё в м^3/ч
-    # NOTE и лучше воспользоваться форматированием с применением научной нотации
-    # NOTE print(f"flow rate : {flow_rate : .5e}") <- пример
-
-    # NOTE потом надо поисктьа ещё литератуту и закрыть пробелы в методике
