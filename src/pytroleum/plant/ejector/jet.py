@@ -116,6 +116,7 @@ def solve_dimensions(
     area_jet_inlet = req.flow_rate[JET] / (jet_density * u_jet_inlet)
     req.velocity[JET, INLET] = u_jet_inlet
 
+    # n was derived from the basic ejection equation by substituting m_opt
     n = ((1 + q) ** 2 * jet_density / mix_density - hj / (2 * dp)) / (
         q ** 2 * jet_density / carry_density
     )
