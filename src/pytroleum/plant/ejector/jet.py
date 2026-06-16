@@ -119,7 +119,6 @@ def solve_dimensions(
     n = ((1 + q) ** 2 * jet_density / mix_density - hj / (2 * dp)) / (
         q ** 2 * jet_density / carry_density
     )
-    # NOTE откуда уравнение для n?
 
     m = (2 * (1 + q) ** 2 * jet_density / mix_density -
          q ** 2 * n * jet_density / carry_density)
