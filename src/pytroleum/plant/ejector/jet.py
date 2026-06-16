@@ -86,6 +86,58 @@ class OperationConditions:
                 self.phase[J].backend_name() + " was provided while carry phase uses " +
                 self.phase[C].backend_name())
 
+    def report(self) -> None:
+        print("         jet / carry / mix")
+        print("flow rates")
+        print(
+            f"         : {self.flow_rate[J]:.2f}"
+            f" / {self.flow_rate[C]:.2f}"
+            f" / {self.flow_rate[M]:.2f} [kg/s]")
+        print()
+        print("temperatures")
+        print(
+            f"Inlet    : {self.temperature[J, I]-_K_TO_C:.2f}"
+            f" / {self.temperature[C, I]-_K_TO_C:.2f}"
+            f" / {self.temperature[M, I]-_K_TO_C:.2f} [C]")
+        print(
+            f"Lobby    : {self.temperature[J, L]-_K_TO_C:.2f}"
+            f" / {self.temperature[C, L]-_K_TO_C:.2f}"
+            f" / {self.temperature[M, L]-_K_TO_C:.2f} [C]")
+        print(
+            f"Premix   : {self.temperature[J, PM]-_K_TO_C:.2f}"
+            f" / {self.temperature[C, PM]-_K_TO_C:.2f}"
+            f" / {self.temperature[M, PM]-_K_TO_C:.2f} [C]")
+        print(
+            f"Aftermix : {self.temperature[J, AM]-_K_TO_C:.2f}"
+            f" / {self.temperature[C, AM]-_K_TO_C:.2f}"
+            f" / {self.temperature[M, AM]-_K_TO_C:.2f} [C]")
+        print(
+            f"Drain    : {self.temperature[J, D]-_K_TO_C:.2f}"
+            f" / {self.temperature[C, D]-_K_TO_C:.2f}"
+            f" / {self.temperature[M, D]-_K_TO_C:.2f} [C]")
+        print()
+        print("pressure")
+        print(
+            f"Inlet    : {self.pressure[J, I]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[C, I]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[M, I]*_PA_TO_BAR:.2f} [bar]")
+        print(
+            f"Lobby    : {self.pressure[J, L]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[C, L]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[M, L]*_PA_TO_BAR:.2f} [bar]")
+        print(
+            f"Premix   : {self.pressure[J, PM]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[C, PM]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[M, PM]*_PA_TO_BAR:.2f} [bar]")
+        print(
+            f"Aftermix : {self.pressure[J, AM]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[C, AM]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[M, AM]*_PA_TO_BAR:.2f} [bar]")
+        print(
+            f"Drain    : {self.pressure[J, D]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[C, D]*_PA_TO_BAR:.2f}"
+            f" / {self.pressure[M, D]*_PA_TO_BAR:.2f} [bar]")
+
 
 @dataclass
 class Design:
@@ -99,6 +151,79 @@ class Design:
     def __post_init__(self) -> None:
         self.m = self.area[MIX, AFTERMIX] / self.area[JET, INLET]
         self.n = self.area[MIX, AFTERMIX] / self.area[CARRY, INLET]
+
+    def report(self) -> None:
+        print("area ratios")
+        print(f"m (area[MIX, AM] / area[JET,   I]) = {self.m:.2f}")
+        print(f"n (area[MIX, AM] / area[CARRY, I]) = {self.n:.2f}")
+        print()
+        print("         jet / carry / mix")
+        print("diameters")
+        print(
+            f"Inlet    : {self.diameter[J, I]*_M_TO_MM:.2f}"
+            f" / {self.diameter[C, I]*_M_TO_MM:.2f}"
+            f" / {self.diameter[M, I]*_M_TO_MM:.2f} [mm]")
+        print(
+            f"Lobby    : {self.diameter[J, L]*_M_TO_MM:.2f}"
+            f" / {self.diameter[C, L]*_M_TO_MM:.2f}"
+            f" / {self.diameter[M, L]*_M_TO_MM:.2f} [mm]")
+        print(
+            f"Premix   : {self.diameter[J, PM]*_M_TO_MM:.2f}"
+            f" / {self.diameter[C, PM]*_M_TO_MM:.2f}"
+            f" / {self.diameter[M, PM]*_M_TO_MM:.2f} [mm]")
+        print(
+            f"Aftermix : {self.diameter[J, AM]*_M_TO_MM:.2f}"
+            f" / {self.diameter[C, AM]*_M_TO_MM:.2f}"
+            f" / {self.diameter[M, AM]*_M_TO_MM:.2f} [mm]")
+        print(
+            f"Drain    : {self.diameter[J, D]*_M_TO_MM:.2f}"
+            f" / {self.diameter[C, D]*_M_TO_MM:.2f}"
+            f" / {self.diameter[M, D]*_M_TO_MM:.2f} [mm]")
+        print()
+        print("areas")
+        print(
+            f"Inlet    : {self.area[J, I]*_M2_TO_CM2:.2f}"
+            f" / {self.area[C, I]*_M2_TO_CM2:.2f}"
+            f" / {self.area[M, I]*_M2_TO_CM2:.2f} [cm²]")
+        print(
+            f"Lobby    : {self.area[J, L]*_M2_TO_CM2:.2f}"
+            f" / {self.area[C, L]*_M2_TO_CM2:.2f}"
+            f" / {self.area[M, L]*_M2_TO_CM2:.2f} [cm²]")
+        print(
+            f"Premix   : {self.area[J, PM]*_M2_TO_CM2:.2f}"
+            f" / {self.area[C, PM]*_M2_TO_CM2:.2f}"
+            f" / {self.area[M, PM]*_M2_TO_CM2:.2f} [cm²]")
+        print(
+            f"Aftermix : {self.area[J, AM]*_M2_TO_CM2:.2f}"
+            f" / {self.area[C, AM]*_M2_TO_CM2:.2f}"
+            f" / {self.area[M, AM]*_M2_TO_CM2:.2f} [cm²]")
+        print(
+            f"Drain    : {self.area[J, D]*_M2_TO_CM2:.2f}"
+            f" / {self.area[C, D]*_M2_TO_CM2:.2f}"
+            f" / {self.area[M, D]*_M2_TO_CM2:.2f} [cm²]")
+        print()
+        print("lengths")
+        print(
+            f"Inlet    : {self.length[J, I]*_M_TO_MM:.2f}"
+            f" / {self.length[C, I]*_M_TO_MM:.2f}"
+            f" / {self.length[M, I]*_M_TO_MM:.2f} [mm]")
+        print(
+            f"Lobby    : {self.length[J, L]*_M_TO_MM:.2f}"
+            f" / {self.length[C, L]*_M_TO_MM:.2f}"
+            f" / {self.length[M, L]*_M_TO_MM:.2f} [mm]")
+        print(
+            f"Premix   : {self.length[J, PM]*_M_TO_MM:.2f}"
+            f" / {self.length[C, PM]*_M_TO_MM:.2f}"
+            f" / {self.length[M, PM]*_M_TO_MM:.2f} [mm]")
+        print(
+            f"Aftermix : {self.length[J, AM]*_M_TO_MM:.2f}"
+            f" / {self.length[C, AM]*_M_TO_MM:.2f}"
+            f" / {self.length[M, AM]*_M_TO_MM:.2f} [mm]")
+        print(
+            f"Drain    : {self.length[J, D]*_M_TO_MM:.2f}"
+            f" / {self.length[C, D]*_M_TO_MM:.2f}"
+            f" / {self.length[M, D]*_M_TO_MM:.2f} [mm]")
+        print()
 
 
 def solve_dimensions(
@@ -178,131 +303,6 @@ def solve_dimensions(
         length=length,
     )
 
-
-def report(design: Design, conditions: OperationConditions) -> None:
-    print("         jet / carry / mix")
-    print("diameters")
-    print(
-        f"Inlet    : {design.diameter[J, I]*_M_TO_MM:.2f}"
-        f" / {design.diameter[C, I]*_M_TO_MM:.2f}"
-        f" / {design.diameter[M, I]*_M_TO_MM:.2f} [mm]")
-    print(
-        f"Lobby    : {design.diameter[J, L]*_M_TO_MM:.2f}"
-        f" / {design.diameter[C, L]*_M_TO_MM:.2f}"
-        f" / {design.diameter[M, L]*_M_TO_MM:.2f} [mm]")
-    print(
-        f"Premix   : {design.diameter[J, PM]*_M_TO_MM:.2f}"
-        f" / {design.diameter[C, PM]*_M_TO_MM:.2f}"
-        f" / {design.diameter[M, PM]*_M_TO_MM:.2f} [mm]")
-    print(
-        f"Aftermix : {design.diameter[J, AM]*_M_TO_MM:.2f}"
-        f" / {design.diameter[C, AM]*_M_TO_MM:.2f}"
-        f" / {design.diameter[M, AM]*_M_TO_MM:.2f} [mm]")
-    print(
-        f"Drain    : {design.diameter[J, D]*_M_TO_MM:.2f}"
-        f" / {design.diameter[C, D]*_M_TO_MM:.2f}"
-        f" / {design.diameter[M, D]*_M_TO_MM:.2f} [mm]")
-    print()
-    print("areas")
-    print(
-        f"Inlet    : {design.area[J, I]*_M2_TO_CM2:.2f}"
-        f" / {design.area[C, I]*_M2_TO_CM2:.2f}"
-        f" / {design.area[M, I]*_M2_TO_CM2:.2f} [cm²]")
-    print(
-        f"Lobby    : {design.area[J, L]*_M2_TO_CM2:.2f}"
-        f" / {design.area[C, L]*_M2_TO_CM2:.2f}"
-        f" / {design.area[M, L]*_M2_TO_CM2:.2f} [cm²]")
-    print(
-        f"Premix   : {design.area[J, PM]*_M2_TO_CM2:.2f}"
-        f" / {design.area[C, PM]*_M2_TO_CM2:.2f}"
-        f" / {design.area[M, PM]*_M2_TO_CM2:.2f} [cm²]")
-    print(
-        f"Aftermix : {design.area[J, AM]*_M2_TO_CM2:.2f}"
-        f" / {design.area[C, AM]*_M2_TO_CM2:.2f}"
-        f" / {design.area[M, AM]*_M2_TO_CM2:.2f} [cm²]")
-    print(
-        f"Drain    : {design.area[J, D]*_M2_TO_CM2:.2f}"
-        f" / {design.area[C, D]*_M2_TO_CM2:.2f}"
-        f" / {design.area[M, D]*_M2_TO_CM2:.2f} [cm²]")
-    print()
-    print("lengths")
-    print(
-        f"Inlet    : {design.length[J, I]*_M_TO_MM:.2f}"
-        f" / {design.length[C, I]*_M_TO_MM:.2f}"
-        f" / {design.length[M, I]*_M_TO_MM:.2f} [mm]")
-    print(
-        f"Lobby    : {design.length[J, L]*_M_TO_MM:.2f}"
-        f" / {design.length[C, L]*_M_TO_MM:.2f}"
-        f" / {design.length[M, L]*_M_TO_MM:.2f} [mm]")
-    print(
-        f"Premix   : {design.length[J, PM]*_M_TO_MM:.2f}"
-        f" / {design.length[C, PM]*_M_TO_MM:.2f}"
-        f" / {design.length[M, PM]*_M_TO_MM:.2f} [mm]")
-    print(
-        f"Aftermix : {design.length[J, AM]*_M_TO_MM:.2f}"
-        f" / {design.length[C, AM]*_M_TO_MM:.2f}"
-        f" / {design.length[M, AM]*_M_TO_MM:.2f} [mm]")
-    print(
-        f"Drain    : {design.length[J, D]*_M_TO_MM:.2f}"
-        f" / {design.length[C, D]*_M_TO_MM:.2f}"
-        f" / {design.length[M, D]*_M_TO_MM:.2f} [mm]")
-    print()
-    print("flow rates")
-    print(
-        f"         : {conditions.flow_rate[J]:.2f}"
-        f" / {conditions.flow_rate[C]:.2f}"
-        f" / {conditions.flow_rate[M]:.2f} [kg/s]")
-    print()
-    print("temperatures")
-    print(
-        f"Inlet    : {conditions.temperature[J, I]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[C, I]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[M, I]-_K_TO_C:.2f} [C]")
-    print(
-        f"Lobby    : {conditions.temperature[J, L]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[C, L]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[M, L]-_K_TO_C:.2f} [C]")
-    print(
-        f"Premix   : {conditions.temperature[J, PM]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[C, PM]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[M, PM]-_K_TO_C:.2f} [C]")
-    print(
-        f"Aftermix : {conditions.temperature[J, AM]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[C, AM]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[M, AM]-_K_TO_C:.2f} [C]")
-    print(
-        f"Drain    : {conditions.temperature[J, D]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[C, D]-_K_TO_C:.2f}"
-        f" / {conditions.temperature[M, D]-_K_TO_C:.2f} [C]")
-    print()
-    print("pressure")
-    print(
-        f"Inlet    : {conditions.pressure[J, I]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[C, I]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[M, I]*_PA_TO_BAR:.2f} [bar]")
-    print(
-        f"Lobby    : {conditions.pressure[J, L]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[C, L]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[M, L]*_PA_TO_BAR:.2f} [bar]")
-    print(
-        f"Premix   : {conditions.pressure[J, PM]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[C, PM]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[M, PM]*_PA_TO_BAR:.2f} [bar]")
-    print(
-        f"Aftermix : {conditions.pressure[J, AM]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[C, AM]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[M, AM]*_PA_TO_BAR:.2f} [bar]")
-    print(
-        f"Drain    : {conditions.pressure[J, D]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[C, D]*_PA_TO_BAR:.2f}"
-        f" / {conditions.pressure[M, D]*_PA_TO_BAR:.2f} [bar]")
-    print()
-    print("area ratios")
-    print(f"m (area[MIX, AM] / area[JET,   I]) = {design.m:.2f}")
-    print(f"n (area[MIX, AM] / area[CARRY, I]) = {design.n:.2f}")
-
-    # NOTE разделить функции, которые печатают отчёт для конструкции и рабочих условий,
-    # NOTE внести в соответсвующие классы как методы
 
 # auxiliary functions
 
@@ -424,7 +424,8 @@ if __name__ == "__main__":
     requirements.velocity_head[JET, INLET] = 5000.0  # Pa
 
     design = solve_dimensions(requirements)
-    report(design, requirements)
+    design.report()
+    requirements.report()
 
     # NOTE надо выводить больше знаков после запятой для расхода, если всё в м^3/ч
     # NOTE и лучше воспользоваться форматированием с применением научной нотации
