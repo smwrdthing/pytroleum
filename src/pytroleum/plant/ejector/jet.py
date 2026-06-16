@@ -88,7 +88,7 @@ class OperationConditions:
 
 
 @dataclass
-class EjectorDesign:  # NOTE можно просто Desing, см. ниже
+class Desing:
     """Ejector geometry computed by solve_dimensions."""
 
     # Area ratios
@@ -124,7 +124,7 @@ class EjectorDesign:  # NOTE можно просто Desing, см. ниже
 
 def solve_dimensions(
         req: Requirements,
-        s: float = S, alpha: float = ALPHA) -> EjectorDesign:
+        s: float = S, alpha: float = ALPHA) -> Desing:
     """Solve ejector equation for design dimensions with known requirements."""
 
     q = req.flow_rate[CARRY] / req.flow_rate[JET]
@@ -172,13 +172,13 @@ def solve_dimensions(
     length_nozzle_to_premix = length_nozzle_to_wall_contact - \
         0.5 * diameter[MIX, AFTERMIX]
     length_lobby_premix = (
-        diameter[MIX, LOBBY] - diameter[MIX, PREMIX]) / (2 * np.tan(alpha))
+        diameter[MIX, LOBBY] - diameter[MIX, PREMIX]) / (2 * np.tan(alpha/2))
 
     length_inlet_lobby = length_nozzle_to_premix - length_lobby_premix
     length_premix_aftermix = length_nozzle_to_wall_contact + \
         length_mixing_chamber - length_nozzle_to_premix
     length_aftermix_drain = (
-        diameter[MIX, DRAIN] - diameter[MIX, AFTERMIX]) / (2 * np.tan(alpha))
+        diameter[MIX, DRAIN] - diameter[MIX, AFTERMIX]) / (2 * np.tan(alpha/2))
 
     # diffuser pressure
     velocity_mix_aftermix = req.flow_rate[MIX] / \
@@ -207,7 +207,7 @@ def solve_dimensions(
         req.phase[MIX], pressure_mix_drain, mix_entropy_aftermix)
     req.temperature[MIX, DRAIN] = req.phase[MIX].T()
 
-    return EjectorDesign(
+    return Desing(
         m=m,
         n=n,
         diameter=diameter,
@@ -220,7 +220,7 @@ def solve_dimensions(
     )
 
 
-def report(design: EjectorDesign, conditions: OperationConditions) -> None:
+def report(design: Desing, conditions: OperationConditions) -> None:
     print("         jet / carry / mix")
     print("diameters")
     print(
