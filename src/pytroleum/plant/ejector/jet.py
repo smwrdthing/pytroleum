@@ -112,9 +112,7 @@ def solve_dimensions(
     jet_density, carry_density, mix_density = _get_densities(req)
 
     hj = req.velocity_head[JET, INLET]
-    u_jet_inlet = np.sqrt(2 * hj / jet_density)
-    area_jet_inlet = req.flow_rate[JET] / (jet_density * u_jet_inlet)
-    req.velocity[JET, INLET] = u_jet_inlet
+    req.velocity[JET, INLET] = np.sqrt(2 * hj / jet_density)
 
     # n was derived from the basic ejection equation by substituting m_opt
     n = ((1 + q) ** 2 * jet_density / mix_density - hj / (2 * dp)) / (
@@ -126,7 +124,8 @@ def solve_dimensions(
 
     # areas
     area = CONTAINER.copy()
-    area[JET, INLET] = area_jet_inlet
+    area[JET, INLET] = req.flow_rate[JET] / \
+        (jet_density * req.velocity[JET, INLET])
     area[MIX, AFTERMIX] = m * area[JET, INLET]
     area[MIX, PREMIX] = area[MIX, AFTERMIX]
     area[MIX, DRAIN] = s * area[MIX, AFTERMIX]
