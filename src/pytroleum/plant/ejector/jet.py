@@ -157,12 +157,7 @@ def solve_dimensions(
     velocity_mix_aftermix = req.flow_rate[MIX] / \
         (mix_density * area[MIX, AFTERMIX])
 
-    # NOTE можно функцией
-    friction_coeff = 0.002 / np.sin(alpha / 2) * (s ** 2 - 1) / s
-    expansion_coeff = np.sin(alpha) * ((s - 1) / s) ** 2
-    outlet_coeff = 1.0 / s ** 2
-    pressure_recovery_coeff = 1.0 - \
-        (friction_coeff + expansion_coeff + outlet_coeff)
+    pressure_recovery_coeff = _recovery_coeff(s, alpha)
 
     req.pressure[MIX, PREMIX] = req.pressure[MIX, AFTERMIX]
     req.temperature[MIX, PREMIX] = req.temperature[MIX, AFTERMIX]
@@ -310,6 +305,14 @@ def report(design: Design, conditions: OperationConditions) -> None:
     # NOTE внести в соответсвующие классы как методы
 
 # auxiliary functions
+
+
+def _recovery_coeff(s: float, alpha: float) -> float:
+    """Return pressure recovery coefficient for a diffuser."""
+    friction_coeff = 0.002 / np.sin(alpha / 2) * (s ** 2 - 1) / s
+    expansion_coeff = np.sin(alpha) * ((s - 1) / s) ** 2
+    outlet_coeff = 1.0 / s ** 2
+    return 1.0 - (friction_coeff + expansion_coeff + outlet_coeff)
 
 
 def _get_densities(  # NOTE более подробное имя для функции, см. ниже
