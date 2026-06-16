@@ -94,29 +94,14 @@ class Design:
     # Full (phase x location) matrices, nan where not computed
     diameter: np.ndarray
     area: np.ndarray
+    length: np.ndarray
 
     def __post_init__(self) -> None:
         self.m = self.area[MIX, AFTERMIX] / self.area[JET, INLET]
         self.n = self.area[MIX, AFTERMIX] / self.area[CARRY, INLET]
 
-    # Lengths of each section [m]
-    length_inlet_lobby: float        # jet inlet    -> mix lobby
-    length_lobby_premix: float       # mix lobby    -> mix premix
-    length_premix_aftermix: float    # mix premix   -> mix aftermix
-    length_aftermix_drain: float     # mix aftermix -> mix drain
-    # NOTE длины в такую же структуру данных, как и диаметры, площади и т.д.
-
     # Diffuser outlet pressure [Pa]
     pressure_mix_drain: float  # NOTE не часть конструкции эжектора
-
-# NOTE внешний импорт сейчас
-# NOTE >> from pytroleum.plant.ejector import jet
-# NOTE >> ...
-# NOTE >> jet.EjectorDesign(...) <- многословно
-# NOTE
-# NOTE Внешний импорт, если просто Design
-# NOTE >> ...
-# NOTE >> jet.Design(...)
 
 
 def solve_dimensions(
@@ -168,13 +153,17 @@ def solve_dimensions(
     length_mixing_chamber = 2.5 * diameter[MIX, AFTERMIX]
     length_nozzle_to_premix = length_nozzle_to_wall_contact - \
         0.5 * diameter[MIX, AFTERMIX]
-    length_lobby_premix = (
-        diameter[MIX, LOBBY] - diameter[MIX, PREMIX]) / (2 * np.tan(alpha/2))
 
-    length_inlet_lobby = length_nozzle_to_premix - length_lobby_premix
-    length_premix_aftermix = length_nozzle_to_wall_contact + \
-        length_mixing_chamber - length_nozzle_to_premix
-    length_aftermix_drain = (
+    # length[:, LOC] holds the distance from the *previous* location to LOC;
+    # length[:, INLET] is nan (no preceding section).
+    length = CONTAINER.copy()
+    length[:, PREMIX] = (                                           # lobby  -> premix
+        diameter[MIX, LOBBY] - diameter[MIX, PREMIX]) / (2 * np.tan(alpha/2))
+    length[:, LOBBY] = length_nozzle_to_premix - \
+        length[:, PREMIX]                                           # inlet-> lobby
+    length[:, AFTERMIX] = (                                         # premix -> aftermix
+        length_nozzle_to_wall_contact + length_mixing_chamber - length_nozzle_to_premix)
+    length[:, DRAIN] = (                                            # aftermix -> drain
         diameter[MIX, DRAIN] - diameter[MIX, AFTERMIX]) / (2 * np.tan(alpha/2))
 
     # diffuser pressure
@@ -207,10 +196,7 @@ def solve_dimensions(
     return Design(
         diameter=diameter,
         area=area,
-        length_inlet_lobby=length_inlet_lobby,
-        length_lobby_premix=length_lobby_premix,
-        length_premix_aftermix=length_premix_aftermix,
-        length_aftermix_drain=length_aftermix_drain,
+        length=length,
         pressure_mix_drain=pressure_mix_drain,
     )
 
@@ -263,13 +249,25 @@ def report(design: Design, conditions: OperationConditions) -> None:
     print()
     print("lengths")
     print(
-        f"jet inlet - mix lobby : {design.length_inlet_lobby*_M_TO_MM:.2f} [mm]")
+        f"Inlet    : {design.length[J, I]*_M_TO_MM:.2f}"
+        f" / {design.length[C, I]*_M_TO_MM:.2f}"
+        f" / {design.length[M, I]*_M_TO_MM:.2f} [mm]")
     print(
-        f"mix lobby - mix premix : {design.length_lobby_premix*_M_TO_MM:.2f} [mm]")
+        f"Lobby    : {design.length[J, L]*_M_TO_MM:.2f}"
+        f" / {design.length[C, L]*_M_TO_MM:.2f}"
+        f" / {design.length[M, L]*_M_TO_MM:.2f} [mm]")
     print(
-        f"mix premix - mix aftermix : {design.length_premix_aftermix*_M_TO_MM:.2f} [mm]")
+        f"Premix   : {design.length[J, PM]*_M_TO_MM:.2f}"
+        f" / {design.length[C, PM]*_M_TO_MM:.2f}"
+        f" / {design.length[M, PM]*_M_TO_MM:.2f} [mm]")
     print(
-        f"mix aftermix - mix drain : {design.length_aftermix_drain*_M_TO_MM:.2f} [mm]")
+        f"Aftermix : {design.length[J, AM]*_M_TO_MM:.2f}"
+        f" / {design.length[C, AM]*_M_TO_MM:.2f}"
+        f" / {design.length[M, AM]*_M_TO_MM:.2f} [mm]")
+    print(
+        f"Drain    : {design.length[J, D]*_M_TO_MM:.2f}"
+        f" / {design.length[C, D]*_M_TO_MM:.2f}"
+        f" / {design.length[M, D]*_M_TO_MM:.2f} [mm]")
     print()
     print("flow rates")
     print(
