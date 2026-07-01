@@ -140,4 +140,16 @@ def solve_dimensions(req: Requirements, design: Design):
         req.pressure[Phase.CARRY, Loc.INLET] /
         (1.0 + (gamma - 1.0) / 2 * req.mach[Phase.CARRY, Loc.CHOKE]**2) **
         (gamma / (gamma - 1.0)))
+
+    req.mach[Phase.JET, Loc.CHOKE] = fsolve(
+        lambda x: (
+            (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.JET, Loc.EXIT_NOZZLE] ** 2) **
+            (gamma / (gamma - 1.0)) /
+            (1.0 + (gamma - 1.0) / 2.0 * x[0] ** 2) **
+            (gamma / (gamma - 1.0)) -
+            req.pressure[Phase.JET, Loc.CHOKE] /
+            req.pressure[Phase.JET, Loc.EXIT_NOZZLE]
+        ),
+        [MACH_GUESS],
+    )[0]
     return
