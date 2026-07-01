@@ -17,9 +17,12 @@ from enum import IntEnum
 _R_UNIV = 8.314462618
 
 # Huang et al. (1999), Eqs. (1), (5), (7)
-PRIMARY_NOZZLE_DISCHARGE_COEFF = 0.95
-CARRY_NOZZLE_DISCHARGE_COEFF = 0.85
+PRIMARY_NOZZLE_EFFICIENCY = 0.95
+CARRY_NOZZLE_EFFICIENCY = 0.85
 PRIMARY_CORE_AREA_FACTOR = 0.88
+
+# fsolve initial guess: supersonic branch of Eq. (2)
+MACH_GUESS = 2.0
 
 
 class Phase(IntEnum):
@@ -55,7 +58,7 @@ type Requirements = OperationConditions
 @dataclass
 class OperationConditions:
 
-    phase: list[AbstractState]
+    phase: AbstractState
     mass_flow_rate: np.ndarray
 
     pressure: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
@@ -95,3 +98,32 @@ def _perfect_gas(
     gamma = cp / eos.cvmass()
     R = _R_UNIV / eos.molar_mass()
     return gamma, R, cp
+
+
+def solve_dimensions(req: Requirements, design: Design) -> float:
+    """Huang et al. (1999) critical-mode analysis, Eqs. (1)–(18), Fig. 3."""
+    gamma, R, cp = _perfect_gas(
+        req.phase,
+        req.pressure[Phase.JET, Loc.INLET],
+        req.temperature[Phase.JET, Loc.INLET],
+    )
+    # Primary flow through nozzle
+    req.mass_flow_rate[Phase.JET] = (
+        req.pressure[Phase.JET, Loc.INLET] *
+        design.area[Phase.JET, Loc.THROAT] /
+        np.sqrt(req.temperature[Phase.JET, Loc.INLET]) *
+        np.sqrt(gamma / R * (2.0 / (gamma + 1.0)) ** ((gamma + 1.0) / (gamma - 1.0))) *
+        np.sqrt(PRIMARY_NOZZLE_EFFICIENCY))
+
+    # Eq. (2)
+    req.mach[Phase.JET, Loc.EXIT_NOZZLE] = fsolve(
+        lambda x: (
+            1.0 / x[0] ** 2 *
+            (2.0 / (gamma + 1.0) * (1.0 + (gamma - 1.0) / 2.0 * x[0] ** 2)) **
+            ((gamma + 1.0) / (gamma - 1.0)) -
+            (design.area[Phase.JET, Loc.EXIT_NOZZLE] /
+                design.area[Phase.JET, Loc.THROAT]) ** 2),
+        [MACH_GUESS],
+    )[0]
+
+    return
