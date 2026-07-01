@@ -88,18 +88,6 @@ class Design:
         report_geometry(self)
 
 
-def _perfect_gas(
-        eos: AbstractState, pressure: float, temperature: float,
-) -> tuple[float, float, float]:
-    """Constant gamma, R, cp at inlet state (Huang et al.)."""
-
-    eos.update(PT_INPUTS, pressure, temperature)
-    cp = eos.cpmass()
-    gamma = cp / eos.cvmass()
-    R = _R_UNIV / eos.molar_mass()
-    return gamma, R, cp
-
-
 def solve_dimensions(req: Requirements, design: Design):
     """Huang et al. (1999) critical-mode analysis, Eqs. (1)–(18), Fig. 3."""
     gamma, R, cp = _perfect_gas(
@@ -108,7 +96,7 @@ def solve_dimensions(req: Requirements, design: Design):
         req.temperature[Phase.JET, Loc.INLET],
     )
 
-    # Eq. (1)
+    # Eq. (1) mp
     req.mass_flow_rate[Phase.JET] = (
         req.pressure[Phase.JET, Loc.INLET] *
         design.area[Phase.JET, Loc.THROAT] /
@@ -116,7 +104,7 @@ def solve_dimensions(req: Requirements, design: Design):
         np.sqrt(gamma / R * (2.0 / (gamma + 1.0)) ** ((gamma + 1.0) / (gamma - 1.0))) *
         np.sqrt(PRIMARY_NOZZLE_EFFICIENCY))
 
-    # Eq. (2)
+    # Eq. (2) Mp1
     req.mach[Phase.JET, Loc.EXIT_NOZZLE] = fsolve(
         lambda x: (
             1.0 / x[0] ** 2 *
@@ -127,13 +115,13 @@ def solve_dimensions(req: Requirements, design: Design):
         [MACH_GUESS],
     )[0]
 
-    # Eq. (3)
+    # Eq. (3) Pp1
     req.pressure[Phase.JET, Loc.EXIT_NOZZLE] = (
         req.pressure[Phase.JET, Loc.INLET] /
         (1 + (gamma - 1) / 2 * req.mach[Phase.JET, Loc.EXIT_NOZZLE]**2) **
         (gamma / (gamma-1)))
 
-    # Eq. (6):
+    # Eq. (6): Psy
     req.mach[Phase.CARRY, Loc.CHOKE] = 1.0
 
     req.pressure[Phase.CARRY, Loc.CHOKE] = (
@@ -141,6 +129,7 @@ def solve_dimensions(req: Requirements, design: Design):
         (1.0 + (gamma - 1.0) / 2 * req.mach[Phase.CARRY, Loc.CHOKE]**2) **
         (gamma / (gamma - 1.0)))
 
+    # Eq. (4): Mpy
     req.mach[Phase.JET, Loc.CHOKE] = fsolve(
         lambda x: (
             (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.JET, Loc.EXIT_NOZZLE] ** 2) **
@@ -152,4 +141,50 @@ def solve_dimensions(req: Requirements, design: Design):
         ),
         [MACH_GUESS],
     )[0]
+
+    # Eq. (5): Apy
+    design.area[Phase.JET, Loc.CHOKE] = (
+        design.area[Phase.JET, Loc.EXIT_NOZZLE] *
+        (PRIMARY_CORE_AREA_FACTOR / req.mach[Phase.JET, Loc.CHOKE] *
+         (2 / (gamma + 1) * (1 + (gamma - 1) / 2 * req.mach[Phase.JET, Loc.CHOKE]**2)) **
+         ((gamma + 1) / (2 * (gamma - 1)))) /
+        (1 / req.mach[Phase.JET, Loc.EXIT_NOZZLE] *
+         (2 / (gamma+1) * (1+(gamma-1) / 2 * req.mach[Phase.JET, Loc.EXIT_NOZZLE]**2)) **
+         ((gamma + 1) / (2 * (gamma - 1)))))
+
+    # Eq. (8): Asy
+    design.area[Phase.CARRY, Loc.CHOKE] = (
+        design.area[Phase.MIX, Loc.AFTERMIX] -
+        design.area[Phase.JET, Loc.CHOKE])
+
+    # Eq. (7): ms
+    req.mass_flow_rate[Phase.CARRY] = (
+        req.pressure[Phase.CARRY, Loc.INLET] *
+        design.area[Phase.CARRY, Loc.CHOKE] /
+        np.sqrt(req.temperature[Phase.CARRY, Loc.INLET]) *
+        np.sqrt(gamma / R * (2.0 / (gamma + 1.0)) ** ((gamma + 1.0) / (gamma - 1.0))) *
+        np.sqrt(CARRY_NOZZLE_EFFICIENCY))
+
+    # Eq. (9): Tpy
+    req.temperature[Phase.JET, Loc.CHOKE] = (
+        req.temperature[Phase.JET, Loc.INLET] /
+        (1 + (gamma - 1) / 2 * req.mach[Phase.JET, Loc.CHOKE] ** 2))
+
+    # Eq. (10): Tsy
+    req.temperature[Phase.CARRY, Loc.CHOKE] = (
+        req.temperature[Phase.JET, Loc.INLET] /
+        (1 + (gamma - 1) / 2 * req.mach[Phase.CARRY, Loc.CHOKE] ** 2))
+
     return
+
+
+def _perfect_gas(
+        eos: AbstractState, pressure: float, temperature: float,
+) -> tuple[float, float, float]:
+    """Constant gamma, R, cp at inlet state (Huang et al.)."""
+
+    eos.update(PT_INPUTS, pressure, temperature)
+    cp = eos.cpmass()
+    gamma = cp / eos.cvmass()
+    R = _R_UNIV / eos.molar_mass()
+    return gamma, R, cp

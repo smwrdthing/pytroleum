@@ -1,4 +1,4 @@
-from jet_huang_new import Phase, Loc
+from huang_new import Phase, Loc
 
 _M_TO_MM = 1e3
 _M2_TO_CM2 = 1e4
