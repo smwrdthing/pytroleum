@@ -107,7 +107,8 @@ def solve_dimensions(req: Requirements, design: Design):
         req.pressure[Phase.JET, Loc.INLET],
         req.temperature[Phase.JET, Loc.INLET],
     )
-    # Primary flow through nozzle
+
+    # Eq. (1)
     req.mass_flow_rate[Phase.JET] = (
         req.pressure[Phase.JET, Loc.INLET] *
         design.area[Phase.JET, Loc.THROAT] /
@@ -132,6 +133,11 @@ def solve_dimensions(req: Requirements, design: Design):
         (1 + (gamma - 1) / 2 * req.mach[Phase.JET, Loc.EXIT_NOZZLE]**2) **
         (gamma / (gamma-1)))
 
-    # Primary-flowcore(fromsection1–1tosectiony–y)
+    # Eq. (6):
+    req.mach[Phase.CARRY, Loc.CHOKE] = 1.0
 
+    req.pressure[Phase.CARRY, Loc.CHOKE] = (
+        req.pressure[Phase.CARRY, Loc.INLET] /
+        (1.0 + (gamma - 1.0) / 2 * req.mach[Phase.CARRY, Loc.CHOKE]**2) **
+        (gamma / (gamma - 1.0)))
     return
