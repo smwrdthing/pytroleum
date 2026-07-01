@@ -1,0 +1,46 @@
+from jet_huang_new import Phase, Loc, _K_TO_C, _PA_TO_BAR
+
+_SECTIONS = (
+    ("Inlet", Loc.INLET),
+    ("Throat", Loc.THROAT),
+    ("Nozzle exit", Loc.EXIT_NOZZLE),
+    ("Premix", Loc.PREMIX),
+    ("Choke", Loc.CHOKE),
+    ("Pre-shock", Loc.PRE_SHOCK),
+    ("Shock", Loc.SHOCK),
+    ("Aftermix", Loc.AFTERMIX),
+    ("Drain", Loc.DRAIN),
+)
+
+
+def _report_field(arr, title, unit, transform, fmt) -> None:
+    print()
+    print(title)
+    suffix = f" [{unit}]" if unit else ""
+    for label, loc in _SECTIONS:
+        print(
+            f"{label:<12}: {transform(arr[Phase.JET, loc]):{fmt}}"
+            f" / {transform(arr[Phase.CARRY, loc]):{fmt}}"
+            f" / {transform(arr[Phase.MIX, loc]):{fmt}}{suffix}")
+
+
+def report_conditions(conditions) -> None:
+    print("         jet / carry / mix")
+    print("Mass flow rates")
+    print(
+        f"         : {conditions.mass_flow_rate[Phase.JET]:.3e}"
+        f" / {conditions.mass_flow_rate[Phase.CARRY]:.3e}"
+        f" / {conditions.mass_flow_rate[Phase.MIX]:.3e} [kg/s]")
+
+    _report_field(
+        conditions.temperature, "temperatures", "C",
+        lambda value: value - _K_TO_C, ".2f")
+    _report_field(
+        conditions.pressure, "pressure", "bar",
+        lambda value: value * _PA_TO_BAR, ".2f")
+    _report_field(
+        conditions.velocity, "velocity", "m/s",
+        lambda value: value, ".2f")
+    _report_field(
+        conditions.mach, "Mach numbers", "",
+        lambda value: value, ".4f")
