@@ -14,10 +14,6 @@ from scipy.optimize import fsolve
 from enum import IntEnum
 
 
-_M_TO_MM = 1e3
-_M2_TO_CM2 = 1e4
-_PA_TO_BAR = 1e-5
-_K_TO_C = 273.15
 _R_UNIV = 8.314462618
 
 # Huang et al. (1999), Eqs. (1), (5), (7)
@@ -78,8 +74,12 @@ class OperationConditions:
 
 @dataclass
 class Design:
-    """Ejector geometry"""
+    """Ejector geometry from Huang et al. critical-mode analysis."""
 
     diameter: np.ndarray
     area: np.ndarray
     length: np.ndarray
+
+    def report(self) -> None:
+        from jet_huang_report import report_geometry
+        report_geometry(self)

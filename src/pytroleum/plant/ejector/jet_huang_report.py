@@ -1,4 +1,9 @@
-from jet_huang_new import Phase, Loc, _K_TO_C, _PA_TO_BAR
+from jet_huang_new import Phase, Loc
+
+_M_TO_MM = 1e3
+_M2_TO_CM2 = 1e4
+_PA_TO_BAR = 1e-5
+_K_TO_C = 273.15
 
 _SECTIONS = (
     ("Inlet", Loc.INLET),
@@ -44,3 +49,16 @@ def report_conditions(conditions) -> None:
     _report_field(
         conditions.mach, "Mach numbers", "",
         lambda value: value, ".4f")
+
+
+def report_geometry(design) -> None:
+    print("         jet / carry / mix")
+    _report_field(
+        design.diameter, "diameters", "mm",
+        lambda value: value * _M_TO_MM, ".2f")
+    _report_field(
+        design.area, "areas", "cm2",
+        lambda value: value * _M2_TO_CM2, ".2f")
+    _report_field(
+        design.length, "lengths", "mm",
+        lambda value: value * _M_TO_MM, ".2f")
