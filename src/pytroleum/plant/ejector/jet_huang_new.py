@@ -83,3 +83,15 @@ class Design:
     def report(self) -> None:
         from jet_huang_report import report_geometry
         report_geometry(self)
+
+
+def _perfect_gas(
+        eos: AbstractState, pressure: float, temperature: float,
+) -> tuple[float, float, float]:
+    """Constant gamma, R, cp at inlet state (Huang et al.)."""
+
+    eos.update(PT_INPUTS, pressure, temperature)
+    cp = eos.cpmass()
+    gamma = cp / eos.cvmass()
+    R = _R_UNIV / eos.molar_mass()
+    return gamma, R, cp
