@@ -100,7 +100,7 @@ def _perfect_gas(
     return gamma, R, cp
 
 
-def solve_dimensions(req: Requirements, design: Design) -> float:
+def solve_dimensions(req: Requirements, design: Design):
     """Huang et al. (1999) critical-mode analysis, Eqs. (1)–(18), Fig. 3."""
     gamma, R, cp = _perfect_gas(
         req.phase,
@@ -125,5 +125,13 @@ def solve_dimensions(req: Requirements, design: Design) -> float:
                 design.area[Phase.JET, Loc.THROAT]) ** 2),
         [MACH_GUESS],
     )[0]
+
+    # Eq. (3)
+    req.pressure[Phase.JET, Loc.EXIT_NOZZLE] = (
+        req.pressure[Phase.JET, Loc.INLET] /
+        (1 + (gamma - 1) / 2 * req.mach[Phase.JET, Loc.EXIT_NOZZLE]**2) **
+        (gamma / (gamma-1)))
+
+    # Primary-flowcore(fromsection1–1tosectiony–y)
 
     return
