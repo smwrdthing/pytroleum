@@ -7,6 +7,7 @@ Secondary (carry) inlet : saturated vapour at T_evap = 8 C
 """
 
 import numpy as np
+import CoolProp
 from CoolProp import AbstractState
 from CoolProp.CoolProp import PropsSI
 
@@ -51,8 +52,11 @@ design.diameter[Phase.MIX, Loc.AFTERMIX] = 19.0e-3
 design.area[Phase.MIX, Loc.AFTERMIX] = np.pi / 4 * \
     design.diameter[Phase.MIX, Loc.AFTERMIX] ** 2
 
+_eos = AbstractState("HEOS", FLUID)
+_eos.specify_phase(CoolProp.iphase_gas)
+
 req = OperationConditions(
-    phase=AbstractState("HEOS", FLUID),
+    phase=_eos,
     mass_flow_rate=np.zeros(2),
     pressure=np.full(SHAPE, np.nan),
     temperature=np.full(SHAPE, np.nan),
