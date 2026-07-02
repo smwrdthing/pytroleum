@@ -88,7 +88,7 @@ class Design:
         report_geometry(self)
 
 
-def solve_dimensions(req: Requirements, design: Design):
+def solve_dimensions(req: Requirements, design: Design) -> None:
     """Huang et al. (1999) critical-mode analysis, Eqs. (1)–(18), Fig. 3."""
     gamma, R, cp = _perfect_gas(
         req.phase,
@@ -121,13 +121,16 @@ def solve_dimensions(req: Requirements, design: Design):
         (1 + (gamma - 1) / 2 * req.mach[Phase.JET, Loc.EXIT_NOZZLE]**2) **
         (gamma / (gamma-1)))
 
-    # Eq. (6): Psy
+    # Eq. (6): Psy, Msy = 1
     req.mach[Phase.CARRY, Loc.CHOKE] = 1.0
 
     req.pressure[Phase.CARRY, Loc.CHOKE] = (
         req.pressure[Phase.CARRY, Loc.INLET] /
         (1.0 + (gamma - 1.0) / 2 * req.mach[Phase.CARRY, Loc.CHOKE]**2) **
         (gamma / (gamma - 1.0)))
+
+    # Ppy = Psy at section y-y
+    req.pressure[Phase.JET, Loc.CHOKE] = req.pressure[Phase.CARRY, Loc.CHOKE]
 
     # Eq. (4): Mpy
     req.mach[Phase.JET, Loc.CHOKE] = fsolve(
@@ -172,9 +175,27 @@ def solve_dimensions(req: Requirements, design: Design):
 
     # Eq. (10): Tsy
     req.temperature[Phase.CARRY, Loc.CHOKE] = (
-        req.temperature[Phase.JET, Loc.INLET] /
+        req.temperature[Phase.CARRY, Loc.INLET] /
         (1 + (gamma - 1) / 2 * req.mach[Phase.CARRY, Loc.CHOKE] ** 2))
 
+    # Eq. (19): fm
+    fm = _mixing_coeff(
+        design.area[Phase.MIX, Loc.AFTERMIX] /
+        design.area[Phase.JET, Loc.THROAT])
+
+    # Eqs. (13)–(14): Vpy, Vsy
+    req.velocity[Phase.JET, Loc.CHOKE] = (
+        req.mach[Phase.JET, Loc.CHOKE] *
+        np.sqrt(gamma * R * req.temperature[Phase.JET, Loc.CHOKE]))
+    req.velocity[Phase.CARRY, Loc.CHOKE] = (
+        req.mach[Phase.CARRY, Loc.CHOKE] *
+        np.sqrt(gamma * R * req.temperature[Phase.CARRY, Loc.CHOKE]))
+
+    # Eq. (11): momentum balance before shock
+    req.velocity[Phase.MIX, Loc.PRE_SHOCK] = fm * (
+        req.mass_flow_rate[Phase.JET] * req.velocity[Phase.JET, Loc.CHOKE] +
+        req.mass_flow_rate[Phase.CARRY] * req.velocity[Phase.CARRY, Loc.CHOKE]
+    ) / (req.mass_flow_rate[Phase.JET] + req.mass_flow_rate[Phase.CARRY])
     return
 
 
@@ -188,3 +209,13 @@ def _perfect_gas(
     gamma = cp / eos.cvmass()
     R = _R_UNIV / eos.molar_mass()
     return gamma, R, cp
+
+
+def _mixing_coeff(area_ratio: float) -> float:
+    """Return fm for A3/At (Huang et al., Eq. 19)."""
+
+    if area_ratio > 8.3:
+        return 0.80
+    if area_ratio > 6.9:
+        return 0.82
+    return 0.84
