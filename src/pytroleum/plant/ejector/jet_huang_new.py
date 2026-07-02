@@ -129,9 +129,6 @@ def solve_dimensions(req: Requirements, design: Design) -> None:
         (1.0 + (gamma - 1.0) / 2 * req.mach[Phase.CARRY, Loc.CHOKE]**2) **
         (gamma / (gamma - 1.0)))
 
-    # Ppy = Psy at section y-y
-    req.pressure[Phase.JET, Loc.CHOKE] = req.pressure[Phase.CARRY, Loc.CHOKE]
-
     # Eq. (4): Mpy
     req.mach[Phase.JET, Loc.CHOKE] = fsolve(
         lambda x: (
@@ -196,6 +193,46 @@ def solve_dimensions(req: Requirements, design: Design) -> None:
         req.mass_flow_rate[Phase.JET] * req.velocity[Phase.JET, Loc.CHOKE] +
         req.mass_flow_rate[Phase.CARRY] * req.velocity[Phase.CARRY, Loc.CHOKE]
     ) / (req.mass_flow_rate[Phase.JET] + req.mass_flow_rate[Phase.CARRY])
+
+    # Ppy = Psy = Pm
+    req.pressure[Phase.MIX, Loc.PRE_SHOCK] = req.pressure[Phase.JET, Loc.CHOKE] = (
+        req.pressure[Phase.CARRY, Loc.CHOKE])
+
+    # Eq. (12): energy balance before shock
+    req.temperature[Phase.MIX, Loc.PRE_SHOCK] = (
+        req.mass_flow_rate[Phase.JET] * (
+            cp * req.temperature[Phase.JET, Loc.CHOKE] +
+            req.velocity[Phase.JET, Loc.CHOKE] ** 2 / 2.0) +
+        req.mass_flow_rate[Phase.CARRY] * (
+            cp * req.temperature[Phase.CARRY, Loc.CHOKE] +
+            req.velocity[Phase.CARRY, Loc.CHOKE] ** 2 / 2.0) -
+        (req.mass_flow_rate[Phase.JET] + req.mass_flow_rate[Phase.CARRY]) *
+        req.velocity[Phase.MIX, Loc.PRE_SHOCK] ** 2 / 2.0) / (
+            req.mass_flow_rate[Phase.JET] * cp +
+            req.mass_flow_rate[Phase.CARRY] * cp)
+
+    # Eq. (15): Mm
+    req.mach[Phase.MIX, Loc.PRE_SHOCK] = (
+        req.velocity[Phase.MIX, Loc.PRE_SHOCK] /
+        np.sqrt(gamma * R * req.temperature[Phase.MIX, Loc.PRE_SHOCK]))
+
+    # Eq. (16): P3
+    req.pressure[Phase.MIX, Loc.AFTERMIX] = (
+        req.pressure[Phase.MIX, Loc.PRE_SHOCK] *
+        (1.0 + 2.0 * gamma / (gamma + 1.0) *
+         (req.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2 - 1.0)))
+
+    # Eq. (17): M3 after shock
+    req.mach[Phase.MIX, Loc.AFTERMIX] = np.sqrt(
+        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2) /
+        (gamma * req.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2 - (gamma - 1.0) / 2.0))
+
+    # Eq. (18): Pc through diffuser
+    req.pressure[Phase.MIX, Loc.DRAIN] = (
+        req.pressure[Phase.MIX, Loc.AFTERMIX] *
+        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.MIX, Loc.AFTERMIX] ** 2) **
+        (gamma / (gamma - 1.0)))
+
     return
 
 
