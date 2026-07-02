@@ -1,11 +1,3 @@
-"""
-Ejector design example – Huang et al. (1999), Table 1 case A.
-
-Fluid : R141b
-Primary (jet)  inlet : saturated vapour at T_gen = 95 C
-Secondary (carry) inlet : saturated vapour at T_evap = 8 C
-"""
-
 import numpy as np
 import CoolProp
 from CoolProp import AbstractState
