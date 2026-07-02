@@ -129,6 +129,9 @@ def solve_dimensions(req: Requirements, design: Design) -> None:
         (1.0 + (gamma - 1.0) / 2 * req.mach[Phase.CARRY, Loc.CHOKE]**2) **
         (gamma / (gamma - 1.0)))
 
+    # Ppy = Psy (equal pressure at mixing cross-section), set before Eq. (4)
+    req.pressure[Phase.JET, Loc.CHOKE] = req.pressure[Phase.CARRY, Loc.CHOKE]
+
     # Eq. (4): Mpy
     req.mach[Phase.JET, Loc.CHOKE] = fsolve(
         lambda x: (
@@ -232,6 +235,10 @@ def solve_dimensions(req: Requirements, design: Design) -> None:
         req.pressure[Phase.MIX, Loc.AFTERMIX] *
         (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.MIX, Loc.AFTERMIX] ** 2) **
         (gamma / (gamma - 1.0)))
+
+    # Update total mass flow rate after jet/carry have been computed
+    req.mass_flow_rate[Phase.MIX] = (
+        req.mass_flow_rate[Phase.JET] + req.mass_flow_rate[Phase.CARRY])
 
     return
 
