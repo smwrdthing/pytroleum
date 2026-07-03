@@ -2,7 +2,7 @@ from jet_huang import Loc, Phase
 
 _M_TO_MM = 1e3
 _M2_TO_CM2 = 1e4
-_PA_TO_BAR = 1e-5
+_PA_TO_MPA = 1e-6
 _K_TO_C = 273.15
 
 _SECTIONS = (
@@ -41,8 +41,8 @@ def report_conditions(conditions) -> None:
         conditions.temperature, "temperatures", "C",
         lambda value: value - _K_TO_C, ".2f")
     _report_field(
-        conditions.pressure, "pressure", "bar",
-        lambda value: value * _PA_TO_BAR, ".2f")
+        conditions.pressure, "pressure", "MPa",
+        lambda value: value * _PA_TO_MPA, ".4f")
     _report_field(
         conditions.velocity, "velocity", "m/s",
         lambda value: value, ".2f")
