@@ -164,6 +164,10 @@ def solve_dimensions(
     design.diameter[Phase.MIX, Loc.AFTERMIX] = np.sqrt(
         4.0 * design.area[Phase.MIX, Loc.AFTERMIX] / np.pi)
 
+    for loc in (Loc.PREMIX, Loc.CHOKE, Loc.PRE_SHOCK, Loc.SHOCK):
+        design.diameter[Phase.MIX, loc] = (
+            design.diameter[Phase.MIX, Loc.AFTERMIX])
+
     req.mass_flow_rate[Phase.MIX] = (
         req.mass_flow_rate[Phase.JET] + req.mass_flow_rate[Phase.CARRY])
 
