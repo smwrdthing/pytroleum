@@ -17,6 +17,11 @@ _SECTIONS = (
     ("Drain", Loc.DRAIN),
 )
 
+# NOTE Форму вывода данных можно чуть причесать, чтобы выглядело почище
+# NOTE
+# NOTE Часть данных в conditions дублирует то, что мы задаём в requirements,
+# NOTE эти поля тоже можно заполнить
+
 
 def _report_field(arr, title, unit, transform, fmt) -> None:
     print()

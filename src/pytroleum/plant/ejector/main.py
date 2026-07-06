@@ -80,3 +80,5 @@ print(f"Area ratio       A3/At         = {A3_over_At:.4f}")
 print(f"Compression ratio  Pc/Pe         = "
       f"{req.pressure[Phase.MIX, Loc.DRAIN] / P_evap:.4f}")
 print("=" * 60)
+
+# NOTE такие скрипты кладём потом в examples, в пакете не оставляем

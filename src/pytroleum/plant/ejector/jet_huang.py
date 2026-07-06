@@ -31,6 +31,14 @@ _MAX_ITER = 500
 class Phase(IntEnum):
     """Stream indices (jet, carry, mixed)."""
 
+    # NOTE можно взять индексы как в статье, у них более удачные, чем те, которые я
+    # NOTE придумал
+    # NOTE JET -> P = PRIMARY
+    # NOTE CARRY -> S = SECONDARY
+    # NOTE
+    # NOTE Или вовсе придумать что-то третье, S=SECONDARY будет конфликтовать с индексом
+    # NOTE для сечения, в котором происходит скачок уплотнения (S=SHOCK)
+
     JET = 0
     CARRY = 1
     MIX = 2
@@ -41,7 +49,7 @@ class Loc(IntEnum):
 
     INLET = 0
     THROAT = 1
-    EXIT_NOZZLE = 2
+    EXIT_NOZZLE = 2  # NOTE можно EXHAUST, поля в enum лучше делать покороче
     PREMIX = 3
     CHOKE = 4
     PRE_SHOCK = 5
@@ -100,6 +108,10 @@ def solve_dimensions(
 ) -> None:
     """Huang et al. (1999) critical-mode analysis, Eqs. (1)–(18), Fig. 3."""
 
+    # NOTE большая функция, будет трудно рефакторить, следует разбить на подфункции
+    # NOTE каждая подфункция будет решать свою задачу из блок-схемы в статье, потом
+    # NOTE можно просто вызывать эти функции здесь
+
     gamma, R, cp = _perfect_gas(
         req.phase,
         req.pressure[Phase.JET, Loc.INLET],
@@ -124,6 +136,8 @@ def solve_dimensions(
              design.area[Phase.JET, Loc.THROAT]) ** 2),
         [MACH_GUESS],
     )[0]
+    # NOTE возможно будет легче вынести нелиненйное уравнение в отдельную функцию вместо
+    # NOTE лямбды, будет полегче читать и проверять
 
     # Eq. (3): Pp1
     req.pressure[Phase.JET, Loc.EXIT_NOZZLE] = (
@@ -139,6 +153,8 @@ def solve_dimensions(
         req.pressure[Phase.CARRY, Loc.INLET] /
         (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.CARRY, Loc.CHOKE] ** 2) **
         (gamma / (gamma - 1.0)))
+    # NOTE уравнения 6 и 3 одинаковые, хороший кандидат на отдельную функцию
+    # NOTE может внутреннюю (с _ в начале)
 
     design.area[Phase.MIX, Loc.AFTERMIX] = (
         design.area[Phase.JET, Loc.THROAT] * _A3_INITIAL_RATIO)
@@ -150,6 +166,8 @@ def solve_dimensions(
         # Fig. 3, step 12 — Pc vs Pc*; подбор A3
         if (abs(req.pressure[Phase.MIX, Loc.DRAIN] - Pc_star) / Pc_star <=
                 Pc_rel_tolerance):
+            # NOTE вместо for - цикла с breake здесь можно сделать while-цикл
+            # NOTE с похожим условием, должно получиться чуть покороче
             break
 
         if req.pressure[Phase.MIX, Loc.DRAIN] >= Pc_star:
@@ -227,6 +245,10 @@ def _solve_entrainment_areas(
             design.area[Phase.MIX, Loc.AFTERMIX] = (
                 design.area[Phase.JET, Loc.CHOKE] + _DA3)
             continue
+        # NOTE конструкция с continue и breake выглядит немного странно,
+        # NOTE лучше вынести условие наверх в while
+        # NOTE если пропустить строчку с continue, то кажется, что цикл выполняется
+        # NOTE один раз и сразу заканчивается
         break
 
 
@@ -235,6 +257,8 @@ def _solve_mixing_to_drain(
         design: Design,
 ) -> None:
     """Fig. 3, steps 6–11 — Eqs. (7)–(18): ms … Pc."""
+
+    # NOTE тоже очень большая функция, я бы разбил на функции поменьше
 
     gamma, R, cp = _perfect_gas(
         req.phase,
@@ -250,6 +274,7 @@ def _solve_mixing_to_drain(
         np.sqrt(gamma / R * (2.0 / (gamma + 1.0)) **
                 ((gamma + 1.0) / (gamma - 1.0))) *
         np.sqrt(CARRY_NOZZLE_EFFICIENCY))
+    # NOTE уравнения 1 и 7 одинаковые, хороший кандидат в отдельную функцию
 
     # Eq. (9): Tpy
     req.temperature[Phase.JET, Loc.CHOKE] = (
@@ -260,16 +285,18 @@ def _solve_mixing_to_drain(
     req.temperature[Phase.CARRY, Loc.CHOKE] = (
         req.temperature[Phase.CARRY, Loc.INLET] /
         (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.CARRY, Loc.CHOKE] ** 2))
+    # NOTE уравнения 9 и 10 одинаковые, хороший кандидат в отдельную функцию
 
     # Eq. (13): Vpy
     req.velocity[Phase.JET, Loc.CHOKE] = (
         req.mach[Phase.JET, Loc.CHOKE] *
         np.sqrt(gamma * R * req.temperature[Phase.JET, Loc.CHOKE]))
 
-    # Eq. (13): Vsy
+    # Eq. (14): Vsy
     req.velocity[Phase.CARRY, Loc.CHOKE] = (
         req.mach[Phase.CARRY, Loc.CHOKE] *
         np.sqrt(gamma * R * req.temperature[Phase.CARRY, Loc.CHOKE]))
+    # NOTE уравнения 13 и 14 одинаковые, хороший кандидат в отдельную функцию
 
     # Eq. (11): Pm
     req.pressure[Phase.MIX, Loc.PRE_SHOCK] = (
@@ -328,6 +355,10 @@ def _perfect_gas(
         eos: AbstractState, pressure: float, temperature: float,
 ) -> tuple[float, float, float]:
     """Constant gamma, R, cp at inlet state (Huang et al.)."""
+
+    # NOTE я бы назвал как-нибудь вроде _extract_properties_for,
+    # NOTE красивше читается :)
+    # NOTE _extract_properties_for(air, pressure=1e5, temperature=293)
 
     eos.update(PT_INPUTS, pressure, temperature)
     cp = eos.cpmass()
