@@ -40,7 +40,9 @@ def report_conditions(conditions) -> None:
     print(
         f"         : {conditions.mass_flow_rate[Phase.PRIMARY]:.3e}"
         f" / {conditions.mass_flow_rate[Phase.SECONDARY]:.3e}"
-        f" / {conditions.mass_flow_rate[Phase.MIX]:.3e} [kg/s]")
+        f" / {conditions.mass_flow_rate[Phase.PRIMARY] +
+              conditions.mass_flow_rate[Phase.SECONDARY]:.3e}"
+        f" [kg/s]")
 
     _report_field(
         conditions.temperature, "temperatures", "C",
