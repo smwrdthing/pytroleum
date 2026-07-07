@@ -120,16 +120,10 @@ def solve_dimensions(
 
     # Eq. (2): Mp1
     req.mach[Phase.PRIMARY, Loc.EXHAUST] = fsolve(
-        lambda x: (
-            1.0 / x[0] ** 2 *
-            (2.0 / (gamma + 1.0) * _isentropic_relation(gamma, x[0])) **
-            ((gamma + 1.0) / (gamma - 1.0)) -
-            (design.area[Phase.PRIMARY, Loc.EXHAUST] /
-             design.area[Phase.PRIMARY, Loc.THROAT]) ** 2),
-        [MACH_GUESS],
+        _primary_exhaust_mach_residual, [MACH_GUESS],
+        args=(gamma, design.area[Phase.PRIMARY, Loc.EXHAUST] /
+              design.area[Phase.PRIMARY, Loc.THROAT]),
     )[0]
-    # NOTE возможно будет легче вынести нелиненйное уравнение в отдельную функцию вместо
-    # NOTE лямбды, будет полегче читать и проверять
 
     # Eq. (3): Pp1
     req.pressure[Phase.PRIMARY, Loc.EXHAUST] = (
@@ -201,15 +195,10 @@ def _solve_entrainment_areas(
 
         # Eq. (4): Mpy
         req.mach[Phase.PRIMARY, Loc.CHOKE] = fsolve(
-            lambda x: (
-                _isentropic_relation(
-                    gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST]) **
-                (gamma / (gamma - 1.0)) /
-                _isentropic_relation(gamma, x[0]) ** (gamma / (gamma - 1.0)) -
-                req.pressure[Phase.SECONDARY, Loc.CHOKE] /
-                req.pressure[Phase.PRIMARY, Loc.EXHAUST]
-            ),
-            [MACH_GUESS],
+            _primary_choke_mach_residual, [MACH_GUESS],
+            args=(gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST],
+                  req.pressure[Phase.SECONDARY, Loc.CHOKE] /
+                  req.pressure[Phase.PRIMARY, Loc.EXHAUST]),
         )[0]
 
         # Eq. (5): Apy
@@ -341,8 +330,39 @@ def _solve_mixing_to_drain(
         (gamma / (gamma - 1.0)))
 
 
-def _isentropic_relation(gamma: float, mach: float) -> float:
+def _isentropic_relation(
+        gamma: float, mach: float | np.ndarray,
+) -> float | np.ndarray:
     return 1.0 + (gamma - 1.0) / 2.0 * mach ** 2
+
+
+def _primary_exhaust_mach_residual(
+        mach: np.ndarray,
+        gamma: float,
+        area_ratio: float,
+) -> float | np.ndarray:
+    """Eq. (2) residual: (A/A*)² − f(M) for primary nozzle exit Mach."""
+
+    return (
+        1.0 / mach ** 2 *
+        (2.0 / (gamma + 1.0) * _isentropic_relation(gamma, mach)) **
+        ((gamma + 1.0) / (gamma - 1.0)) -
+        area_ratio ** 2)
+
+
+def _primary_choke_mach_residual(
+        mach: np.ndarray,
+        gamma: float,
+        mach_exhaust: float,
+        pressure_ratio: float,
+) -> float | np.ndarray:
+    """Eq. (4) residual: isentropic pressure ratio match at primary choke."""
+
+    return (
+        _isentropic_relation(gamma, mach_exhaust) **
+        (gamma / (gamma - 1.0)) /
+        _isentropic_relation(gamma, mach) ** (gamma / (gamma - 1.0)) -
+        pressure_ratio)
 
 
 def _extract_properties_for(
