@@ -36,13 +36,13 @@ design = Design(
 )
 
 # Table 1, nozzle E
-design.diameter[Phase.JET, Loc.THROAT] = 2.82e-3
-design.area[Phase.JET, Loc.THROAT] = np.pi / 4 * \
-    design.diameter[Phase.JET, Loc.THROAT] ** 2
+design.diameter[Phase.PRIMARY, Loc.THROAT] = 2.82e-3
+design.area[Phase.PRIMARY, Loc.THROAT] = np.pi / 4 * \
+    design.diameter[Phase.PRIMARY, Loc.THROAT] ** 2
 
-design.diameter[Phase.JET, Loc.EXIT_NOZZLE] = 5.10e-3
-design.area[Phase.JET, Loc.EXIT_NOZZLE] = np.pi / 4 * \
-    design.diameter[Phase.JET, Loc.EXIT_NOZZLE] ** 2
+design.diameter[Phase.PRIMARY, Loc.EXHAUST] = 5.10e-3
+design.area[Phase.PRIMARY, Loc.EXHAUST] = np.pi / 4 * \
+    design.diameter[Phase.PRIMARY, Loc.EXHAUST] ** 2
 
 _eos = AbstractState("HEOS", FLUID)
 _eos.specify_phase(CoolProp.iphase_gas)
@@ -54,10 +54,10 @@ req = OperationConditions(
     temperature=np.full(SHAPE, np.nan),
 )
 
-req.pressure[Phase.JET, Loc.INLET] = P_gen
-req.pressure[Phase.CARRY, Loc.INLET] = P_evap
-req.temperature[Phase.JET, Loc.INLET] = T_gen + 273.15
-req.temperature[Phase.CARRY, Loc.INLET] = T_evap + 273.15
+req.pressure[Phase.PRIMARY, Loc.INLET] = P_gen
+req.pressure[Phase.SECONDARY, Loc.INLET] = P_evap
+req.temperature[Phase.PRIMARY, Loc.INLET] = T_gen + 273.15
+req.temperature[Phase.SECONDARY, Loc.INLET] = T_evap + 273.15
 
 solve_dimensions(req, design, Pc_star)
 
@@ -71,9 +71,9 @@ print("GEOMETRY")
 print("=" * 60)
 design.report()
 
-omega = req.mass_flow_rate[Phase.CARRY] / req.mass_flow_rate[Phase.JET]
+omega = req.mass_flow_rate[Phase.SECONDARY] / req.mass_flow_rate[Phase.PRIMARY]
 A3_over_At = design.area[Phase.MIX, Loc.AFTERMIX] / \
-    design.area[Phase.JET, Loc.THROAT]
+    design.area[Phase.PRIMARY, Loc.THROAT]
 print("\n" + "=" * 60)
 print(f"Entrainment ratio  omega = ms/mp = {omega:.4f}")
 print(f"Area ratio       A3/At         = {A3_over_At:.4f}")

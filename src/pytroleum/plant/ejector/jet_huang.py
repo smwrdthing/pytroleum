@@ -31,16 +31,8 @@ _MAX_ITER = 500
 class Phase(IntEnum):
     """Stream indices (jet, carry, mixed)."""
 
-    # NOTE можно взять индексы как в статье, у них более удачные, чем те, которые я
-    # NOTE придумал
-    # NOTE JET -> P = PRIMARY
-    # NOTE CARRY -> S = SECONDARY
-    # NOTE
-    # NOTE Или вовсе придумать что-то третье, S=SECONDARY будет конфликтовать с индексом
-    # NOTE для сечения, в котором происходит скачок уплотнения (S=SHOCK)
-
-    JET = 0
-    CARRY = 1
+    PRIMARY = 0
+    SECONDARY = 1
     MIX = 2
 
 
@@ -49,7 +41,7 @@ class Loc(IntEnum):
 
     INLET = 0
     THROAT = 1
-    EXIT_NOZZLE = 2  # NOTE можно EXHAUST, поля в enum лучше делать покороче
+    EXHAUST = 2
     PREMIX = 3
     CHOKE = 4
     PRE_SHOCK = 5
@@ -114,50 +106,50 @@ def solve_dimensions(
 
     gamma, R, cp = _perfect_gas(
         req.phase,
-        req.pressure[Phase.JET, Loc.INLET],
-        req.temperature[Phase.JET, Loc.INLET],
+        req.pressure[Phase.PRIMARY, Loc.INLET],
+        req.temperature[Phase.PRIMARY, Loc.INLET],
     )
 
     # Eq. (1): mp
-    req.mass_flow_rate[Phase.JET] = (
-        req.pressure[Phase.JET, Loc.INLET] *
-        design.area[Phase.JET, Loc.THROAT] /
-        np.sqrt(req.temperature[Phase.JET, Loc.INLET]) *
+    req.mass_flow_rate[Phase.PRIMARY] = (
+        req.pressure[Phase.PRIMARY, Loc.INLET] *
+        design.area[Phase.PRIMARY, Loc.THROAT] /
+        np.sqrt(req.temperature[Phase.PRIMARY, Loc.INLET]) *
         np.sqrt(gamma / R * (2.0 / (gamma + 1.0)) ** ((gamma + 1.0) / (gamma - 1.0))) *
         np.sqrt(PRIMARY_NOZZLE_EFFICIENCY))
 
     # Eq. (2): Mp1
-    req.mach[Phase.JET, Loc.EXIT_NOZZLE] = fsolve(
+    req.mach[Phase.PRIMARY, Loc.EXHAUST] = fsolve(
         lambda x: (
             1.0 / x[0] ** 2 *
             (2.0 / (gamma + 1.0) * (1.0 + (gamma - 1.0) / 2.0 * x[0] ** 2)) **
             ((gamma + 1.0) / (gamma - 1.0)) -
-            (design.area[Phase.JET, Loc.EXIT_NOZZLE] /
-             design.area[Phase.JET, Loc.THROAT]) ** 2),
+            (design.area[Phase.PRIMARY, Loc.EXHAUST] /
+             design.area[Phase.PRIMARY, Loc.THROAT]) ** 2),
         [MACH_GUESS],
     )[0]
     # NOTE возможно будет легче вынести нелиненйное уравнение в отдельную функцию вместо
     # NOTE лямбды, будет полегче читать и проверять
 
     # Eq. (3): Pp1
-    req.pressure[Phase.JET, Loc.EXIT_NOZZLE] = (
-        req.pressure[Phase.JET, Loc.INLET] /
-        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.JET, Loc.EXIT_NOZZLE] ** 2) **
+    req.pressure[Phase.PRIMARY, Loc.EXHAUST] = (
+        req.pressure[Phase.PRIMARY, Loc.INLET] /
+        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.PRIMARY, Loc.EXHAUST] ** 2) **
         (gamma / (gamma - 1.0)))
 
     # Eq. (6): Msy
-    req.mach[Phase.CARRY, Loc.CHOKE] = 1.0
+    req.mach[Phase.SECONDARY, Loc.CHOKE] = 1.0
 
     # Eq. (6): Psy
-    req.pressure[Phase.CARRY, Loc.CHOKE] = (
-        req.pressure[Phase.CARRY, Loc.INLET] /
-        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.CARRY, Loc.CHOKE] ** 2) **
+    req.pressure[Phase.SECONDARY, Loc.CHOKE] = (
+        req.pressure[Phase.SECONDARY, Loc.INLET] /
+        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.SECONDARY, Loc.CHOKE] ** 2) **
         (gamma / (gamma - 1.0)))
     # NOTE уравнения 6 и 3 одинаковые, хороший кандидат на отдельную функцию
     # NOTE может внутреннюю (с _ в начале)
 
     design.area[Phase.MIX, Loc.AFTERMIX] = (
-        design.area[Phase.JET, Loc.THROAT] * _A3_INITIAL_RATIO)
+        design.area[Phase.PRIMARY, Loc.THROAT] * _A3_INITIAL_RATIO)
 
     for _ in range(max_iter):
         _solve_entrainment_areas(req, design)
@@ -187,7 +179,7 @@ def solve_dimensions(
             design.diameter[Phase.MIX, Loc.AFTERMIX])
 
     req.mass_flow_rate[Phase.MIX] = (
-        req.mass_flow_rate[Phase.JET] + req.mass_flow_rate[Phase.CARRY])
+        req.mass_flow_rate[Phase.PRIMARY] + req.mass_flow_rate[Phase.SECONDARY])
 
 
 def _solve_entrainment_areas(
@@ -198,52 +190,52 @@ def _solve_entrainment_areas(
 
     gamma, _, _ = _perfect_gas(
         req.phase,
-        req.pressure[Phase.JET, Loc.INLET],
-        req.temperature[Phase.JET, Loc.INLET],
+        req.pressure[Phase.PRIMARY, Loc.INLET],
+        req.temperature[Phase.PRIMARY, Loc.INLET],
     )
 
     while True:
         # Eq. (4): Ppy
-        req.pressure[Phase.JET, Loc.CHOKE] = (
-            req.pressure[Phase.CARRY, Loc.CHOKE])
+        req.pressure[Phase.PRIMARY, Loc.CHOKE] = (
+            req.pressure[Phase.SECONDARY, Loc.CHOKE])
 
         # Eq. (4): Mpy
-        req.mach[Phase.JET, Loc.CHOKE] = fsolve(
+        req.mach[Phase.PRIMARY, Loc.CHOKE] = fsolve(
             lambda x: (
                 (1.0 + (gamma - 1.0) / 2.0 *
-                 req.mach[Phase.JET, Loc.EXIT_NOZZLE] ** 2) **
+                 req.mach[Phase.PRIMARY, Loc.EXHAUST] ** 2) **
                 (gamma / (gamma - 1.0)) /
                 (1.0 + (gamma - 1.0) / 2.0 * x[0] ** 2) **
                 (gamma / (gamma - 1.0)) -
-                req.pressure[Phase.CARRY, Loc.CHOKE] /
-                req.pressure[Phase.JET, Loc.EXIT_NOZZLE]
+                req.pressure[Phase.SECONDARY, Loc.CHOKE] /
+                req.pressure[Phase.PRIMARY, Loc.EXHAUST]
             ),
             [MACH_GUESS],
         )[0]
 
         # Eq. (5): Apy
-        design.area[Phase.JET, Loc.CHOKE] = (
-            design.area[Phase.JET, Loc.EXIT_NOZZLE] *
-            (PRIMARY_CORE_AREA_FACTOR / req.mach[Phase.JET, Loc.CHOKE] *
+        design.area[Phase.PRIMARY, Loc.CHOKE] = (
+            design.area[Phase.PRIMARY, Loc.EXHAUST] *
+            (PRIMARY_CORE_AREA_FACTOR / req.mach[Phase.PRIMARY, Loc.CHOKE] *
              (2.0 / (gamma + 1.0) *
               (1.0 + (gamma - 1.0) / 2.0 *
-               req.mach[Phase.JET, Loc.CHOKE] ** 2)) **
+               req.mach[Phase.PRIMARY, Loc.CHOKE] ** 2)) **
              ((gamma + 1.0) / (2.0 * (gamma - 1.0)))) /
-            (1.0 / req.mach[Phase.JET, Loc.EXIT_NOZZLE] *
+            (1.0 / req.mach[Phase.PRIMARY, Loc.EXHAUST] *
              (2.0 / (gamma + 1.0) *
               (1.0 + (gamma - 1.0) / 2.0 *
-               req.mach[Phase.JET, Loc.EXIT_NOZZLE] ** 2)) **
+               req.mach[Phase.PRIMARY, Loc.EXHAUST] ** 2)) **
              ((gamma + 1.0) / (2.0 * (gamma - 1.0)))))
 
         # Eq. (8): Asy
-        design.area[Phase.CARRY, Loc.CHOKE] = (
+        design.area[Phase.SECONDARY, Loc.CHOKE] = (
             design.area[Phase.MIX, Loc.AFTERMIX] -
-            design.area[Phase.JET, Loc.CHOKE])
+            design.area[Phase.PRIMARY, Loc.CHOKE])
 
-        if design.area[Phase.CARRY, Loc.CHOKE] < 0.0:
+        if design.area[Phase.SECONDARY, Loc.CHOKE] < 0.0:
             # Fig. 3, step 5: Asy < 0 → A3 + ΔA3
             design.area[Phase.MIX, Loc.AFTERMIX] = (
-                design.area[Phase.JET, Loc.CHOKE] + _DA3)
+                design.area[Phase.PRIMARY, Loc.CHOKE] + _DA3)
             continue
         # NOTE конструкция с continue и breake выглядит немного странно,
         # NOTE лучше вынести условие наверх в while
@@ -262,69 +254,70 @@ def _solve_mixing_to_drain(
 
     gamma, R, cp = _perfect_gas(
         req.phase,
-        req.pressure[Phase.JET, Loc.INLET],
-        req.temperature[Phase.JET, Loc.INLET],
+        req.pressure[Phase.PRIMARY, Loc.INLET],
+        req.temperature[Phase.PRIMARY, Loc.INLET],
     )
 
     # Eq. (7): ms
-    req.mass_flow_rate[Phase.CARRY] = (
-        req.pressure[Phase.CARRY, Loc.INLET] *
-        design.area[Phase.CARRY, Loc.CHOKE] /
-        np.sqrt(req.temperature[Phase.CARRY, Loc.INLET]) *
+    req.mass_flow_rate[Phase.SECONDARY] = (
+        req.pressure[Phase.SECONDARY, Loc.INLET] *
+        design.area[Phase.SECONDARY, Loc.CHOKE] /
+        np.sqrt(req.temperature[Phase.SECONDARY, Loc.INLET]) *
         np.sqrt(gamma / R * (2.0 / (gamma + 1.0)) **
                 ((gamma + 1.0) / (gamma - 1.0))) *
         np.sqrt(CARRY_NOZZLE_EFFICIENCY))
     # NOTE уравнения 1 и 7 одинаковые, хороший кандидат в отдельную функцию
 
     # Eq. (9): Tpy
-    req.temperature[Phase.JET, Loc.CHOKE] = (
-        req.temperature[Phase.JET, Loc.INLET] /
-        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.JET, Loc.CHOKE] ** 2))
+    req.temperature[Phase.PRIMARY, Loc.CHOKE] = (
+        req.temperature[Phase.PRIMARY, Loc.INLET] /
+        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.PRIMARY, Loc.CHOKE] ** 2))
 
     # Eq. (10): Tsy
-    req.temperature[Phase.CARRY, Loc.CHOKE] = (
-        req.temperature[Phase.CARRY, Loc.INLET] /
-        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.CARRY, Loc.CHOKE] ** 2))
+    req.temperature[Phase.SECONDARY, Loc.CHOKE] = (
+        req.temperature[Phase.SECONDARY, Loc.INLET] /
+        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.SECONDARY, Loc.CHOKE] ** 2))
     # NOTE уравнения 9 и 10 одинаковые, хороший кандидат в отдельную функцию
 
     # Eq. (13): Vpy
-    req.velocity[Phase.JET, Loc.CHOKE] = (
-        req.mach[Phase.JET, Loc.CHOKE] *
-        np.sqrt(gamma * R * req.temperature[Phase.JET, Loc.CHOKE]))
+    req.velocity[Phase.PRIMARY, Loc.CHOKE] = (
+        req.mach[Phase.PRIMARY, Loc.CHOKE] *
+        np.sqrt(gamma * R * req.temperature[Phase.PRIMARY, Loc.CHOKE]))
 
     # Eq. (14): Vsy
-    req.velocity[Phase.CARRY, Loc.CHOKE] = (
-        req.mach[Phase.CARRY, Loc.CHOKE] *
-        np.sqrt(gamma * R * req.temperature[Phase.CARRY, Loc.CHOKE]))
+    req.velocity[Phase.SECONDARY, Loc.CHOKE] = (
+        req.mach[Phase.SECONDARY, Loc.CHOKE] *
+        np.sqrt(gamma * R * req.temperature[Phase.SECONDARY, Loc.CHOKE]))
     # NOTE уравнения 13 и 14 одинаковые, хороший кандидат в отдельную функцию
 
     # Eq. (11): Pm
     req.pressure[Phase.MIX, Loc.PRE_SHOCK] = (
-        req.pressure[Phase.CARRY, Loc.CHOKE])
+        req.pressure[Phase.SECONDARY, Loc.CHOKE])
 
     # Eq. (19): fm
     fm = _mixing_coeff(
         design.area[Phase.MIX, Loc.AFTERMIX] /
-        design.area[Phase.JET, Loc.THROAT])
+        design.area[Phase.PRIMARY, Loc.THROAT])
 
     # Eq. (11): Vm
     req.velocity[Phase.MIX, Loc.PRE_SHOCK] = fm * (
-        req.mass_flow_rate[Phase.JET] * req.velocity[Phase.JET, Loc.CHOKE] +
-        req.mass_flow_rate[Phase.CARRY] * req.velocity[Phase.CARRY, Loc.CHOKE]
-    ) / (req.mass_flow_rate[Phase.JET] + req.mass_flow_rate[Phase.CARRY])
+        req.mass_flow_rate[Phase.PRIMARY] * req.velocity[Phase.PRIMARY, Loc.CHOKE] +
+        req.mass_flow_rate[Phase.SECONDARY] *
+        req.velocity[Phase.SECONDARY, Loc.CHOKE]
+    ) / (req.mass_flow_rate[Phase.PRIMARY] + req.mass_flow_rate[Phase.SECONDARY])
 
     # Eq. (12): Tm
     req.temperature[Phase.MIX, Loc.PRE_SHOCK] = (
-        req.mass_flow_rate[Phase.JET] * (
-            cp * req.temperature[Phase.JET, Loc.CHOKE] +
-            req.velocity[Phase.JET, Loc.CHOKE] ** 2 / 2.0) +
-        req.mass_flow_rate[Phase.CARRY] * (
-            cp * req.temperature[Phase.CARRY, Loc.CHOKE] +
-            req.velocity[Phase.CARRY, Loc.CHOKE] ** 2 / 2.0) -
-        (req.mass_flow_rate[Phase.JET] + req.mass_flow_rate[Phase.CARRY]) *
+        req.mass_flow_rate[Phase.PRIMARY] * (
+            cp * req.temperature[Phase.PRIMARY, Loc.CHOKE] +
+            req.velocity[Phase.PRIMARY, Loc.CHOKE] ** 2 / 2.0) +
+        req.mass_flow_rate[Phase.SECONDARY] * (
+            cp * req.temperature[Phase.SECONDARY, Loc.CHOKE] +
+            req.velocity[Phase.SECONDARY, Loc.CHOKE] ** 2 / 2.0) -
+        (req.mass_flow_rate[Phase.PRIMARY] + req.mass_flow_rate[Phase.SECONDARY]) *
         req.velocity[Phase.MIX, Loc.PRE_SHOCK] ** 2 / 2.0) / (
-            req.mass_flow_rate[Phase.JET] * cp +
-            req.mass_flow_rate[Phase.CARRY] * cp)
+            req.mass_flow_rate[Phase.PRIMARY] * cp +
+            req.mass_flow_rate[Phase.SECONDARY] * cp)
 
     # Eq. (15): Mm
     req.mach[Phase.MIX, Loc.PRE_SHOCK] = (

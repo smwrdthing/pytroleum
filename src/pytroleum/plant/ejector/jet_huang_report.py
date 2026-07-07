@@ -8,7 +8,7 @@ _K_TO_C = 273.15
 _SECTIONS = (
     ("Inlet", Loc.INLET),
     ("Throat", Loc.THROAT),
-    ("Nozzle exit", Loc.EXIT_NOZZLE),
+    ("Nozzle exit", Loc.EXHAUST),
     ("Premix", Loc.PREMIX),
     ("Choke", Loc.CHOKE),
     ("Pre-shock", Loc.PRE_SHOCK),
@@ -29,8 +29,8 @@ def _report_field(arr, title, unit, transform, fmt) -> None:
     suffix = f" [{unit}]" if unit else ""
     for label, loc in _SECTIONS:
         print(
-            f"{label:<12}: {transform(arr[Phase.JET, loc]):{fmt}}"
-            f" / {transform(arr[Phase.CARRY, loc]):{fmt}}"
+            f"{label:<12}: {transform(arr[Phase.PRIMARY, loc]):{fmt}}"
+            f" / {transform(arr[Phase.SECONDARY, loc]):{fmt}}"
             f" / {transform(arr[Phase.MIX, loc]):{fmt}}{suffix}")
 
 
@@ -38,8 +38,8 @@ def report_conditions(conditions) -> None:
     print("         jet / carry / mix")
     print("Mass flow rates")
     print(
-        f"         : {conditions.mass_flow_rate[Phase.JET]:.3e}"
-        f" / {conditions.mass_flow_rate[Phase.CARRY]:.3e}"
+        f"         : {conditions.mass_flow_rate[Phase.PRIMARY]:.3e}"
+        f" / {conditions.mass_flow_rate[Phase.SECONDARY]:.3e}"
         f" / {conditions.mass_flow_rate[Phase.MIX]:.3e} [kg/s]")
 
     _report_field(
