@@ -111,18 +111,20 @@ def solve_dimensions(
     )
 
     # Eq. (1): mp
-    req.mass_flow_rate[Phase.PRIMARY] = (
-        req.pressure[Phase.PRIMARY, Loc.INLET] *
-        design.area[Phase.PRIMARY, Loc.THROAT] /
-        np.sqrt(req.temperature[Phase.PRIMARY, Loc.INLET]) *
-        np.sqrt(gamma / R * (2.0 / (gamma + 1.0)) ** ((gamma + 1.0) / (gamma - 1.0))) *
-        np.sqrt(PRIMARY_NOZZLE_EFFICIENCY))
+    req.mass_flow_rate[Phase.PRIMARY] = _mass_flow_rate(
+        req.pressure[Phase.PRIMARY, Loc.INLET],
+        req.temperature[Phase.PRIMARY, Loc.INLET],
+        design.area[Phase.PRIMARY, Loc.THROAT],
+        gamma, R, PRIMARY_NOZZLE_EFFICIENCY)
 
     # Eq. (2): Mp1
     req.mach[Phase.PRIMARY, Loc.EXHAUST] = fsolve(
-        _primary_exhaust_mach_residual, [MACH_GUESS],
-        args=(gamma, design.area[Phase.PRIMARY, Loc.EXHAUST] /
-              design.area[Phase.PRIMARY, Loc.THROAT]),
+        _primary_exhaust_mach_residual,
+        [MACH_GUESS],
+        args=(
+            gamma,
+            design.area[Phase.PRIMARY, Loc.EXHAUST] /
+            design.area[Phase.PRIMARY, Loc.THROAT]),
     )[0]
 
     # Eq. (3): Pp1
@@ -195,10 +197,13 @@ def _solve_entrainment_areas(
 
         # Eq. (4): Mpy
         req.mach[Phase.PRIMARY, Loc.CHOKE] = fsolve(
-            _primary_choke_mach_residual, [MACH_GUESS],
-            args=(gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST],
-                  req.pressure[Phase.SECONDARY, Loc.CHOKE] /
-                  req.pressure[Phase.PRIMARY, Loc.EXHAUST]),
+            _primary_choke_mach_residual,
+            [MACH_GUESS],
+            args=(
+                gamma,
+                req.mach[Phase.PRIMARY, Loc.EXHAUST],
+                req.pressure[Phase.SECONDARY, Loc.CHOKE] /
+                req.pressure[Phase.PRIMARY, Loc.EXHAUST]),
         )[0]
 
         # Eq. (5): Apy
@@ -247,14 +252,11 @@ def _solve_mixing_to_drain(
     )
 
     # Eq. (7): ms
-    req.mass_flow_rate[Phase.SECONDARY] = (
-        req.pressure[Phase.SECONDARY, Loc.INLET] *
-        design.area[Phase.SECONDARY, Loc.CHOKE] /
-        np.sqrt(req.temperature[Phase.SECONDARY, Loc.INLET]) *
-        np.sqrt(gamma / R * (2.0 / (gamma + 1.0)) **
-                ((gamma + 1.0) / (gamma - 1.0))) *
-        np.sqrt(CARRY_NOZZLE_EFFICIENCY))
-    # NOTE уравнения 1 и 7 одинаковые, хороший кандидат в отдельную функцию
+    req.mass_flow_rate[Phase.SECONDARY] = _mass_flow_rate(
+        req.pressure[Phase.SECONDARY, Loc.INLET],
+        req.temperature[Phase.SECONDARY, Loc.INLET],
+        design.area[Phase.SECONDARY, Loc.CHOKE],
+        gamma, R, CARRY_NOZZLE_EFFICIENCY)
 
     # Eq. (9): Tpy
     req.temperature[Phase.PRIMARY, Loc.CHOKE] = (
@@ -328,6 +330,23 @@ def _solve_mixing_to_drain(
         req.pressure[Phase.MIX, Loc.AFTERMIX] *
         _isentropic_relation(gamma, req.mach[Phase.MIX, Loc.AFTERMIX]) **
         (gamma / (gamma - 1.0)))
+
+
+def _mass_flow_rate(
+        pressure: float,
+        temperature: float,
+        area: float,
+        gamma: float,
+        R: float,
+        nozzle_efficiency: float,
+) -> float:
+    """Mass flow through the nozzle at choking condition (Huang et al., Eqs. 1, 7)."""
+
+    return (
+        pressure * area / np.sqrt(temperature) *
+        np.sqrt(gamma / R * (2.0 / (gamma + 1.0)) **
+                ((gamma + 1.0) / (gamma - 1.0))) *
+        np.sqrt(nozzle_efficiency))
 
 
 def _isentropic_relation(
