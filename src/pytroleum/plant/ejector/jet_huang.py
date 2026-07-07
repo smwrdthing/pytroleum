@@ -17,8 +17,8 @@ from enum import IntEnum
 _R_UNIV = 8.314462618
 
 # Huang et al. (1999), Eqs. (1), (5), (7); Section 4: np, ns, fp; Eq. (19): fm
-PRIMARY_NOZZLE_EFFICIENCY = 0.95
-CARRY_NOZZLE_EFFICIENCY = 0.85
+PRIMARY_NOZZLE_EFF = 0.95
+SECONDARY_NOZZLE_EFF = 0.85
 PRIMARY_CORE_AREA_FACTOR = 0.88
 
 MACH_GUESS = 2.0
@@ -164,7 +164,7 @@ def _primary_mass_flow(
         req.pressure[Phase.PRIMARY, Loc.INLET],
         req.temperature[Phase.PRIMARY, Loc.INLET],
         design.area[Phase.PRIMARY, Loc.THROAT],
-        gamma, R, PRIMARY_NOZZLE_EFFICIENCY)
+        gamma, R, PRIMARY_NOZZLE_EFF)
 
 
 def _primary_exhaust_state(
@@ -223,13 +223,11 @@ def _primary_core_state(
         design.area[Phase.PRIMARY, Loc.EXHAUST] *
         (PRIMARY_CORE_AREA_FACTOR / req.mach[Phase.PRIMARY, Loc.CHOKE] *
          (2.0 / (gamma + 1.0) *
-          _isentropic_relation(
-              gamma, req.mach[Phase.PRIMARY, Loc.CHOKE])) **
+          _isentropic_relation(gamma, req.mach[Phase.PRIMARY, Loc.CHOKE])) **
          ((gamma + 1.0) / (2.0 * (gamma - 1.0)))) /
         (1.0 / req.mach[Phase.PRIMARY, Loc.EXHAUST] *
          (2.0 / (gamma + 1.0) *
-          _isentropic_relation(
-              gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST])) **
+          _isentropic_relation(gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST])) **
          ((gamma + 1.0) / (2.0 * (gamma - 1.0)))))
 
 
@@ -255,7 +253,7 @@ def _secondary_mass_flow(
         req.pressure[Phase.SECONDARY, Loc.INLET],
         req.temperature[Phase.SECONDARY, Loc.INLET],
         design.area[Phase.SECONDARY, Loc.CHOKE],
-        gamma, R, CARRY_NOZZLE_EFFICIENCY)
+        gamma, R, SECONDARY_NOZZLE_EFF)
 
 
 def _choke_temperatures(
@@ -306,17 +304,20 @@ def _mix_pre_shock_temperature_mach(
 ) -> None:
     """Fig. 3 — Eqs. (12), (15): Tm, Mm."""
 
-    req.temperature[Phase.MIX, Loc.PRE_SHOCK] = (
-        req.mass_flow_rate[Phase.PRIMARY] * (
-            cp * req.temperature[Phase.PRIMARY, Loc.CHOKE] +
-            req.velocity[Phase.PRIMARY, Loc.CHOKE] ** 2 / 2.0) +
-        req.mass_flow_rate[Phase.SECONDARY] * (
-            cp * req.temperature[Phase.SECONDARY, Loc.CHOKE] +
-            req.velocity[Phase.SECONDARY, Loc.CHOKE] ** 2 / 2.0) -
-        (req.mass_flow_rate[Phase.PRIMARY] + req.mass_flow_rate[Phase.SECONDARY]) *
-        req.velocity[Phase.MIX, Loc.PRE_SHOCK] ** 2 / 2.0) / (
-            req.mass_flow_rate[Phase.PRIMARY] * cp +
-            req.mass_flow_rate[Phase.SECONDARY] * cp)
+    primary_choke_energy = (
+        cp * req.temperature[Phase.PRIMARY, Loc.CHOKE] +
+        req.velocity[Phase.PRIMARY, Loc.CHOKE] ** 2 / 2.0)
+    secondary_choke_energy = (
+        cp * req.temperature[Phase.SECONDARY, Loc.CHOKE] +
+        req.velocity[Phase.SECONDARY, Loc.CHOKE] ** 2 / 2.0)
+
+    req.temperature[Phase.MIX, Loc.PRE_SHOCK] = 1/cp*(
+        (req.mass_flow_rate[Phase.PRIMARY] * primary_choke_energy +
+         req.mass_flow_rate[Phase.SECONDARY] * secondary_choke_energy) /
+        (req.mass_flow_rate[Phase.PRIMARY] +
+         req.mass_flow_rate[Phase.SECONDARY]) -
+        req.velocity[Phase.MIX, Loc.PRE_SHOCK] ** 2 / 2.0)
+
     req.mach[Phase.MIX, Loc.PRE_SHOCK] = (
         req.velocity[Phase.MIX, Loc.PRE_SHOCK] /
         np.sqrt(gamma * R * req.temperature[Phase.MIX, Loc.PRE_SHOCK]))
