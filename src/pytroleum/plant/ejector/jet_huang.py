@@ -104,7 +104,7 @@ def solve_dimensions(
     # NOTE каждая подфункция будет решать свою задачу из блок-схемы в статье, потом
     # NOTE можно просто вызывать эти функции здесь
 
-    gamma, R, cp = _perfect_gas(
+    gamma, R, cp = _extract_properties_for(
         req.phase,
         req.pressure[Phase.PRIMARY, Loc.INLET],
         req.temperature[Phase.PRIMARY, Loc.INLET],
@@ -188,7 +188,7 @@ def _solve_entrainment_areas(
 ) -> None:
     """Fig. 3, steps 4–5 — Eqs. (4), (5), (8): Mpy, Apy, Asy."""
 
-    gamma, _, _ = _perfect_gas(
+    gamma, _, _ = _extract_properties_for(
         req.phase,
         req.pressure[Phase.PRIMARY, Loc.INLET],
         req.temperature[Phase.PRIMARY, Loc.INLET],
@@ -252,7 +252,7 @@ def _solve_mixing_to_drain(
 
     # NOTE тоже очень большая функция, я бы разбил на функции поменьше
 
-    gamma, R, cp = _perfect_gas(
+    gamma, R, cp = _extract_properties_for(
         req.phase,
         req.pressure[Phase.PRIMARY, Loc.INLET],
         req.temperature[Phase.PRIMARY, Loc.INLET],
@@ -344,14 +344,10 @@ def _solve_mixing_to_drain(
         (gamma / (gamma - 1.0)))
 
 
-def _perfect_gas(
+def _extract_properties_for(
         eos: AbstractState, pressure: float, temperature: float,
 ) -> tuple[float, float, float]:
     """Constant gamma, R, cp at inlet state (Huang et al.)."""
-
-    # NOTE я бы назвал как-нибудь вроде _extract_properties_for,
-    # NOTE красивше читается :)
-    # NOTE _extract_properties_for(air, pressure=1e5, temperature=293)
 
     eos.update(PT_INPUTS, pressure, temperature)
     cp = eos.cpmass()
