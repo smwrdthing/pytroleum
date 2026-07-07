@@ -122,7 +122,7 @@ def solve_dimensions(
     req.mach[Phase.PRIMARY, Loc.EXHAUST] = fsolve(
         lambda x: (
             1.0 / x[0] ** 2 *
-            (2.0 / (gamma + 1.0) * (1.0 + (gamma - 1.0) / 2.0 * x[0] ** 2)) **
+            (2.0 / (gamma + 1.0) * _isentropic_relation(gamma, x[0])) **
             ((gamma + 1.0) / (gamma - 1.0)) -
             (design.area[Phase.PRIMARY, Loc.EXHAUST] /
              design.area[Phase.PRIMARY, Loc.THROAT]) ** 2),
@@ -134,7 +134,7 @@ def solve_dimensions(
     # Eq. (3): Pp1
     req.pressure[Phase.PRIMARY, Loc.EXHAUST] = (
         req.pressure[Phase.PRIMARY, Loc.INLET] /
-        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.PRIMARY, Loc.EXHAUST] ** 2) **
+        _isentropic_relation(gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST]) **
         (gamma / (gamma - 1.0)))
 
     # Eq. (6): Msy
@@ -143,7 +143,7 @@ def solve_dimensions(
     # Eq. (6): Psy
     req.pressure[Phase.SECONDARY, Loc.CHOKE] = (
         req.pressure[Phase.SECONDARY, Loc.INLET] /
-        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.SECONDARY, Loc.CHOKE] ** 2) **
+        _isentropic_relation(gamma, req.mach[Phase.SECONDARY, Loc.CHOKE]) **
         (gamma / (gamma - 1.0)))
     # NOTE уравнения 6 и 3 одинаковые, хороший кандидат на отдельную функцию
     # NOTE может внутреннюю (с _ в начале)
@@ -202,11 +202,10 @@ def _solve_entrainment_areas(
         # Eq. (4): Mpy
         req.mach[Phase.PRIMARY, Loc.CHOKE] = fsolve(
             lambda x: (
-                (1.0 + (gamma - 1.0) / 2.0 *
-                 req.mach[Phase.PRIMARY, Loc.EXHAUST] ** 2) **
+                _isentropic_relation(
+                    gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST]) **
                 (gamma / (gamma - 1.0)) /
-                (1.0 + (gamma - 1.0) / 2.0 * x[0] ** 2) **
-                (gamma / (gamma - 1.0)) -
+                _isentropic_relation(gamma, x[0]) ** (gamma / (gamma - 1.0)) -
                 req.pressure[Phase.SECONDARY, Loc.CHOKE] /
                 req.pressure[Phase.PRIMARY, Loc.EXHAUST]
             ),
@@ -218,13 +217,13 @@ def _solve_entrainment_areas(
             design.area[Phase.PRIMARY, Loc.EXHAUST] *
             (PRIMARY_CORE_AREA_FACTOR / req.mach[Phase.PRIMARY, Loc.CHOKE] *
              (2.0 / (gamma + 1.0) *
-              (1.0 + (gamma - 1.0) / 2.0 *
-               req.mach[Phase.PRIMARY, Loc.CHOKE] ** 2)) **
+              _isentropic_relation(
+                  gamma, req.mach[Phase.PRIMARY, Loc.CHOKE])) **
              ((gamma + 1.0) / (2.0 * (gamma - 1.0)))) /
             (1.0 / req.mach[Phase.PRIMARY, Loc.EXHAUST] *
              (2.0 / (gamma + 1.0) *
-              (1.0 + (gamma - 1.0) / 2.0 *
-               req.mach[Phase.PRIMARY, Loc.EXHAUST] ** 2)) **
+              _isentropic_relation(
+                  gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST])) **
              ((gamma + 1.0) / (2.0 * (gamma - 1.0)))))
 
         # Eq. (8): Asy
@@ -271,13 +270,12 @@ def _solve_mixing_to_drain(
     # Eq. (9): Tpy
     req.temperature[Phase.PRIMARY, Loc.CHOKE] = (
         req.temperature[Phase.PRIMARY, Loc.INLET] /
-        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.PRIMARY, Loc.CHOKE] ** 2))
+        _isentropic_relation(gamma, req.mach[Phase.PRIMARY, Loc.CHOKE]))
 
     # Eq. (10): Tsy
     req.temperature[Phase.SECONDARY, Loc.CHOKE] = (
         req.temperature[Phase.SECONDARY, Loc.INLET] /
-        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.SECONDARY, Loc.CHOKE] ** 2))
-    # NOTE уравнения 9 и 10 одинаковые, хороший кандидат в отдельную функцию
+        _isentropic_relation(gamma, req.mach[Phase.SECONDARY, Loc.CHOKE]))
 
     # Eq. (13): Vpy
     req.velocity[Phase.PRIMARY, Loc.CHOKE] = (
@@ -332,16 +330,19 @@ def _solve_mixing_to_drain(
 
     # Eq. (17): M3
     req.mach[Phase.MIX, Loc.AFTERMIX] = np.sqrt(
-        (1.0 + (gamma - 1.0) / 2.0 * req.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2) /
+        _isentropic_relation(gamma, req.mach[Phase.MIX, Loc.PRE_SHOCK]) /
         (gamma * req.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2 -
          (gamma - 1.0) / 2.0))
 
     # Eq. (18): Pc
     req.pressure[Phase.MIX, Loc.DRAIN] = (
         req.pressure[Phase.MIX, Loc.AFTERMIX] *
-        (1.0 + (gamma - 1.0) / 2.0 *
-         req.mach[Phase.MIX, Loc.AFTERMIX] ** 2) **
+        _isentropic_relation(gamma, req.mach[Phase.MIX, Loc.AFTERMIX]) **
         (gamma / (gamma - 1.0)))
+
+
+def _isentropic_relation(gamma: float, mach: float) -> float:
+    return 1.0 + (gamma - 1.0) / 2.0 * mach ** 2
 
 
 def _extract_properties_for(
