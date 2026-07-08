@@ -130,7 +130,8 @@ def solve_dimensions(
     design.area[Phase.MIX, Loc.AFTERMIX] = (
         design.area[Phase.PRIMARY, Loc.THROAT] * _A3_INITIAL_RATIO)
 
-    for _ in range(max_iter):
+    iter_count = 0
+    while True:
         # Fig. 3: Asy < 0 → A3 = Apy + ΔA3 → Eq. (4)
         while True:
             _primary_core_state(conditions, design, gamma)
@@ -147,21 +148,21 @@ def solve_dimensions(
         _aftermix_state(conditions, gamma)
         _mix_drain_pressure(conditions, gamma)
 
-        # Fig. 3: Pc vs Pc* → подбор A3 → Eq. (4)
-        if (abs(conditions.pressure[Phase.MIX, Loc.DRAIN] - Pc_star) /
-                Pc_star <= Pc_rel_tolerance):
-            # NOTE вместо for - цикла с breake здесь можно сделать while-цикл
-            # NOTE с похожим условием, должно получиться чуть покороче
+        Pc = conditions.pressure[Phase.MIX, Loc.DRAIN]
+        if abs(Pc - Pc_star) / Pc_star <= Pc_rel_tolerance:
             break
 
-        if conditions.pressure[Phase.MIX, Loc.DRAIN] >= Pc_star:
+        if iter_count >= max_iter:
+            raise RuntimeError(
+                f"solve_dimensions: Fig. 3 did not converge to Pc = Pc* "
+                f"within {max_iter} iterations.")
+
+        # Fig. 3: Pc vs Pc* → подбор A3 → Eq. (4)
+        if Pc >= Pc_star:
             design.area[Phase.MIX, Loc.AFTERMIX] += _DA3
         else:
             design.area[Phase.MIX, Loc.AFTERMIX] -= _DA3
-    else:
-        raise RuntimeError(
-            f"solve_dimensions: Fig. 3 did not converge to Pc = Pc* "
-            f"within {max_iter} iterations.")
+        iter_count += 1
 
     _finalize_mix_geometry(design)
     return conditions
