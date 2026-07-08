@@ -302,14 +302,18 @@ def _mix_pre_shock_velocity_pressure(
     conditions.velocity[Phase.PRIMARY, Loc.CHOKE] = _velocity_from_mach(
         conditions.mach[Phase.PRIMARY, Loc.CHOKE], gamma, R,
         conditions.temperature[Phase.PRIMARY, Loc.CHOKE])
+
     conditions.velocity[Phase.SECONDARY, Loc.CHOKE] = _velocity_from_mach(
         conditions.mach[Phase.SECONDARY, Loc.CHOKE], gamma, R,
         conditions.temperature[Phase.SECONDARY, Loc.CHOKE])
+
     conditions.pressure[Phase.MIX, Loc.PRE_SHOCK] = (
         conditions.pressure[Phase.SECONDARY, Loc.CHOKE])
+
     fm = _mixing_coeff(
         design.area[Phase.MIX, Loc.AFTERMIX] /
         design.area[Phase.PRIMARY, Loc.THROAT])
+
     conditions.velocity[Phase.MIX, Loc.PRE_SHOCK] = fm * (
         conditions.mass_flow_rate[Phase.PRIMARY] *
         conditions.velocity[Phase.PRIMARY, Loc.CHOKE] +
