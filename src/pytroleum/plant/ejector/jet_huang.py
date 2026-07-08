@@ -65,6 +65,10 @@ class Requirements:
     pressure: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
     temperature: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
 
+    def report(self) -> None:
+        from jet_huang_report import report_inputs
+        report_inputs(self)
+
 
 @dataclass
 class OperationConditions:
@@ -101,8 +105,8 @@ class Design:
     length: np.ndarray
 
     def report(self) -> None:
-        from jet_huang_report import report_geometry
-        report_geometry(self)
+        from jet_huang_report import report_dimensions
+        report_dimensions(self)
 
 
 def solve_dimensions(

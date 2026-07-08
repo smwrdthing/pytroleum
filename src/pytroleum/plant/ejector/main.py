@@ -23,10 +23,6 @@ P_gen = PropsSI("P", "T", T_gen + 273.15, "Q", 1.0, FLUID)
 P_evap = PropsSI("P", "T", T_evap + 273.15, "Q", 1.0, FLUID)
 Pc_star = PropsSI("P", "T", Tc_star + 273.15, "Q", 1.0, FLUID)
 
-print(f"Primary   inlet: T = {T_gen} C,  P = {P_gen/1e6:.4f} MPa")
-print(f"Secondary inlet: T = {T_evap} C,  P = {P_evap/1e6:.4f} MPa")
-print(f"Target Pc* (Fig. 3): T = {Tc_star} C,  P = {Pc_star/1e6:.4f} MPa")
-
 SHAPE = (_LAST_PHASE, _LAST_LOC)
 
 design = Design(
@@ -60,25 +56,8 @@ req.temperature[Phase.SECONDARY, Loc.INLET] = T_evap + 273.15
 
 conditions = solve_dimensions(req, design, Pc_star)
 
-print("\n" + "=" * 60)
-print("OPERATING CONDITIONS")
-print("=" * 60)
-conditions.report()
-
-print("\n" + "=" * 60)
-print("GEOMETRY")
-print("=" * 60)
+req.report()
 design.report()
-
-omega = conditions.mass_flow_rate[Phase.SECONDARY] / \
-    conditions.mass_flow_rate[Phase.PRIMARY]
-A3_over_At = design.area[Phase.MIX, Loc.AFTERMIX] / \
-    design.area[Phase.PRIMARY, Loc.THROAT]
-print("\n" + "=" * 60)
-print(f"Entrainment ratio  omega = ms/mp = {omega:.4f}")
-print(f"Area ratio       A3/At         = {A3_over_At:.4f}")
-print(f"Compression ratio  Pc/Pe         = "
-      f"{conditions.pressure[Phase.MIX, Loc.DRAIN] / P_evap:.4f}")
-print("=" * 60)
+conditions.report()
 
 # NOTE такие скрипты кладём потом в examples, в пакете не оставляем
