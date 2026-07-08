@@ -54,15 +54,24 @@ _LAST_PHASE = len(Phase)
 _LAST_LOC = len(Loc)
 _SHAPE = (_LAST_PHASE, _LAST_LOC)
 CONTAINER = np.full(_SHAPE, np.nan)
+_N_FLOW_STREAMS = Phase.MIX
 
-type Requirements = OperationConditions
+
+@dataclass
+class Requirements:
+    """Boundary conditions from the technical specification (ТЗ)."""
+
+    phase: AbstractState
+    pressure: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
+    temperature: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
 
 
 @dataclass
 class OperationConditions:
 
     phase: AbstractState
-    mass_flow_rate: np.ndarray
+    mass_flow_rate: np.ndarray = field(
+        default_factory=lambda: np.zeros(_N_FLOW_STREAMS))
 
     pressure: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
     temperature: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
@@ -72,6 +81,11 @@ class OperationConditions:
     def __post_init__(self) -> None:
         self.mass_flow_rate = np.array(
             [*self.mass_flow_rate, np.sum(self.mass_flow_rate)])
+
+    def copy(self, req: Requirements) -> None:
+        self.phase = req.phase
+        self.pressure = req.pressure.copy()
+        self.temperature = req.temperature.copy()
 
     def report(self) -> None:
         from jet_huang_report import report_conditions
@@ -97,18 +111,21 @@ def solve_dimensions(
         Pc_star: float,
         Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
         max_iter: int = _MAX_ITER,
-) -> None:
+) -> OperationConditions:
     """Huang et al. (1999) critical-mode analysis, Eqs. (1)–(18), Fig. 3."""
 
+    conditions = OperationConditions(phase=req.phase)
+    conditions.copy(req)
+
     gamma, R, cp = _extract_properties_for(
-        req.phase,
-        req.pressure[Phase.PRIMARY, Loc.INLET],
-        req.temperature[Phase.PRIMARY, Loc.INLET],
+        conditions.phase,
+        conditions.pressure[Phase.PRIMARY, Loc.INLET],
+        conditions.temperature[Phase.PRIMARY, Loc.INLET],
     )
 
-    _primary_mass_flow(req, design, gamma, R)
-    _primary_exhaust_state(req, design, gamma)
-    _secondary_choke_state(req, gamma)
+    _primary_mass_flow(conditions, design, gamma, R)
+    _primary_exhaust_state(conditions, design, gamma)
+    _secondary_choke_state(conditions, gamma)
 
     design.area[Phase.MIX, Loc.AFTERMIX] = (
         design.area[Phase.PRIMARY, Loc.THROAT] * _A3_INITIAL_RATIO)
@@ -116,28 +133,28 @@ def solve_dimensions(
     for _ in range(max_iter):
         # Fig. 3: Asy < 0 → A3 = Apy + ΔA3 → Eq. (4)
         while True:
-            _primary_core_state(req, design, gamma)
+            _primary_core_state(conditions, design, gamma)
             _secondary_choke_area(design)
             if design.area[Phase.SECONDARY, Loc.CHOKE] >= 0.0:
                 break
             design.area[Phase.MIX, Loc.AFTERMIX] = (
                 design.area[Phase.PRIMARY, Loc.CHOKE] + _DA3)
 
-        _secondary_mass_flow(req, design, gamma, R)
-        _choke_temperatures(req, gamma)
-        _mix_pre_shock_velocity_pressure(req, design, gamma, R)
-        _mix_pre_shock_temperature_mach(req, gamma, R, cp)
-        _aftermix_state(req, gamma)
-        _mix_drain_pressure(req, gamma)
+        _secondary_mass_flow(conditions, design, gamma, R)
+        _choke_temperatures(conditions, gamma)
+        _mix_pre_shock_velocity_pressure(conditions, design, gamma, R)
+        _mix_pre_shock_temperature_mach(conditions, gamma, R, cp)
+        _aftermix_state(conditions, gamma)
+        _mix_drain_pressure(conditions, gamma)
 
         # Fig. 3: Pc vs Pc* → подбор A3 → Eq. (4)
-        if (abs(req.pressure[Phase.MIX, Loc.DRAIN] - Pc_star) / Pc_star <=
-                Pc_rel_tolerance):
+        if (abs(conditions.pressure[Phase.MIX, Loc.DRAIN] - Pc_star) /
+                Pc_star <= Pc_rel_tolerance):
             # NOTE вместо for - цикла с breake здесь можно сделать while-цикл
             # NOTE с похожим условием, должно получиться чуть покороче
             break
 
-        if req.pressure[Phase.MIX, Loc.DRAIN] >= Pc_star:
+        if conditions.pressure[Phase.MIX, Loc.DRAIN] >= Pc_star:
             design.area[Phase.MIX, Loc.AFTERMIX] += _DA3
         else:
             design.area[Phase.MIX, Loc.AFTERMIX] -= _DA3
@@ -146,35 +163,36 @@ def solve_dimensions(
             f"solve_dimensions: Fig. 3 did not converge to Pc = Pc* "
             f"within {max_iter} iterations.")
 
-    _finalize_mix_geometry(req, design)
+    _finalize_mix_geometry(design)
+    return conditions
 
 
 # --- Fig. 3 (Huang et al., Eqs. 1–18) ---
 
 
 def _primary_mass_flow(
-        req: Requirements,
+        conditions: OperationConditions,
         design: Design,
         gamma: float,
         R: float,
 ) -> None:
     """Fig. 3 — Eq. (1): mp."""
 
-    req.mass_flow_rate[Phase.PRIMARY] = _mass_flow_rate(
-        req.pressure[Phase.PRIMARY, Loc.INLET],
-        req.temperature[Phase.PRIMARY, Loc.INLET],
+    conditions.mass_flow_rate[Phase.PRIMARY] = _mass_flow_rate(
+        conditions.pressure[Phase.PRIMARY, Loc.INLET],
+        conditions.temperature[Phase.PRIMARY, Loc.INLET],
         design.area[Phase.PRIMARY, Loc.THROAT],
         gamma, R, PRIMARY_NOZZLE_EFF)
 
 
 def _primary_exhaust_state(
-        req: Requirements,
+        conditions: OperationConditions,
         design: Design,
         gamma: float,
 ) -> None:
     """Fig. 3 — Eqs. (2), (3): Mp1, Pp1."""
 
-    req.mach[Phase.PRIMARY, Loc.EXHAUST] = fsolve(
+    conditions.mach[Phase.PRIMARY, Loc.EXHAUST] = fsolve(
         _primary_exhaust_mach_residual,
         [MACH_GUESS],
         args=(
@@ -182,52 +200,52 @@ def _primary_exhaust_state(
             design.area[Phase.PRIMARY, Loc.EXHAUST] /
             design.area[Phase.PRIMARY, Loc.THROAT]),
     )[0]
-    req.pressure[Phase.PRIMARY, Loc.EXHAUST] = (
-        req.pressure[Phase.PRIMARY, Loc.INLET] /
-        _isentropic_relation(gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST]) **
+    conditions.pressure[Phase.PRIMARY, Loc.EXHAUST] = (
+        conditions.pressure[Phase.PRIMARY, Loc.INLET] /
+        _isentropic_relation(gamma, conditions.mach[Phase.PRIMARY, Loc.EXHAUST]) **
         (gamma / (gamma - 1.0)))
 
 
 def _secondary_choke_state(
-        req: Requirements,
+        conditions: OperationConditions,
         gamma: float,
 ) -> None:
     """Fig. 3 — Eq. (6): Msy, Psy."""
 
-    req.mach[Phase.SECONDARY, Loc.CHOKE] = 1.0
-    req.pressure[Phase.SECONDARY, Loc.CHOKE] = (
-        req.pressure[Phase.SECONDARY, Loc.INLET] /
-        _isentropic_relation(gamma, req.mach[Phase.SECONDARY, Loc.CHOKE]) **
+    conditions.mach[Phase.SECONDARY, Loc.CHOKE] = 1.0
+    conditions.pressure[Phase.SECONDARY, Loc.CHOKE] = (
+        conditions.pressure[Phase.SECONDARY, Loc.INLET] /
+        _isentropic_relation(gamma, conditions.mach[Phase.SECONDARY, Loc.CHOKE]) **
         (gamma / (gamma - 1.0)))
 
 
 def _primary_core_state(
-        req: Requirements,
+        conditions: OperationConditions,
         design: Design,
         gamma: float,
 ) -> None:
     """Fig. 3 — Eqs. (4), (5): Mpy, Apy."""
 
-    req.pressure[Phase.PRIMARY, Loc.CHOKE] = (
-        req.pressure[Phase.SECONDARY, Loc.CHOKE])
-    req.mach[Phase.PRIMARY, Loc.CHOKE] = fsolve(
+    conditions.pressure[Phase.PRIMARY, Loc.CHOKE] = (
+        conditions.pressure[Phase.SECONDARY, Loc.CHOKE])
+    conditions.mach[Phase.PRIMARY, Loc.CHOKE] = fsolve(
         _primary_choke_mach_residual,
         [MACH_GUESS],
         args=(
             gamma,
-            req.mach[Phase.PRIMARY, Loc.EXHAUST],
-            req.pressure[Phase.SECONDARY, Loc.CHOKE] /
-            req.pressure[Phase.PRIMARY, Loc.EXHAUST]),
+            conditions.mach[Phase.PRIMARY, Loc.EXHAUST],
+            conditions.pressure[Phase.SECONDARY, Loc.CHOKE] /
+            conditions.pressure[Phase.PRIMARY, Loc.EXHAUST]),
     )[0]
     design.area[Phase.PRIMARY, Loc.CHOKE] = (
         design.area[Phase.PRIMARY, Loc.EXHAUST] *
-        (PRIMARY_CORE_AREA_FACTOR / req.mach[Phase.PRIMARY, Loc.CHOKE] *
+        (PRIMARY_CORE_AREA_FACTOR / conditions.mach[Phase.PRIMARY, Loc.CHOKE] *
          (2.0 / (gamma + 1.0) *
-          _isentropic_relation(gamma, req.mach[Phase.PRIMARY, Loc.CHOKE])) **
+          _isentropic_relation(gamma, conditions.mach[Phase.PRIMARY, Loc.CHOKE])) **
          ((gamma + 1.0) / (2.0 * (gamma - 1.0)))) /
-        (1.0 / req.mach[Phase.PRIMARY, Loc.EXHAUST] *
+        (1.0 / conditions.mach[Phase.PRIMARY, Loc.EXHAUST] *
          (2.0 / (gamma + 1.0) *
-          _isentropic_relation(gamma, req.mach[Phase.PRIMARY, Loc.EXHAUST])) **
+          _isentropic_relation(gamma, conditions.mach[Phase.PRIMARY, Loc.EXHAUST])) **
          ((gamma + 1.0) / (2.0 * (gamma - 1.0)))))
 
 
@@ -242,62 +260,64 @@ def _secondary_choke_area(
 
 
 def _secondary_mass_flow(
-        req: Requirements,
+        conditions: OperationConditions,
         design: Design,
         gamma: float,
         R: float,
 ) -> None:
     """Fig. 3 — Eq. (7): ms."""
 
-    req.mass_flow_rate[Phase.SECONDARY] = _mass_flow_rate(
-        req.pressure[Phase.SECONDARY, Loc.INLET],
-        req.temperature[Phase.SECONDARY, Loc.INLET],
+    conditions.mass_flow_rate[Phase.SECONDARY] = _mass_flow_rate(
+        conditions.pressure[Phase.SECONDARY, Loc.INLET],
+        conditions.temperature[Phase.SECONDARY, Loc.INLET],
         design.area[Phase.SECONDARY, Loc.CHOKE],
         gamma, R, SECONDARY_NOZZLE_EFF)
 
 
 def _choke_temperatures(
-        req: Requirements,
+        conditions: OperationConditions,
         gamma: float,
 ) -> None:
     """Fig. 3 — Eqs. (9), (10): Tpy, Tsy."""
 
-    req.temperature[Phase.PRIMARY, Loc.CHOKE] = (
-        req.temperature[Phase.PRIMARY, Loc.INLET] /
-        _isentropic_relation(gamma, req.mach[Phase.PRIMARY, Loc.CHOKE]))
-    req.temperature[Phase.SECONDARY, Loc.CHOKE] = (
-        req.temperature[Phase.SECONDARY, Loc.INLET] /
-        _isentropic_relation(gamma, req.mach[Phase.SECONDARY, Loc.CHOKE]))
+    conditions.temperature[Phase.PRIMARY, Loc.CHOKE] = (
+        conditions.temperature[Phase.PRIMARY, Loc.INLET] /
+        _isentropic_relation(gamma, conditions.mach[Phase.PRIMARY, Loc.CHOKE]))
+    conditions.temperature[Phase.SECONDARY, Loc.CHOKE] = (
+        conditions.temperature[Phase.SECONDARY, Loc.INLET] /
+        _isentropic_relation(gamma, conditions.mach[Phase.SECONDARY, Loc.CHOKE]))
 
 
 def _mix_pre_shock_velocity_pressure(
-        req: Requirements,
+        conditions: OperationConditions,
         design: Design,
         gamma: float,
         R: float,
 ) -> None:
     """Fig. 3 — Eqs. (11), (13), (14), (19): Pm, Vpy, Vsy, Vm."""
 
-    req.velocity[Phase.PRIMARY, Loc.CHOKE] = _velocity_from_mach(
-        req.mach[Phase.PRIMARY, Loc.CHOKE], gamma, R,
-        req.temperature[Phase.PRIMARY, Loc.CHOKE])
-    req.velocity[Phase.SECONDARY, Loc.CHOKE] = _velocity_from_mach(
-        req.mach[Phase.SECONDARY, Loc.CHOKE], gamma, R,
-        req.temperature[Phase.SECONDARY, Loc.CHOKE])
-    req.pressure[Phase.MIX, Loc.PRE_SHOCK] = (
-        req.pressure[Phase.SECONDARY, Loc.CHOKE])
+    conditions.velocity[Phase.PRIMARY, Loc.CHOKE] = _velocity_from_mach(
+        conditions.mach[Phase.PRIMARY, Loc.CHOKE], gamma, R,
+        conditions.temperature[Phase.PRIMARY, Loc.CHOKE])
+    conditions.velocity[Phase.SECONDARY, Loc.CHOKE] = _velocity_from_mach(
+        conditions.mach[Phase.SECONDARY, Loc.CHOKE], gamma, R,
+        conditions.temperature[Phase.SECONDARY, Loc.CHOKE])
+    conditions.pressure[Phase.MIX, Loc.PRE_SHOCK] = (
+        conditions.pressure[Phase.SECONDARY, Loc.CHOKE])
     fm = _mixing_coeff(
         design.area[Phase.MIX, Loc.AFTERMIX] /
         design.area[Phase.PRIMARY, Loc.THROAT])
-    req.velocity[Phase.MIX, Loc.PRE_SHOCK] = fm * (
-        req.mass_flow_rate[Phase.PRIMARY] * req.velocity[Phase.PRIMARY, Loc.CHOKE] +
-        req.mass_flow_rate[Phase.SECONDARY] *
-        req.velocity[Phase.SECONDARY, Loc.CHOKE]
-    ) / (req.mass_flow_rate[Phase.PRIMARY] + req.mass_flow_rate[Phase.SECONDARY])
+    conditions.velocity[Phase.MIX, Loc.PRE_SHOCK] = fm * (
+        conditions.mass_flow_rate[Phase.PRIMARY] *
+        conditions.velocity[Phase.PRIMARY, Loc.CHOKE] +
+        conditions.mass_flow_rate[Phase.SECONDARY] *
+        conditions.velocity[Phase.SECONDARY, Loc.CHOKE]
+    ) / (conditions.mass_flow_rate[Phase.PRIMARY] +
+         conditions.mass_flow_rate[Phase.SECONDARY])
 
 
 def _mix_pre_shock_temperature_mach(
-        req: Requirements,
+        conditions: OperationConditions,
         gamma: float,
         R: float,
         cp: float,
@@ -305,56 +325,53 @@ def _mix_pre_shock_temperature_mach(
     """Fig. 3 — Eqs. (12), (15): Tm, Mm."""
 
     primary_choke_energy = (
-        cp * req.temperature[Phase.PRIMARY, Loc.CHOKE] +
-        req.velocity[Phase.PRIMARY, Loc.CHOKE] ** 2 / 2.0)
+        cp * conditions.temperature[Phase.PRIMARY, Loc.CHOKE] +
+        conditions.velocity[Phase.PRIMARY, Loc.CHOKE] ** 2 / 2.0)
     secondary_choke_energy = (
-        cp * req.temperature[Phase.SECONDARY, Loc.CHOKE] +
-        req.velocity[Phase.SECONDARY, Loc.CHOKE] ** 2 / 2.0)
+        cp * conditions.temperature[Phase.SECONDARY, Loc.CHOKE] +
+        conditions.velocity[Phase.SECONDARY, Loc.CHOKE] ** 2 / 2.0)
 
-    req.temperature[Phase.MIX, Loc.PRE_SHOCK] = 1/cp*(
-        (req.mass_flow_rate[Phase.PRIMARY] * primary_choke_energy +
-         req.mass_flow_rate[Phase.SECONDARY] * secondary_choke_energy) /
-        (req.mass_flow_rate[Phase.PRIMARY] +
-         req.mass_flow_rate[Phase.SECONDARY]) -
-        req.velocity[Phase.MIX, Loc.PRE_SHOCK] ** 2 / 2.0)
+    conditions.temperature[Phase.MIX, Loc.PRE_SHOCK] = 1/cp*(
+        (conditions.mass_flow_rate[Phase.PRIMARY] * primary_choke_energy +
+         conditions.mass_flow_rate[Phase.SECONDARY] * secondary_choke_energy) /
+        (conditions.mass_flow_rate[Phase.PRIMARY] +
+         conditions.mass_flow_rate[Phase.SECONDARY]) -
+        conditions.velocity[Phase.MIX, Loc.PRE_SHOCK] ** 2 / 2.0)
 
-    req.mach[Phase.MIX, Loc.PRE_SHOCK] = (
-        req.velocity[Phase.MIX, Loc.PRE_SHOCK] /
-        np.sqrt(gamma * R * req.temperature[Phase.MIX, Loc.PRE_SHOCK]))
+    conditions.mach[Phase.MIX, Loc.PRE_SHOCK] = (
+        conditions.velocity[Phase.MIX, Loc.PRE_SHOCK] /
+        np.sqrt(gamma * R * conditions.temperature[Phase.MIX, Loc.PRE_SHOCK]))
 
 
 def _aftermix_state(
-        req: Requirements,
+        conditions: OperationConditions,
         gamma: float,
 ) -> None:
     """Fig. 3 — Eqs. (16), (17): P3, M3."""
 
-    req.pressure[Phase.MIX, Loc.AFTERMIX] = (
-        req.pressure[Phase.MIX, Loc.PRE_SHOCK] *
+    conditions.pressure[Phase.MIX, Loc.AFTERMIX] = (
+        conditions.pressure[Phase.MIX, Loc.PRE_SHOCK] *
         (1.0 + 2.0 * gamma / (gamma + 1.0) *
-         (req.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2 - 1.0)))
-    req.mach[Phase.MIX, Loc.AFTERMIX] = np.sqrt(
-        _isentropic_relation(gamma, req.mach[Phase.MIX, Loc.PRE_SHOCK]) /
-        (gamma * req.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2 -
+         (conditions.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2 - 1.0)))
+    conditions.mach[Phase.MIX, Loc.AFTERMIX] = np.sqrt(
+        _isentropic_relation(gamma, conditions.mach[Phase.MIX, Loc.PRE_SHOCK]) /
+        (gamma * conditions.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2 -
          (gamma - 1.0) / 2.0))
 
 
 def _mix_drain_pressure(
-        req: Requirements,
+        conditions: OperationConditions,
         gamma: float,
 ) -> None:
     """Fig. 3 — Eq. (18): Pc."""
 
-    req.pressure[Phase.MIX, Loc.DRAIN] = (
-        req.pressure[Phase.MIX, Loc.AFTERMIX] *
-        _isentropic_relation(gamma, req.mach[Phase.MIX, Loc.AFTERMIX]) **
+    conditions.pressure[Phase.MIX, Loc.DRAIN] = (
+        conditions.pressure[Phase.MIX, Loc.AFTERMIX] *
+        _isentropic_relation(gamma, conditions.mach[Phase.MIX, Loc.AFTERMIX]) **
         (gamma / (gamma - 1.0)))
 
 
-def _finalize_mix_geometry(
-        req: Requirements,
-        design: Design,
-) -> None:
+def _finalize_mix_geometry(design: Design) -> None:
     """Set mix-section diameters"""
 
     design.diameter[Phase.MIX, Loc.AFTERMIX] = np.sqrt(

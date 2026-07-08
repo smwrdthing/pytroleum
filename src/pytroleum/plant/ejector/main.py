@@ -6,8 +6,8 @@ from CoolProp.CoolProp import PropsSI
 from jet_huang import (
     Design,
     Loc,
-    OperationConditions,
     Phase,
+    Requirements,
     _LAST_LOC,
     _LAST_PHASE,
     solve_dimensions,
@@ -47,9 +47,8 @@ design.area[Phase.PRIMARY, Loc.EXHAUST] = np.pi / 4 * \
 _eos = AbstractState("HEOS", FLUID)
 _eos.specify_phase(CoolProp.iphase_gas)
 
-req = OperationConditions(
+req = Requirements(
     phase=_eos,
-    mass_flow_rate=np.zeros(2),
     pressure=np.full(SHAPE, np.nan),
     temperature=np.full(SHAPE, np.nan),
 )
@@ -59,26 +58,27 @@ req.pressure[Phase.SECONDARY, Loc.INLET] = P_evap
 req.temperature[Phase.PRIMARY, Loc.INLET] = T_gen + 273.15
 req.temperature[Phase.SECONDARY, Loc.INLET] = T_evap + 273.15
 
-solve_dimensions(req, design, Pc_star)
+conditions = solve_dimensions(req, design, Pc_star)
 
 print("\n" + "=" * 60)
 print("OPERATING CONDITIONS")
 print("=" * 60)
-req.report()
+conditions.report()
 
 print("\n" + "=" * 60)
 print("GEOMETRY")
 print("=" * 60)
 design.report()
 
-omega = req.mass_flow_rate[Phase.SECONDARY] / req.mass_flow_rate[Phase.PRIMARY]
+omega = conditions.mass_flow_rate[Phase.SECONDARY] / \
+    conditions.mass_flow_rate[Phase.PRIMARY]
 A3_over_At = design.area[Phase.MIX, Loc.AFTERMIX] / \
     design.area[Phase.PRIMARY, Loc.THROAT]
 print("\n" + "=" * 60)
 print(f"Entrainment ratio  omega = ms/mp = {omega:.4f}")
 print(f"Area ratio       A3/At         = {A3_over_At:.4f}")
 print(f"Compression ratio  Pc/Pe         = "
-      f"{req.pressure[Phase.MIX, Loc.DRAIN] / P_evap:.4f}")
+      f"{conditions.pressure[Phase.MIX, Loc.DRAIN] / P_evap:.4f}")
 print("=" * 60)
 
 # NOTE такие скрипты кладём потом в examples, в пакете не оставляем
