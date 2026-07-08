@@ -22,10 +22,10 @@ SECONDARY_NOZZLE_EFF = 0.85
 PRIMARY_CORE_AREA_FACTOR = 0.88
 
 MACH_GUESS = 2.0
-_DA3 = 1e-8  # ΔA3, m² (Fig. 3)
+_DA3 = 1e-5  # ΔA3, m² (Fig. 3)
 _A3_INITIAL_RATIO = 7.0
 _PC_REL_TOLERANCE = 1e-3
-_MAX_ITER = 500
+_MAX_ITER = 1000
 
 
 class Phase(IntEnum):
@@ -159,9 +159,9 @@ def solve_dimensions(
 
         # Fig. 3: Pc vs Pc* → подбор A3 → Eq. (4)
         if Pc >= Pc_star:
-            design.area[Phase.MIX, Loc.AFTERMIX] += _DA3
-        else:
             design.area[Phase.MIX, Loc.AFTERMIX] -= _DA3
+        else:
+            design.area[Phase.MIX, Loc.AFTERMIX] += _DA3
         iter_count += 1
 
     _finalize_mix_geometry(design)
