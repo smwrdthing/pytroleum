@@ -158,6 +158,8 @@ def solve_dimensions(
                 f"within {max_iter} iterations.")
 
         # Fig. 3: Pc vs Pc* → подбор A3 → Eq. (4)
+        # Эта часть не соответствует блок схеме, начинаю менять знаки как
+        # там и не сходится ничего
         if Pc >= Pc_star:
             design.area[Phase.MIX, Loc.AFTERMIX] += _DA3
         else:
