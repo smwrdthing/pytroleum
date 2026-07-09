@@ -8,8 +8,6 @@ from jet_huang import (
     Loc,
     Phase,
     Requirements,
-    _LAST_LOC,
-    _LAST_PHASE,
     solve_dimensions,
 )
 
@@ -23,7 +21,7 @@ P_gen = PropsSI("P", "T", T_gen + 273.15, "Q", 1.0, FLUID)
 P_evap = PropsSI("P", "T", T_evap + 273.15, "Q", 1.0, FLUID)
 Pc_star = PropsSI("P", "T", Tc_star + 273.15, "Q", 1.0, FLUID)
 
-SHAPE = (_LAST_PHASE, _LAST_LOC)
+SHAPE = (len(Phase), len(Loc))
 
 design = Design(
     diameter=np.full(SHAPE, np.nan),

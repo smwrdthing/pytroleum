@@ -54,8 +54,7 @@ _LAST_PHASE = len(Phase)
 _LAST_LOC = len(Loc)
 _SHAPE = (_LAST_PHASE, _LAST_LOC)
 
-# NOTE сделать внутренним, если больше нигде не нужен
-CONTAINER = np.full(_SHAPE, np.nan)
+_CONTAINER = np.full(_SHAPE, np.nan)
 
 _N_FLOW_STREAMS = Phase.M
 # NOTE ^^^ если мы используем enum - всё, что выше можно сделать через AUTO внутри enum,
@@ -67,8 +66,8 @@ class Requirements:
     """Boundary conditions from the technical specification (ТЗ)."""
 
     phase: AbstractState
-    pressure: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
-    temperature: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
+    pressure: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
+    temperature: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
 
     def report(self) -> None:
         from jet_huang_report import report_inputs
@@ -82,10 +81,10 @@ class OperationConditions:
     mass_flow_rate: np.ndarray = field(
         default_factory=lambda: np.zeros(_N_FLOW_STREAMS))
 
-    pressure: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
-    temperature: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
-    velocity: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
-    mach: np.ndarray = field(default_factory=lambda: CONTAINER.copy())
+    pressure: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
+    temperature: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
+    velocity: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
+    mach: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
 
     def __post_init__(self) -> None:
         self.mass_flow_rate = np.array(
@@ -269,7 +268,7 @@ def _primary_exhaust_state(
     # NOTE Идея, чтобы повысить читаемость:
     # NOTE Для отношения площадей можно в design завести метод area_ratio, который будет
     # NOTE принимать целочисленные значения, получится что-то типа
-    # NOTE >> design.area_ratio(Loc.EXHAUST,Loc.THROAT)
+    # NOTE >> design.area_ratio(Loc.EX, Loc.TH)
 
     conditions.pressure[Phase.P, Loc.EX] = (
         conditions.pressure[Phase.P, Loc.IN] /
