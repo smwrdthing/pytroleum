@@ -87,9 +87,7 @@ class OperationConditions:
         self.mass_flow_rate = np.array(
             [*self.mass_flow_rate, np.sum(self.mass_flow_rate)])
 
-    def copy(self, req: Requirements) -> None:
-        # NOTE вместо copy лучше назвать read_requirements
-
+    def read_requirements(self, req: Requirements) -> None:
         self.phase = req.phase
         # NOTE надёжнее будет сконструировать новые объекты для уравнений состояний,
         # NOTE здесь может оказаться так, что self.phase и req.phase - одно и то же,
@@ -129,7 +127,7 @@ def solve_dimensions(
     """Huang et al. (1999) critical-mode analysis, Eqs. (1)–(18), Fig. 3."""
 
     conditions = OperationConditions(phase=req.phase)
-    conditions.copy(req)
+    conditions.read_requirements(req)
 
     gamma, R, cp = _extract_properties_for(
         conditions.phase,
