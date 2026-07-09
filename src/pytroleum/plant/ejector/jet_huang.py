@@ -12,7 +12,9 @@ from CoolProp.constants import PT_INPUTS
 import numpy as np
 from scipy.optimize import fsolve
 from enum import IntEnum, auto
-
+from jet_huang_report import report_inputs
+from jet_huang_report import report_conditions
+from jet_huang_report import report_dimensions
 
 _R_UNIV = 8.314462618
 
@@ -66,7 +68,6 @@ class Requirements:
     temperature: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
 
     def report(self) -> None:
-        from jet_huang_report import report_inputs
         report_inputs(self)
 
 
@@ -99,7 +100,6 @@ class OperationConditions:
         self.temperature = req.temperature.copy()
 
     def report(self) -> None:
-        from jet_huang_report import report_conditions
         report_conditions(self)
 
 
@@ -112,14 +112,6 @@ class Design:
     length: np.ndarray
 
     def report(self) -> None:
-
-        from jet_huang_report import report_dimensions
-        # NOTE все импорты лучше держать вверху, иногда импорты внутри функций
-        # NOTE оправданы (для избежания циклических импортов), но здесь это лишнее
-        # NOTE
-        # NOTE В случае с циклическими импортами более надёжное решение - файл-интерфейс
-        # NOTE с классами-протоколами (см. src/pytroleum/sdyna)
-
         report_dimensions(self)
 
 
