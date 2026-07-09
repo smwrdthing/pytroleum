@@ -27,6 +27,13 @@ _A3_INITIAL_RATIO = 7.0
 _PC_REL_TOLERANCE = 1e-3
 _MAX_ITER = 1000
 
+# NOTE для индексов не помешает завести сокращения:
+# NOTE >> P = PRIMARY = 0
+# NOTE и т.д.
+# NOTE
+# NOTE Тогда в коде модуля можно пользоваться сокращениями для читаемости, а у
+# NOTE пользователя будет доступ к полным именам
+
 
 class Phase(IntEnum):
     """Stream indices (jet, carry, mixed)."""
@@ -53,8 +60,13 @@ class Loc(IntEnum):
 _LAST_PHASE = len(Phase)
 _LAST_LOC = len(Loc)
 _SHAPE = (_LAST_PHASE, _LAST_LOC)
+
+# NOTE сделать внутренним, если больше нигде не нужен
 CONTAINER = np.full(_SHAPE, np.nan)
+
 _N_FLOW_STREAMS = Phase.MIX
+# NOTE ^^^ если мы используем enum - всё, что выше можно сделать через AUTO внутри enum,
+# NOTE см. документацию enumerations in python
 
 
 @dataclass
@@ -87,7 +99,14 @@ class OperationConditions:
             [*self.mass_flow_rate, np.sum(self.mass_flow_rate)])
 
     def copy(self, req: Requirements) -> None:
+        # NOTE вместо copy лучше назвать read_requirements
+
         self.phase = req.phase
+        # NOTE надёжнее будет сконструировать новые объекты для уравнений состояний,
+        # NOTE здесь может оказаться так, что self.phase и req.phase - одно и то же,
+        # NOTE тогда при изменении self.phase будет меняться и req.phase, при копировании
+        # NOTE объектов из полей классов такую связь нужно исключить
+
         self.pressure = req.pressure.copy()
         self.temperature = req.temperature.copy()
 
@@ -105,17 +124,28 @@ class Design:
     length: np.ndarray
 
     def report(self) -> None:
+
         from jet_huang_report import report_dimensions
+        # NOTE все импорты лучше держать вверху, иногда импорты внутри функций
+        # NOTE оправданы (для избежания циклических импортов), но здесь это лишнее
+        # NOTE
+        # NOTE В случае с циклическими импортами более надёжное решение - файл-интерфейс
+        # NOTE с классами-протоколами (см. src/pytroleum/sdyna)
+
         report_dimensions(self)
 
 
 def solve_dimensions(
         req: Requirements,
+
         design: Design,
-        Pc_star: float,
+        # NOTE design лучше создавать внутри функции, которая выполняет проектный расчёт
+        # NOTE и возвращать вместе с OperationConditions (см. заметки в __init__.py)
+
+        Pc_star: float,  # NOTE в requirements
         Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
         max_iter: int = _MAX_ITER,
-) -> OperationConditions:
+) -> OperationConditions:  # NOTE сигнатура вызова и имя функции противоречат друг-другу
     """Huang et al. (1999) critical-mode analysis, Eqs. (1)–(18), Fig. 3."""
 
     conditions = OperationConditions(phase=req.phase)
@@ -126,8 +156,9 @@ def solve_dimensions(
         conditions.pressure[Phase.PRIMARY, Loc.INLET],
         conditions.temperature[Phase.PRIMARY, Loc.INLET],
     )
-
-    _primary_mass_flow(conditions, design, gamma, R)
+    # NOTE если мы дальше везде тащим эти параметры - лучше записать их один раз
+    # NOTE в conditions и передавать только conditions
+    _primary_mass_flow(conditions, design, gamma, R)  # NOTE здесь будет чище
     _primary_exhaust_state(conditions, design, gamma)
     _secondary_choke_state(conditions, gamma)
 
@@ -140,10 +171,18 @@ def solve_dimensions(
         while True:
             _primary_core_state(conditions, design, gamma)
             _secondary_choke_area(design)
+
+            # NOTE если такие кнострукции нужны - их надо выделять визуально,
+            # NOTE без пустых линий до и после этот условный блок сливается со всем
+            # NOTE остальным и теряется из виду
             if design.area[Phase.SECONDARY, Loc.CHOKE] >= 0.0:
+                # NOTE Условие цикла сразу в while, break здесь не нужен
                 break
+
+            # NOTE можно оператором +=
             design.area[Phase.MIX, Loc.AFTERMIX] = (
                 design.area[Phase.PRIMARY, Loc.CHOKE] + _DA3)
+            # NOTE Индексируем по разным локациям?
 
         _secondary_mass_flow(conditions, design, gamma, R)
         _choke_temperatures(conditions, gamma)
@@ -153,10 +192,31 @@ def solve_dimensions(
         _mix_drain_pressure(conditions, gamma)
 
         Pc = conditions.pressure[Phase.MIX, Loc.DRAIN]
+        # NOTE условие можно в функцию от conditoins, будет чище + не надо вытаскивать Pc
         if abs(Pc - Pc_star) / Pc_star <= Pc_rel_tolerance:
+            # NOTE Условие цикла сразу в while, break здесь не нужен
             break
+        # NOTE в итоге должно быть что-то вроде
+        # NOTE >> while not converged(conditions):
+        # NOTE >>     # код цикла
+        # NOTE может быть
+        # NOTE >> while not conditions.converged(): # если сделать converged методом
+        # NOTE >>     # код цикла
+        # NOTE
+        # NOTE Сигнатура функции, проверящей сходимость, может быть сложнее, но в целом
+        # NOTE можно добиться вида сверху, если записать недостающее в conditions
 
         if iter_count >= max_iter:
+            # NOTE Сообщение об ошибке либо не должно ссылаться на внешний источник
+            # NOTE совсем, либо должно быть более подробным
+            # NOTE
+            # NOTE новый пользователь библиотеки через 3 года не будет понимать, на какие
+            # NOTE рисунки/блок-схемы/таблицы ссылка, сама статья тоже может потеряться,
+            # NOTE а человек поленится снова её искать в интернете
+            # NOTE
+            # NOTE Пример:
+            # NOTE f"Solution algorithm did not converge in {max_iter} iterations, "+
+            # NOTE "outer loop is abandoned"
             raise RuntimeError(
                 f"solve_dimensions: Fig. 3 did not converge to Pc = Pc* "
                 f"within {max_iter} iterations.")
@@ -184,6 +244,12 @@ def _primary_mass_flow(
         R: float,
 ) -> None:
     """Fig. 3 — Eq. (1): mp."""
+    # NOTE докстринги нужны для документации функции, короткие ссылки на внешние
+    # NOTE источники вне кода - комментариями (либо вовсе исключить, см. заметки выше)
+    # NOTE
+    # NOTE Либо для полного докстринга можно оставить ссылку внизу в качестве
+    # NOTE дополнительной информации, оформление таких штук можно подсмотреть в
+    # NOTE библиотеках типа numpy, scipy
 
     conditions.mass_flow_rate[Phase.PRIMARY] = _mass_flow_rate(
         conditions.pressure[Phase.PRIMARY, Loc.INLET],
@@ -207,6 +273,11 @@ def _primary_exhaust_state(
             design.area[Phase.PRIMARY, Loc.EXHAUST] /
             design.area[Phase.PRIMARY, Loc.THROAT]),
     )[0]
+    # NOTE Идея, чтобы повысить читаемость:
+    # NOTE Для отношения площадей можно в design завести метод area_ratio, который будет
+    # NOTE принимать целочисленные значения, получится что-то типа
+    # NOTE >> design.area_ratio(Loc.EXHAUST,Loc.THROAT)
+
     conditions.pressure[Phase.PRIMARY, Loc.EXHAUST] = (
         conditions.pressure[Phase.PRIMARY, Loc.INLET] /
         _isentropic_relation(gamma, conditions.mach[Phase.PRIMARY, Loc.EXHAUST]) **
@@ -439,6 +510,7 @@ def _primary_exhaust_mach_residual(
 ) -> float | np.ndarray:
     """Eq. (2) residual: (A/A*)² − f(M) for primary nozzle exit Mach."""
 
+    # NOTE многоэтажные return'ы тяжело читаются
     return (
         1.0 / mach ** 2 *
         (2.0 / (gamma + 1.0) * _isentropic_relation(gamma, mach)) **
@@ -481,3 +553,14 @@ def _mixing_coeff(area_ratio: float) -> float:
     if area_ratio > 6.9:
         return 0.82
     return 0.84
+
+# NOTE Идея для рефакторинга: многие функции работают только с conditions, их можно
+# NOTE cделать методами класса OperationConditions
+
+# NOTE Почитать:
+# NOTE https://gist.github.com/sloria/7001839
+# NOTE + глянуть ссылки внизу страницы
+
+# NOTE Привести файлы в пакете в порядок: убать лишнее, пересмотреть имена нужных файлов
+# NOTE имена файлов - часть API (то, что видит пользователь), они должны быть как можно
+# NOTE более ёмкими и репрезентативными
