@@ -11,7 +11,7 @@ from CoolProp.constants import PT_INPUTS
 
 import numpy as np
 from scipy.optimize import fsolve
-from enum import IntEnum
+from enum import IntEnum, auto
 
 
 _R_UNIV = 8.314462618
@@ -31,34 +31,30 @@ _MAX_ITER = 1000
 class Phase(IntEnum):
     """Stream indices (jet, carry, mixed)."""
 
-    P = PRIMARY = 0
-    S = SECONDARY = 1
-    M = MIX = 2
+    P, PRIMARY = 0, 0
+    S, SECONDARY = 1, 1
+    M, MIX = 2, 2
+
+    SIZE = auto()
 
 
 class Loc(IntEnum):
     """Ejector section indices along the flow path (Huang et al., Fig. 2)."""
 
-    IN = INLET = 0
-    TH = THROAT = 1
-    EX = EXHAUST = 2
-    PM = PREMIX = 3
-    CH = CHOKE = 4
-    PS = PRE_SHOCK = 5
-    SH = SHOCK = 6
-    AM = AFTERMIX = 7
-    D = DRAIN = 8
+    IN, INLET = 0, 0
+    TH, THROAT = 1, 1
+    EX, EXHAUST = 2, 2
+    PM, PREMIX = 3, 3
+    CH, CHOKE = 4, 4
+    PS, PRE_SHOCK = 5, 5
+    SH, SHOCK = 6, 6
+    AM, AFTERMIX = 7, 7
+    D, DRAIN = 8, 8
+
+    SIZE = auto()
 
 
-_LAST_PHASE = len(Phase)
-_LAST_LOC = len(Loc)
-_SHAPE = (_LAST_PHASE, _LAST_LOC)
-
-_CONTAINER = np.full(_SHAPE, np.nan)
-
-_N_FLOW_STREAMS = Phase.M
-# NOTE ^^^ если мы используем enum - всё, что выше можно сделать через AUTO внутри enum,
-# NOTE см. документацию enumerations in python
+_CONTAINER = np.full((Phase.SIZE, Loc.SIZE), np.nan)
 
 
 @dataclass
@@ -79,7 +75,7 @@ class OperationConditions:
 
     phase: AbstractState
     mass_flow_rate: np.ndarray = field(
-        default_factory=lambda: np.zeros(_N_FLOW_STREAMS))
+        default_factory=lambda: np.zeros(Phase.M))
 
     pressure: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
     temperature: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())

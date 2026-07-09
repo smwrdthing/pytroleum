@@ -21,7 +21,7 @@ P_gen = PropsSI("P", "T", T_gen + 273.15, "Q", 1.0, FLUID)
 P_evap = PropsSI("P", "T", T_evap + 273.15, "Q", 1.0, FLUID)
 Pc_star = PropsSI("P", "T", Tc_star + 273.15, "Q", 1.0, FLUID)
 
-SHAPE = (len(Phase), len(Loc))
+SHAPE = (Phase.SIZE, Loc.SIZE)
 
 design = Design(
     diameter=np.full(SHAPE, np.nan),
