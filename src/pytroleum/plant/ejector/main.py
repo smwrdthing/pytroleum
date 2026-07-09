@@ -32,13 +32,13 @@ design = Design(
 )
 
 # Table 1, nozzle E
-design.diameter[Phase.PRIMARY, Loc.THROAT] = 2.82e-3
-design.area[Phase.PRIMARY, Loc.THROAT] = np.pi / 4 * \
-    design.diameter[Phase.PRIMARY, Loc.THROAT] ** 2
+design.diameter[Phase.P, Loc.TH] = 2.82e-3
+design.area[Phase.P, Loc.TH] = np.pi / 4 * \
+    design.diameter[Phase.P, Loc.TH] ** 2
 
-design.diameter[Phase.PRIMARY, Loc.EXHAUST] = 5.10e-3
-design.area[Phase.PRIMARY, Loc.EXHAUST] = np.pi / 4 * \
-    design.diameter[Phase.PRIMARY, Loc.EXHAUST] ** 2
+design.diameter[Phase.P, Loc.EX] = 5.10e-3
+design.area[Phase.P, Loc.EX] = np.pi / 4 * \
+    design.diameter[Phase.P, Loc.EX] ** 2
 
 _eos = AbstractState("HEOS", FLUID)
 _eos.specify_phase(CoolProp.iphase_gas)
@@ -49,10 +49,10 @@ req = Requirements(
     temperature=np.full(SHAPE, np.nan),
 )
 
-req.pressure[Phase.PRIMARY, Loc.INLET] = P_gen
-req.pressure[Phase.SECONDARY, Loc.INLET] = P_evap
-req.temperature[Phase.PRIMARY, Loc.INLET] = T_gen + 273.15
-req.temperature[Phase.SECONDARY, Loc.INLET] = T_evap + 273.15
+req.pressure[Phase.P, Loc.IN] = P_gen
+req.pressure[Phase.S, Loc.IN] = P_evap
+req.temperature[Phase.P, Loc.IN] = T_gen + 273.15
+req.temperature[Phase.S, Loc.IN] = T_evap + 273.15
 
 conditions = solve_dimensions(req, design, Pc_star)
 

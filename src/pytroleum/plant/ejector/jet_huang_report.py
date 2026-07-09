@@ -33,138 +33,138 @@ def report_inputs(req: Requirements) -> None:
     print_row("Working fluid", req.phase.name())
     print_row(
         "Vapor temperature at the nozzle inlet Tg",
-        f"{req.temperature[Phase.PRIMARY, Loc.INLET] - _K_TO_C:.2f} C "
-        f"({req.temperature[Phase.PRIMARY, Loc.INLET]:.2f} K)")
+        f"{req.temperature[Phase.P, Loc.IN] - _K_TO_C:.2f} C "
+        f"({req.temperature[Phase.P, Loc.IN]:.2f} K)")
     print_row(
         "Vapor pressure at the nozzle inlet Pg",
-        f"{req.pressure[Phase.PRIMARY, Loc.INLET] * _PA_TO_MPA:.4f}", "MPa")
+        f"{req.pressure[Phase.P, Loc.IN] * _PA_TO_MPA:.4f}", "MPa")
     print_row(
         "Vapor temperature at the suction port Te",
-        f"{req.temperature[Phase.SECONDARY, Loc.INLET] - _K_TO_C:.2f} C "
-        f"({req.temperature[Phase.SECONDARY, Loc.INLET]:.2f} K)")
+        f"{req.temperature[Phase.S, Loc.IN] - _K_TO_C:.2f} C "
+        f"({req.temperature[Phase.S, Loc.IN]:.2f} K)")
     print_row(
         "Vapor pressure at the suction port Pe",
-        f"{req.pressure[Phase.SECONDARY, Loc.INLET] * _PA_TO_MPA:.4f}", "MPa")
+        f"{req.pressure[Phase.S, Loc.IN] * _PA_TO_MPA:.4f}", "MPa")
 
 
 def report_dimensions(design: Design) -> None:
     _major_header("DIMENSIONS")
     print_row(
         "Nozzle throat diameter dt",
-        f"{design.diameter[Phase.PRIMARY, Loc.THROAT] * _M_TO_MM:.2f}", "mm")
+        f"{design.diameter[Phase.P, Loc.TH] * _M_TO_MM:.2f}", "mm")
     print_row(
         "Nozzle exit diameter dp1",
-        f"{design.diameter[Phase.PRIMARY, Loc.EXHAUST] * _M_TO_MM:.2f}", "mm")
+        f"{design.diameter[Phase.P, Loc.EX] * _M_TO_MM:.2f}", "mm")
     print(_MINOR_DIVIDER)
     print_row(
         "Nozzle throat area At",
-        f"{design.area[Phase.PRIMARY, Loc.THROAT] * _M2_TO_CM2:.2f}", "cm2")
+        f"{design.area[Phase.P, Loc.TH] * _M2_TO_CM2:.2f}", "cm2")
     print_row(
         "Nozzle exit area Ap1",
-        f"{design.area[Phase.PRIMARY, Loc.EXHAUST] * _M2_TO_CM2:.2f}", "cm2")
+        f"{design.area[Phase.P, Loc.EX] * _M2_TO_CM2:.2f}", "cm2")
     print_row(
         "Primary flow area at plane y-y Apy",
-        f"{design.area[Phase.PRIMARY, Loc.CHOKE] * _M2_TO_CM2:.2f}", "cm2")
+        f"{design.area[Phase.P, Loc.CH] * _M2_TO_CM2:.2f}", "cm2")
     print_row(
         "Suction flow area at plane y-y Asy",
-        f"{design.area[Phase.SECONDARY, Loc.CHOKE] * _M2_TO_CM2:.2f}", "cm2")
+        f"{design.area[Phase.S, Loc.CH] * _M2_TO_CM2:.2f}", "cm2")
     print_row(
         "Constant-area section area A3",
-        f"{design.area[Phase.MIX, Loc.AFTERMIX] * _M2_TO_CM2:.2f}", "cm2")
+        f"{design.area[Phase.M, Loc.AM] * _M2_TO_CM2:.2f}", "cm2")
     print_row(
         "Constant-area section diameter d3",
-        f"{design.diameter[Phase.MIX, Loc.AFTERMIX] * _M_TO_MM:.2f}", "mm")
+        f"{design.diameter[Phase.M, Loc.AM] * _M_TO_MM:.2f}", "mm")
     print_row(
         "Area ratio A3/At",
-        f"{(design.area[Phase.MIX, Loc.AFTERMIX] /
-            design.area[Phase.PRIMARY, Loc.THROAT]):.4f}")
+        f"{(design.area[Phase.M, Loc.AM] /
+            design.area[Phase.P, Loc.TH]):.4f}")
 
 
 def report_conditions(conditions: OperationConditions) -> None:
     _major_header("OPERATION")
     print_row(
         "Primary mass flow rate mp",
-        f"{conditions.mass_flow_rate[Phase.PRIMARY]:.4e}", "kg/s")
+        f"{conditions.mass_flow_rate[Phase.P]:.4e}", "kg/s")
     print_row(
         "Suction mass flow rate ms",
-        f"{conditions.mass_flow_rate[Phase.SECONDARY]:.4e}", "kg/s")
+        f"{conditions.mass_flow_rate[Phase.S]:.4e}", "kg/s")
     print_row(
         "Total mass flow rate mp + ms",
-        f"{(conditions.mass_flow_rate[Phase.PRIMARY] +
-            conditions.mass_flow_rate[Phase.SECONDARY]):.4e}",
+        f"{(conditions.mass_flow_rate[Phase.P] +
+            conditions.mass_flow_rate[Phase.S]):.4e}",
         "kg/s")
     print_row(
         "Entrainment ratio omega = ms/mp",
-        f"{(conditions.mass_flow_rate[Phase.SECONDARY] /
-            conditions.mass_flow_rate[Phase.PRIMARY]):.4f}")
+        f"{(conditions.mass_flow_rate[Phase.S] /
+            conditions.mass_flow_rate[Phase.P]):.4f}")
     print_row(
         "Compression ratio Pc/Pe",
-        f"{(conditions.pressure[Phase.MIX, Loc.DRAIN] /
-            conditions.pressure[Phase.SECONDARY, Loc.INLET]):.4f}")
+        f"{(conditions.pressure[Phase.M, Loc.D] /
+            conditions.pressure[Phase.S, Loc.IN]):.4f}")
 
     _minor_header("SECTION p1")
     print_row(
         "Pressure at nozzle exit Pp1",
-        f"{conditions.pressure[Phase.PRIMARY, Loc.EXHAUST] * _PA_TO_MPA:.4f}",
+        f"{conditions.pressure[Phase.P, Loc.EX] * _PA_TO_MPA:.4f}",
         "MPa")
     print_row(
         "Mach number at nozzle exit Mp1",
-        f"{conditions.mach[Phase.PRIMARY, Loc.EXHAUST]:.4f}")
+        f"{conditions.mach[Phase.P, Loc.EX]:.4f}")
 
     _minor_header("SECTION y-y")
     print_row(
         "Primary pressure at plane y-y Ppy",
-        f"{conditions.pressure[Phase.PRIMARY, Loc.CHOKE] * _PA_TO_MPA:.4f}",
+        f"{conditions.pressure[Phase.P, Loc.CH] * _PA_TO_MPA:.4f}",
         "MPa")
     print_row(
         "Primary temperature at plane y-y Tpy",
-        f"{conditions.temperature[Phase.PRIMARY, Loc.CHOKE] - _K_TO_C:.2f}", "C")
+        f"{conditions.temperature[Phase.P, Loc.CH] - _K_TO_C:.2f}", "C")
     print_row(
         "Primary Mach number at plane y-y Mpy",
-        f"{conditions.mach[Phase.PRIMARY, Loc.CHOKE]:.4f}")
+        f"{conditions.mach[Phase.P, Loc.CH]:.4f}")
     print_row(
         "Primary velocity at plane y-y Vpy",
-        f"{conditions.velocity[Phase.PRIMARY, Loc.CHOKE]:.2f}", "m/s")
+        f"{conditions.velocity[Phase.P, Loc.CH]:.2f}", "m/s")
     print_row(
         "Suction pressure at plane y-y Psy",
-        f"{conditions.pressure[Phase.SECONDARY, Loc.CHOKE] * _PA_TO_MPA:.4f}",
+        f"{conditions.pressure[Phase.S, Loc.CH] * _PA_TO_MPA:.4f}",
         "MPa")
     print_row(
         "Suction temperature at plane y-y Tsy",
-        f"{conditions.temperature[Phase.SECONDARY, Loc.CHOKE] - _K_TO_C:.2f}",
+        f"{conditions.temperature[Phase.S, Loc.CH] - _K_TO_C:.2f}",
         "C")
     print_row(
         "Suction velocity at plane y-y Vsy",
-        f"{conditions.velocity[Phase.SECONDARY, Loc.CHOKE]:.2f}", "m/s")
+        f"{conditions.velocity[Phase.S, Loc.CH]:.2f}", "m/s")
 
     _minor_header("SECTION m")
     print_row(
         "Mixed-flow pressure before shock Pm",
-        f"{conditions.pressure[Phase.MIX, Loc.PRE_SHOCK] * _PA_TO_MPA:.4f}",
+        f"{conditions.pressure[Phase.M, Loc.PS] * _PA_TO_MPA:.4f}",
         "MPa")
     print_row(
         "Mixed-flow temperature before shock Tm",
-        f"{conditions.temperature[Phase.MIX, Loc.PRE_SHOCK] - _K_TO_C:.2f}", "C")
+        f"{conditions.temperature[Phase.M, Loc.PS] - _K_TO_C:.2f}", "C")
     print_row(
         "Mixed-flow Mach number before shock Mm",
-        f"{conditions.mach[Phase.MIX, Loc.PRE_SHOCK]:.4f}")
+        f"{conditions.mach[Phase.M, Loc.PS]:.4f}")
     print_row(
         "Mixed-flow velocity before shock Vm",
-        f"{conditions.velocity[Phase.MIX, Loc.PRE_SHOCK]:.2f}", "m/s")
+        f"{conditions.velocity[Phase.M, Loc.PS]:.2f}", "m/s")
 
     _minor_header("SECTION 3")
     print_row(
         "Pressure at constant-area section exit P3",
-        f"{conditions.pressure[Phase.MIX, Loc.AFTERMIX] * _PA_TO_MPA:.4f}",
+        f"{conditions.pressure[Phase.M, Loc.AM] * _PA_TO_MPA:.4f}",
         "MPa")
     print_row(
         "Mach number at constant-area section exit M3",
-        f"{conditions.mach[Phase.MIX, Loc.AFTERMIX]:.4f}")
+        f"{conditions.mach[Phase.M, Loc.AM]:.4f}")
 
     _minor_header("SECTION c")
     print_row(
         "Discharge pressure at ejector exit Pc",
-        f"{conditions.pressure[Phase.MIX, Loc.DRAIN] * _PA_TO_MPA:.4f}",
+        f"{conditions.pressure[Phase.M, Loc.D] * _PA_TO_MPA:.4f}",
         "MPa")
 
     print(_MAJOR_DIVIDER)

@@ -27,34 +27,27 @@ _A3_INITIAL_RATIO = 7.0
 _PC_REL_TOLERANCE = 1e-3
 _MAX_ITER = 1000
 
-# NOTE для индексов не помешает завести сокращения:
-# NOTE >> P = PRIMARY = 0
-# NOTE и т.д.
-# NOTE
-# NOTE Тогда в коде модуля можно пользоваться сокращениями для читаемости, а у
-# NOTE пользователя будет доступ к полным именам
-
 
 class Phase(IntEnum):
     """Stream indices (jet, carry, mixed)."""
 
-    PRIMARY = 0
-    SECONDARY = 1
-    MIX = 2
+    P = PRIMARY = 0
+    S = SECONDARY = 1
+    M = MIX = 2
 
 
 class Loc(IntEnum):
     """Ejector section indices along the flow path (Huang et al., Fig. 2)."""
 
-    INLET = 0
-    THROAT = 1
-    EXHAUST = 2
-    PREMIX = 3
-    CHOKE = 4
-    PRE_SHOCK = 5
-    SHOCK = 6
-    AFTERMIX = 7
-    DRAIN = 8
+    IN = INLET = 0
+    TH = THROAT = 1
+    EX = EXHAUST = 2
+    PM = PREMIX = 3
+    CH = CHOKE = 4
+    PS = PRE_SHOCK = 5
+    SH = SHOCK = 6
+    AM = AFTERMIX = 7
+    D = DRAIN = 8
 
 
 _LAST_PHASE = len(Phase)
@@ -64,7 +57,7 @@ _SHAPE = (_LAST_PHASE, _LAST_LOC)
 # NOTE сделать внутренним, если больше нигде не нужен
 CONTAINER = np.full(_SHAPE, np.nan)
 
-_N_FLOW_STREAMS = Phase.MIX
+_N_FLOW_STREAMS = Phase.M
 # NOTE ^^^ если мы используем enum - всё, что выше можно сделать через AUTO внутри enum,
 # NOTE см. документацию enumerations in python
 
@@ -153,8 +146,8 @@ def solve_dimensions(
 
     gamma, R, cp = _extract_properties_for(
         conditions.phase,
-        conditions.pressure[Phase.PRIMARY, Loc.INLET],
-        conditions.temperature[Phase.PRIMARY, Loc.INLET],
+        conditions.pressure[Phase.P, Loc.IN],
+        conditions.temperature[Phase.P, Loc.IN],
     )
     # NOTE если мы дальше везде тащим эти параметры - лучше записать их один раз
     # NOTE в conditions и передавать только conditions
@@ -162,8 +155,8 @@ def solve_dimensions(
     _primary_exhaust_state(conditions, design, gamma)
     _secondary_choke_state(conditions, gamma)
 
-    design.area[Phase.MIX, Loc.AFTERMIX] = (
-        design.area[Phase.PRIMARY, Loc.THROAT] * _A3_INITIAL_RATIO)
+    design.area[Phase.M, Loc.AM] = (
+        design.area[Phase.P, Loc.TH] * _A3_INITIAL_RATIO)
 
     iter_count = 0
     while True:
@@ -175,13 +168,13 @@ def solve_dimensions(
             # NOTE если такие кнострукции нужны - их надо выделять визуально,
             # NOTE без пустых линий до и после этот условный блок сливается со всем
             # NOTE остальным и теряется из виду
-            if design.area[Phase.SECONDARY, Loc.CHOKE] >= 0.0:
+            if design.area[Phase.S, Loc.CH] >= 0.0:
                 # NOTE Условие цикла сразу в while, break здесь не нужен
                 break
 
             # NOTE можно оператором +=
-            design.area[Phase.MIX, Loc.AFTERMIX] = (
-                design.area[Phase.PRIMARY, Loc.CHOKE] + _DA3)
+            design.area[Phase.M, Loc.AM] = (
+                design.area[Phase.P, Loc.CH] + _DA3)
             # NOTE Индексируем по разным локациям?
 
         _secondary_mass_flow(conditions, design, gamma, R)
@@ -191,7 +184,7 @@ def solve_dimensions(
         _aftermix_state(conditions, gamma)
         _mix_drain_pressure(conditions, gamma)
 
-        Pc = conditions.pressure[Phase.MIX, Loc.DRAIN]
+        Pc = conditions.pressure[Phase.M, Loc.D]
         # NOTE условие можно в функцию от conditoins, будет чище + не надо вытаскивать Pc
         if abs(Pc - Pc_star) / Pc_star <= Pc_rel_tolerance:
             # NOTE Условие цикла сразу в while, break здесь не нужен
@@ -225,9 +218,9 @@ def solve_dimensions(
         # Эта часть не соответствует блок схеме, начинаю менять знаки как
         # там и не сходится ничего
         if Pc >= Pc_star:
-            design.area[Phase.MIX, Loc.AFTERMIX] += _DA3
+            design.area[Phase.M, Loc.AM] += _DA3
         else:
-            design.area[Phase.MIX, Loc.AFTERMIX] -= _DA3
+            design.area[Phase.M, Loc.AM] -= _DA3
         iter_count += 1
 
     _finalize_mix_geometry(design)
@@ -251,10 +244,10 @@ def _primary_mass_flow(
     # NOTE дополнительной информации, оформление таких штук можно подсмотреть в
     # NOTE библиотеках типа numpy, scipy
 
-    conditions.mass_flow_rate[Phase.PRIMARY] = _mass_flow_rate(
-        conditions.pressure[Phase.PRIMARY, Loc.INLET],
-        conditions.temperature[Phase.PRIMARY, Loc.INLET],
-        design.area[Phase.PRIMARY, Loc.THROAT],
+    conditions.mass_flow_rate[Phase.P] = _mass_flow_rate(
+        conditions.pressure[Phase.P, Loc.IN],
+        conditions.temperature[Phase.P, Loc.IN],
+        design.area[Phase.P, Loc.TH],
         gamma, R, PRIMARY_NOZZLE_EFF)
 
 
@@ -265,22 +258,22 @@ def _primary_exhaust_state(
 ) -> None:
     """Fig. 3 — Eqs. (2), (3): Mp1, Pp1."""
 
-    conditions.mach[Phase.PRIMARY, Loc.EXHAUST] = fsolve(
+    conditions.mach[Phase.P, Loc.EX] = fsolve(
         _primary_exhaust_mach_residual,
         [MACH_GUESS],
         args=(
             gamma,
-            design.area[Phase.PRIMARY, Loc.EXHAUST] /
-            design.area[Phase.PRIMARY, Loc.THROAT]),
+            design.area[Phase.P, Loc.EX] /
+            design.area[Phase.P, Loc.TH]),
     )[0]
     # NOTE Идея, чтобы повысить читаемость:
     # NOTE Для отношения площадей можно в design завести метод area_ratio, который будет
     # NOTE принимать целочисленные значения, получится что-то типа
     # NOTE >> design.area_ratio(Loc.EXHAUST,Loc.THROAT)
 
-    conditions.pressure[Phase.PRIMARY, Loc.EXHAUST] = (
-        conditions.pressure[Phase.PRIMARY, Loc.INLET] /
-        _isentropic_relation(gamma, conditions.mach[Phase.PRIMARY, Loc.EXHAUST]) **
+    conditions.pressure[Phase.P, Loc.EX] = (
+        conditions.pressure[Phase.P, Loc.IN] /
+        _isentropic_relation(gamma, conditions.mach[Phase.P, Loc.EX]) **
         (gamma / (gamma - 1.0)))
 
 
@@ -290,10 +283,10 @@ def _secondary_choke_state(
 ) -> None:
     """Fig. 3 — Eq. (6): Msy, Psy."""
 
-    conditions.mach[Phase.SECONDARY, Loc.CHOKE] = 1.0
-    conditions.pressure[Phase.SECONDARY, Loc.CHOKE] = (
-        conditions.pressure[Phase.SECONDARY, Loc.INLET] /
-        _isentropic_relation(gamma, conditions.mach[Phase.SECONDARY, Loc.CHOKE]) **
+    conditions.mach[Phase.S, Loc.CH] = 1.0
+    conditions.pressure[Phase.S, Loc.CH] = (
+        conditions.pressure[Phase.S, Loc.IN] /
+        _isentropic_relation(gamma, conditions.mach[Phase.S, Loc.CH]) **
         (gamma / (gamma - 1.0)))
 
 
@@ -304,26 +297,26 @@ def _primary_core_state(
 ) -> None:
     """Fig. 3 — Eqs. (4), (5): Mpy, Apy."""
 
-    conditions.pressure[Phase.PRIMARY, Loc.CHOKE] = (
-        conditions.pressure[Phase.SECONDARY, Loc.CHOKE])
-    conditions.mach[Phase.PRIMARY, Loc.CHOKE] = fsolve(
+    conditions.pressure[Phase.P, Loc.CH] = (
+        conditions.pressure[Phase.S, Loc.CH])
+    conditions.mach[Phase.P, Loc.CH] = fsolve(
         _primary_choke_mach_residual,
         [MACH_GUESS],
         args=(
             gamma,
-            conditions.mach[Phase.PRIMARY, Loc.EXHAUST],
-            conditions.pressure[Phase.SECONDARY, Loc.CHOKE] /
-            conditions.pressure[Phase.PRIMARY, Loc.EXHAUST]),
+            conditions.mach[Phase.P, Loc.EX],
+            conditions.pressure[Phase.S, Loc.CH] /
+            conditions.pressure[Phase.P, Loc.EX]),
     )[0]
-    design.area[Phase.PRIMARY, Loc.CHOKE] = (
-        design.area[Phase.PRIMARY, Loc.EXHAUST] *
-        (PRIMARY_CORE_AREA_FACTOR / conditions.mach[Phase.PRIMARY, Loc.CHOKE] *
+    design.area[Phase.P, Loc.CH] = (
+        design.area[Phase.P, Loc.EX] *
+        (PRIMARY_CORE_AREA_FACTOR / conditions.mach[Phase.P, Loc.CH] *
          (2.0 / (gamma + 1.0) *
-          _isentropic_relation(gamma, conditions.mach[Phase.PRIMARY, Loc.CHOKE])) **
+          _isentropic_relation(gamma, conditions.mach[Phase.P, Loc.CH])) **
          ((gamma + 1.0) / (2.0 * (gamma - 1.0)))) /
-        (1.0 / conditions.mach[Phase.PRIMARY, Loc.EXHAUST] *
+        (1.0 / conditions.mach[Phase.P, Loc.EX] *
          (2.0 / (gamma + 1.0) *
-          _isentropic_relation(gamma, conditions.mach[Phase.PRIMARY, Loc.EXHAUST])) **
+          _isentropic_relation(gamma, conditions.mach[Phase.P, Loc.EX])) **
          ((gamma + 1.0) / (2.0 * (gamma - 1.0)))))
 
 
@@ -332,9 +325,9 @@ def _secondary_choke_area(
 ) -> None:
     """Fig. 3 — Eq. (8): Asy."""
 
-    design.area[Phase.SECONDARY, Loc.CHOKE] = (
-        design.area[Phase.MIX, Loc.AFTERMIX] -
-        design.area[Phase.PRIMARY, Loc.CHOKE])
+    design.area[Phase.S, Loc.CH] = (
+        design.area[Phase.M, Loc.AM] -
+        design.area[Phase.P, Loc.CH])
 
 
 def _secondary_mass_flow(
@@ -345,10 +338,10 @@ def _secondary_mass_flow(
 ) -> None:
     """Fig. 3 — Eq. (7): ms."""
 
-    conditions.mass_flow_rate[Phase.SECONDARY] = _mass_flow_rate(
-        conditions.pressure[Phase.SECONDARY, Loc.INLET],
-        conditions.temperature[Phase.SECONDARY, Loc.INLET],
-        design.area[Phase.SECONDARY, Loc.CHOKE],
+    conditions.mass_flow_rate[Phase.S] = _mass_flow_rate(
+        conditions.pressure[Phase.S, Loc.IN],
+        conditions.temperature[Phase.S, Loc.IN],
+        design.area[Phase.S, Loc.CH],
         gamma, R, SECONDARY_NOZZLE_EFF)
 
 
@@ -358,12 +351,12 @@ def _choke_temperatures(
 ) -> None:
     """Fig. 3 — Eqs. (9), (10): Tpy, Tsy."""
 
-    conditions.temperature[Phase.PRIMARY, Loc.CHOKE] = (
-        conditions.temperature[Phase.PRIMARY, Loc.INLET] /
-        _isentropic_relation(gamma, conditions.mach[Phase.PRIMARY, Loc.CHOKE]))
-    conditions.temperature[Phase.SECONDARY, Loc.CHOKE] = (
-        conditions.temperature[Phase.SECONDARY, Loc.INLET] /
-        _isentropic_relation(gamma, conditions.mach[Phase.SECONDARY, Loc.CHOKE]))
+    conditions.temperature[Phase.P, Loc.CH] = (
+        conditions.temperature[Phase.P, Loc.IN] /
+        _isentropic_relation(gamma, conditions.mach[Phase.P, Loc.CH]))
+    conditions.temperature[Phase.S, Loc.CH] = (
+        conditions.temperature[Phase.S, Loc.IN] /
+        _isentropic_relation(gamma, conditions.mach[Phase.S, Loc.CH]))
 
 
 def _mix_pre_shock_velocity_pressure(
@@ -374,28 +367,28 @@ def _mix_pre_shock_velocity_pressure(
 ) -> None:
     """Fig. 3 — Eqs. (11), (13), (14), (19): Pm, Vpy, Vsy, Vm."""
 
-    conditions.velocity[Phase.PRIMARY, Loc.CHOKE] = _velocity_from_mach(
-        conditions.mach[Phase.PRIMARY, Loc.CHOKE], gamma, R,
-        conditions.temperature[Phase.PRIMARY, Loc.CHOKE])
+    conditions.velocity[Phase.P, Loc.CH] = _velocity_from_mach(
+        conditions.mach[Phase.P, Loc.CH], gamma, R,
+        conditions.temperature[Phase.P, Loc.CH])
 
-    conditions.velocity[Phase.SECONDARY, Loc.CHOKE] = _velocity_from_mach(
-        conditions.mach[Phase.SECONDARY, Loc.CHOKE], gamma, R,
-        conditions.temperature[Phase.SECONDARY, Loc.CHOKE])
+    conditions.velocity[Phase.S, Loc.CH] = _velocity_from_mach(
+        conditions.mach[Phase.S, Loc.CH], gamma, R,
+        conditions.temperature[Phase.S, Loc.CH])
 
-    conditions.pressure[Phase.MIX, Loc.PRE_SHOCK] = (
-        conditions.pressure[Phase.SECONDARY, Loc.CHOKE])
+    conditions.pressure[Phase.M, Loc.PS] = (
+        conditions.pressure[Phase.S, Loc.CH])
 
     fm = _mixing_coeff(
-        design.area[Phase.MIX, Loc.AFTERMIX] /
-        design.area[Phase.PRIMARY, Loc.THROAT])
+        design.area[Phase.M, Loc.AM] /
+        design.area[Phase.P, Loc.TH])
 
-    conditions.velocity[Phase.MIX, Loc.PRE_SHOCK] = fm * (
-        conditions.mass_flow_rate[Phase.PRIMARY] *
-        conditions.velocity[Phase.PRIMARY, Loc.CHOKE] +
-        conditions.mass_flow_rate[Phase.SECONDARY] *
-        conditions.velocity[Phase.SECONDARY, Loc.CHOKE]
-    ) / (conditions.mass_flow_rate[Phase.PRIMARY] +
-         conditions.mass_flow_rate[Phase.SECONDARY])
+    conditions.velocity[Phase.M, Loc.PS] = fm * (
+        conditions.mass_flow_rate[Phase.P] *
+        conditions.velocity[Phase.P, Loc.CH] +
+        conditions.mass_flow_rate[Phase.S] *
+        conditions.velocity[Phase.S, Loc.CH]
+    ) / (conditions.mass_flow_rate[Phase.P] +
+         conditions.mass_flow_rate[Phase.S])
 
 
 def _mix_pre_shock_temperature_mach(
@@ -407,22 +400,22 @@ def _mix_pre_shock_temperature_mach(
     """Fig. 3 — Eqs. (12), (15): Tm, Mm."""
 
     primary_choke_energy = (
-        cp * conditions.temperature[Phase.PRIMARY, Loc.CHOKE] +
-        conditions.velocity[Phase.PRIMARY, Loc.CHOKE] ** 2 / 2.0)
+        cp * conditions.temperature[Phase.P, Loc.CH] +
+        conditions.velocity[Phase.P, Loc.CH] ** 2 / 2.0)
     secondary_choke_energy = (
-        cp * conditions.temperature[Phase.SECONDARY, Loc.CHOKE] +
-        conditions.velocity[Phase.SECONDARY, Loc.CHOKE] ** 2 / 2.0)
+        cp * conditions.temperature[Phase.S, Loc.CH] +
+        conditions.velocity[Phase.S, Loc.CH] ** 2 / 2.0)
 
-    conditions.temperature[Phase.MIX, Loc.PRE_SHOCK] = 1/cp*(
-        (conditions.mass_flow_rate[Phase.PRIMARY] * primary_choke_energy +
-         conditions.mass_flow_rate[Phase.SECONDARY] * secondary_choke_energy) /
-        (conditions.mass_flow_rate[Phase.PRIMARY] +
-         conditions.mass_flow_rate[Phase.SECONDARY]) -
-        conditions.velocity[Phase.MIX, Loc.PRE_SHOCK] ** 2 / 2.0)
+    conditions.temperature[Phase.M, Loc.PS] = 1/cp*(
+        (conditions.mass_flow_rate[Phase.P] * primary_choke_energy +
+         conditions.mass_flow_rate[Phase.S] * secondary_choke_energy) /
+        (conditions.mass_flow_rate[Phase.P] +
+         conditions.mass_flow_rate[Phase.S]) -
+        conditions.velocity[Phase.M, Loc.PS] ** 2 / 2.0)
 
-    conditions.mach[Phase.MIX, Loc.PRE_SHOCK] = (
-        conditions.velocity[Phase.MIX, Loc.PRE_SHOCK] /
-        np.sqrt(gamma * R * conditions.temperature[Phase.MIX, Loc.PRE_SHOCK]))
+    conditions.mach[Phase.M, Loc.PS] = (
+        conditions.velocity[Phase.M, Loc.PS] /
+        np.sqrt(gamma * R * conditions.temperature[Phase.M, Loc.PS]))
 
 
 def _aftermix_state(
@@ -431,13 +424,13 @@ def _aftermix_state(
 ) -> None:
     """Fig. 3 — Eqs. (16), (17): P3, M3."""
 
-    conditions.pressure[Phase.MIX, Loc.AFTERMIX] = (
-        conditions.pressure[Phase.MIX, Loc.PRE_SHOCK] *
+    conditions.pressure[Phase.M, Loc.AM] = (
+        conditions.pressure[Phase.M, Loc.PS] *
         (1.0 + 2.0 * gamma / (gamma + 1.0) *
-         (conditions.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2 - 1.0)))
-    conditions.mach[Phase.MIX, Loc.AFTERMIX] = np.sqrt(
-        _isentropic_relation(gamma, conditions.mach[Phase.MIX, Loc.PRE_SHOCK]) /
-        (gamma * conditions.mach[Phase.MIX, Loc.PRE_SHOCK] ** 2 -
+         (conditions.mach[Phase.M, Loc.PS] ** 2 - 1.0)))
+    conditions.mach[Phase.M, Loc.AM] = np.sqrt(
+        _isentropic_relation(gamma, conditions.mach[Phase.M, Loc.PS]) /
+        (gamma * conditions.mach[Phase.M, Loc.PS] ** 2 -
          (gamma - 1.0) / 2.0))
 
 
@@ -447,21 +440,21 @@ def _mix_drain_pressure(
 ) -> None:
     """Fig. 3 — Eq. (18): Pc."""
 
-    conditions.pressure[Phase.MIX, Loc.DRAIN] = (
-        conditions.pressure[Phase.MIX, Loc.AFTERMIX] *
-        _isentropic_relation(gamma, conditions.mach[Phase.MIX, Loc.AFTERMIX]) **
+    conditions.pressure[Phase.M, Loc.D] = (
+        conditions.pressure[Phase.M, Loc.AM] *
+        _isentropic_relation(gamma, conditions.mach[Phase.M, Loc.AM]) **
         (gamma / (gamma - 1.0)))
 
 
 def _finalize_mix_geometry(design: Design) -> None:
     """Set mix-section diameters"""
 
-    design.diameter[Phase.MIX, Loc.AFTERMIX] = np.sqrt(
-        4.0 * design.area[Phase.MIX, Loc.AFTERMIX] / np.pi)
+    design.diameter[Phase.M, Loc.AM] = np.sqrt(
+        4.0 * design.area[Phase.M, Loc.AM] / np.pi)
 
-    for loc in (Loc.PREMIX, Loc.CHOKE, Loc.PRE_SHOCK, Loc.SHOCK):
-        design.diameter[Phase.MIX, loc] = (
-            design.diameter[Phase.MIX, Loc.AFTERMIX])
+    for loc in (Loc.PM, Loc.CH, Loc.PS, Loc.SH):
+        design.diameter[Phase.M, loc] = (
+            design.diameter[Phase.M, Loc.AM])
 
 
 # --- Helpers ---
