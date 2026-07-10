@@ -460,12 +460,10 @@ def _primary_exhaust_mach_residual(
 ) -> float | np.ndarray:
     """Eq. (2) residual: (A/A*)² − f(M) for primary nozzle exit Mach."""
 
-    # NOTE многоэтажные return'ы тяжело читаются
-    return (
-        1.0 / mach ** 2 *
-        (2.0 / (gamma + 1.0) * _isentropic_relation(gamma, mach)) **
-        ((gamma + 1.0) / (gamma - 1.0)) -
-        area_ratio ** 2)
+    residual = (
+        1.0 / mach ** 2 * (2.0 / (gamma + 1.0) * _isentropic_relation(gamma, mach)) **
+        ((gamma + 1.0) / (gamma - 1.0)) - area_ratio ** 2)
+    return residual
 
 
 def _primary_choke_mach_residual(
