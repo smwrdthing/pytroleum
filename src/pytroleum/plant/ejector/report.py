@@ -1,4 +1,4 @@
-from jet_huang_interfaces import (
+from interfaces import (
     Design,
     Loc,
     OperationConditions,

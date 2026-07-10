@@ -3,7 +3,7 @@ import CoolProp
 from CoolProp import AbstractState
 from CoolProp.CoolProp import PropsSI
 
-from jet_huang import (
+from jet import (
     Design,
     Loc,
     Phase,

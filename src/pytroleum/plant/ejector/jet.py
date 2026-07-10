@@ -1,7 +1,5 @@
 from __future__ import annotations
-from jet_huang_report import report_inputs
-from jet_huang_report import report_dimensions
-from jet_huang_report import report_conditions
+from report import report_conditions, report_dimensions, report_inputs
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -15,7 +13,7 @@ from CoolProp.constants import PT_INPUTS
 import numpy as np
 from scipy.optimize import fsolve
 
-from jet_huang_interfaces import Loc, Phase, _CONTAINER
+from interfaces import Loc, Phase, _CONTAINER
 
 _R_UNIV = 8.314462618
 
