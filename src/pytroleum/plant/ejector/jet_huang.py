@@ -1,4 +1,7 @@
 from __future__ import annotations
+from jet_huang_report import report_inputs
+from jet_huang_report import report_dimensions
+from jet_huang_report import report_conditions
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -11,10 +14,8 @@ from CoolProp.constants import PT_INPUTS
 
 import numpy as np
 from scipy.optimize import fsolve
-from enum import IntEnum, auto
-from jet_huang_report import report_inputs
-from jet_huang_report import report_conditions
-from jet_huang_report import report_dimensions
+
+from jet_huang_interfaces import Loc, Phase, _CONTAINER
 
 _R_UNIV = 8.314462618
 
@@ -28,35 +29,6 @@ _DA3 = 1e-6  # ΔA3, m² (Fig. 3)
 _A3_INITIAL_RATIO = 7.0
 _PC_REL_TOLERANCE = 1e-3
 _MAX_ITER = 1000
-
-
-class Phase(IntEnum):
-    """Stream indices (jet, carry, mixed)."""
-
-    P, PRIMARY = 0, 0
-    S, SECONDARY = 1, 1
-    M, MIX = 2, 2
-
-    SIZE = auto()
-
-
-class Loc(IntEnum):
-    """Ejector section indices along the flow path (Huang et al., Fig. 2)."""
-
-    IN, INLET = 0, 0
-    TH, THROAT = 1, 1
-    EX, EXHAUST = 2, 2
-    PM, PREMIX = 3, 3
-    CH, CHOKE = 4, 4
-    PS, PRE_SHOCK = 5, 5
-    SH, SHOCK = 6, 6
-    AM, AFTERMIX = 7, 7
-    D, DRAIN = 8, 8
-
-    SIZE = auto()
-
-
-_CONTAINER = np.full((Phase.SIZE, Loc.SIZE), np.nan)
 
 
 @dataclass

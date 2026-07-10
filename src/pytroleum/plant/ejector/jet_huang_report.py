@@ -1,4 +1,10 @@
-from jet_huang import Design, Loc, OperationConditions, Phase, Requirements
+from jet_huang_interfaces import (
+    Design,
+    Loc,
+    OperationConditions,
+    Phase,
+    Requirements,
+)
 
 _M_TO_MM = 1e3
 _M2_TO_CM2 = 1e4
