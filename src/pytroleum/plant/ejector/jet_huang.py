@@ -85,6 +85,67 @@ class OperationConditions:
         self.gamma = self.cp / self.phase.cvmass()
         self.R = _R_UNIV / self.phase.molar_mass()
 
+    def _secondary_choke_state(self) -> None:
+        """Fig. 3 — Eq. (6): Msy, Psy."""
+
+        self.mach[Phase.S, Loc.CH] = 1.0
+        self.pressure[Phase.S, Loc.CH] = (
+            self.pressure[Phase.S, Loc.IN] /
+            _isentropic_relation(self.gamma, self.mach[Phase.S, Loc.CH]) **
+            (self.gamma / (self.gamma - 1.0)))
+
+    def _choke_temperatures(self) -> None:
+        """Fig. 3 — Eqs. (9), (10): Tpy, Tsy."""
+
+        self.temperature[Phase.P, Loc.CH] = (
+            self.temperature[Phase.P, Loc.IN] /
+            _isentropic_relation(self.gamma, self.mach[Phase.P, Loc.CH]))
+        self.temperature[Phase.S, Loc.CH] = (
+            self.temperature[Phase.S, Loc.IN] /
+            _isentropic_relation(self.gamma, self.mach[Phase.S, Loc.CH]))
+
+    def _mix_pre_shock_temperature_mach(self) -> None:
+        """Fig. 3 — Eqs. (12), (15): Tm, Mm."""
+
+        primary_choke_energy = (
+            self.cp * self.temperature[Phase.P, Loc.CH] +
+            self.velocity[Phase.P, Loc.CH] ** 2 / 2.0)
+        secondary_choke_energy = (
+            self.cp * self.temperature[Phase.S, Loc.CH] +
+            self.velocity[Phase.S, Loc.CH] ** 2 / 2.0)
+
+        self.temperature[Phase.M, Loc.PS] = 1/self.cp*(
+            (self.mass_flow_rate[Phase.P] * primary_choke_energy +
+             self.mass_flow_rate[Phase.S] * secondary_choke_energy) /
+            (self.mass_flow_rate[Phase.P] +
+             self.mass_flow_rate[Phase.S]) -
+            self.velocity[Phase.M, Loc.PS] ** 2 / 2.0)
+
+        self.mach[Phase.M, Loc.PS] = (
+            self.velocity[Phase.M, Loc.PS] /
+            np.sqrt(self.gamma * self.R *
+                    self.temperature[Phase.M, Loc.PS]))
+
+    def _aftermix_state(self) -> None:
+        """Fig. 3 — Eqs. (16), (17): P3, M3."""
+
+        self.pressure[Phase.M, Loc.AM] = (
+            self.pressure[Phase.M, Loc.PS] *
+            (1.0 + 2.0 * self.gamma / (self.gamma + 1.0) *
+             (self.mach[Phase.M, Loc.PS] ** 2 - 1.0)))
+        self.mach[Phase.M, Loc.AM] = np.sqrt(
+            _isentropic_relation(self.gamma, self.mach[Phase.M, Loc.PS]) /
+            (self.gamma * self.mach[Phase.M, Loc.PS] ** 2 -
+             (self.gamma - 1.0) / 2.0))
+
+    def _mix_drain_pressure(self) -> None:
+        """Fig. 3 — Eq. (18): Pc."""
+
+        self.pressure[Phase.M, Loc.D] = (
+            self.pressure[Phase.M, Loc.AM] *
+            _isentropic_relation(self.gamma, self.mach[Phase.M, Loc.AM]) **
+            (self.gamma / (self.gamma - 1.0)))
+
     def report(self) -> None:
         report_conditions(self)
 
@@ -118,7 +179,7 @@ def solve_dimensions(
 
     _primary_mass_flow(conditions, design)
     _primary_exhaust_state(conditions, design)
-    _secondary_choke_state(conditions)
+    conditions._secondary_choke_state()
 
     design.area[Phase.M, Loc.AM] = (
         design.area[Phase.P, Loc.TH] * _A3_INITIAL_RATIO)
@@ -138,11 +199,11 @@ def solve_dimensions(
             design.area[Phase.M, Loc.AM] += _DA3
 
         _secondary_mass_flow(conditions, design)
-        _choke_temperatures(conditions)
+        conditions._choke_temperatures()
         _mix_pre_shock_velocity_pressure(conditions, design)
-        _mix_pre_shock_temperature_mach(conditions)
-        _aftermix_state(conditions)
-        _mix_drain_pressure(conditions)
+        conditions._mix_pre_shock_temperature_mach()
+        conditions._aftermix_state()
+        conditions._mix_drain_pressure()
 
         Pc = conditions.pressure[Phase.M, Loc.D]
         # NOTE условие можно в функцию от conditoins, будет чище + не надо вытаскивать Pc
@@ -220,18 +281,6 @@ def _primary_exhaust_state(
         (conditions.gamma / (conditions.gamma - 1.0)))
 
 
-def _secondary_choke_state(
-        conditions: OperationConditions,
-) -> None:
-    """Fig. 3 — Eq. (6): Msy, Psy."""
-
-    conditions.mach[Phase.S, Loc.CH] = 1.0
-    conditions.pressure[Phase.S, Loc.CH] = (
-        conditions.pressure[Phase.S, Loc.IN] /
-        _isentropic_relation(conditions.gamma, conditions.mach[Phase.S, Loc.CH]) **
-        (conditions.gamma / (conditions.gamma - 1.0)))
-
-
 def _primary_core_state(
         conditions: OperationConditions,
         design: Design,
@@ -284,19 +333,6 @@ def _secondary_mass_flow(
         conditions.gamma, conditions.R, SECONDARY_NOZZLE_EFF)
 
 
-def _choke_temperatures(
-        conditions: OperationConditions,
-) -> None:
-    """Fig. 3 — Eqs. (9), (10): Tpy, Tsy."""
-
-    conditions.temperature[Phase.P, Loc.CH] = (
-        conditions.temperature[Phase.P, Loc.IN] /
-        _isentropic_relation(conditions.gamma, conditions.mach[Phase.P, Loc.CH]))
-    conditions.temperature[Phase.S, Loc.CH] = (
-        conditions.temperature[Phase.S, Loc.IN] /
-        _isentropic_relation(conditions.gamma, conditions.mach[Phase.S, Loc.CH]))
-
-
 def _mix_pre_shock_velocity_pressure(
         conditions: OperationConditions,
         design: Design,
@@ -325,57 +361,6 @@ def _mix_pre_shock_velocity_pressure(
         conditions.velocity[Phase.S, Loc.CH]
     ) / (conditions.mass_flow_rate[Phase.P] +
          conditions.mass_flow_rate[Phase.S])
-
-
-def _mix_pre_shock_temperature_mach(
-        conditions: OperationConditions,
-) -> None:
-    """Fig. 3 — Eqs. (12), (15): Tm, Mm."""
-
-    primary_choke_energy = (
-        conditions.cp * conditions.temperature[Phase.P, Loc.CH] +
-        conditions.velocity[Phase.P, Loc.CH] ** 2 / 2.0)
-    secondary_choke_energy = (
-        conditions.cp * conditions.temperature[Phase.S, Loc.CH] +
-        conditions.velocity[Phase.S, Loc.CH] ** 2 / 2.0)
-
-    conditions.temperature[Phase.M, Loc.PS] = 1/conditions.cp*(
-        (conditions.mass_flow_rate[Phase.P] * primary_choke_energy +
-         conditions.mass_flow_rate[Phase.S] * secondary_choke_energy) /
-        (conditions.mass_flow_rate[Phase.P] +
-         conditions.mass_flow_rate[Phase.S]) -
-        conditions.velocity[Phase.M, Loc.PS] ** 2 / 2.0)
-
-    conditions.mach[Phase.M, Loc.PS] = (
-        conditions.velocity[Phase.M, Loc.PS] /
-        np.sqrt(conditions.gamma * conditions.R *
-                conditions.temperature[Phase.M, Loc.PS]))
-
-
-def _aftermix_state(
-        conditions: OperationConditions,
-) -> None:
-    """Fig. 3 — Eqs. (16), (17): P3, M3."""
-
-    conditions.pressure[Phase.M, Loc.AM] = (
-        conditions.pressure[Phase.M, Loc.PS] *
-        (1.0 + 2.0 * conditions.gamma / (conditions.gamma + 1.0) *
-         (conditions.mach[Phase.M, Loc.PS] ** 2 - 1.0)))
-    conditions.mach[Phase.M, Loc.AM] = np.sqrt(
-        _isentropic_relation(conditions.gamma, conditions.mach[Phase.M, Loc.PS]) /
-        (conditions.gamma * conditions.mach[Phase.M, Loc.PS] ** 2 -
-         (conditions.gamma - 1.0) / 2.0))
-
-
-def _mix_drain_pressure(
-        conditions: OperationConditions,
-) -> None:
-    """Fig. 3 — Eq. (18): Pc."""
-
-    conditions.pressure[Phase.M, Loc.D] = (
-        conditions.pressure[Phase.M, Loc.AM] *
-        _isentropic_relation(conditions.gamma, conditions.mach[Phase.M, Loc.AM]) **
-        (conditions.gamma / (conditions.gamma - 1.0)))
 
 
 def _finalize_mix_geometry(design: Design) -> None:
@@ -464,9 +449,6 @@ def _mixing_coeff(area_ratio: float) -> float:
     if area_ratio > 6.9:
         return 0.82
     return 0.84
-
-# NOTE Идея для рефакторинга: многие функции работают только с conditions, их можно
-# NOTE cделать методами класса OperationConditions
 
 # NOTE Почитать:
 # NOTE https://gist.github.com/sloria/7001839
