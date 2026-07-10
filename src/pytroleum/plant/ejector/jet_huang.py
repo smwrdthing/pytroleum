@@ -129,10 +129,9 @@ def solve_dimensions(
                 # NOTE Условие цикла сразу в while, break здесь не нужен
                 break
 
-            # NOTE можно оператором +=
-            design.area[Phase.M, Loc.AM] = (
-                design.area[Phase.P, Loc.CH] + _DA3)
-            # NOTE Индексируем по разным локациям?
+            # A3 = Apy + ΔA3: mixed-section area from primary core area.
+            design.area[Phase.M, Loc.AM] = design.area[Phase.P, Loc.CH]
+            design.area[Phase.M, Loc.AM] += _DA3
 
         _secondary_mass_flow(conditions, design, gamma, R)
         _choke_temperatures(conditions, gamma)
