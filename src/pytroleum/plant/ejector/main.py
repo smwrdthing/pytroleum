@@ -43,6 +43,7 @@ _eos.specify_phase(CoolProp.iphase_gas)
 
 req = Requirements(
     phase=_eos,
+    Pc_star=Pc_star,
     pressure=np.full(SHAPE, np.nan),
     temperature=np.full(SHAPE, np.nan),
 )
@@ -52,7 +53,7 @@ req.pressure[Phase.S, Loc.IN] = P_evap
 req.temperature[Phase.P, Loc.IN] = T_gen + 273.15
 req.temperature[Phase.S, Loc.IN] = T_evap + 273.15
 
-conditions = solve_dimensions(req, design, Pc_star)
+conditions = solve_dimensions(req, design)
 
 req.report()
 design.report()

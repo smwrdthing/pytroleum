@@ -36,6 +36,7 @@ class Requirements:
     """Boundary conditions from the technical specification (ТЗ)."""
 
     phase: AbstractState
+    Pc_star: float
     pressure: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
     temperature: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
 
@@ -92,7 +93,6 @@ def solve_dimensions(
         # NOTE design лучше создавать внутри функции, которая выполняет проектный расчёт
         # NOTE и возвращать вместе с OperationConditions (см. заметки в __init__.py)
 
-        Pc_star: float,  # NOTE в requirements
         Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
         max_iter: int = _MAX_ITER,
 ) -> OperationConditions:  # NOTE сигнатура вызова и имя функции противоречат друг-другу
@@ -143,7 +143,7 @@ def solve_dimensions(
 
         Pc = conditions.pressure[Phase.M, Loc.D]
         # NOTE условие можно в функцию от conditoins, будет чище + не надо вытаскивать Pc
-        if abs(Pc - Pc_star) / Pc_star <= Pc_rel_tolerance:
+        if abs(Pc - req.Pc_star) / req.Pc_star <= Pc_rel_tolerance:
             # NOTE Условие цикла сразу в while, break здесь не нужен
             break
         # NOTE в итоге должно быть что-то вроде
@@ -174,7 +174,7 @@ def solve_dimensions(
         # Fig. 3: Pc vs Pc* → подбор A3 → Eq. (4)
         # Эта часть не соответствует блок схеме, начинаю менять знаки как
         # там и не сходится ничего
-        if Pc >= Pc_star:
+        if Pc >= req.Pc_star:
             design.area[Phase.M, Loc.AM] += _DA3
         else:
             design.area[Phase.M, Loc.AM] -= _DA3

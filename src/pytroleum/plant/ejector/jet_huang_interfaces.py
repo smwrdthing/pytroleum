@@ -39,6 +39,7 @@ _CONTAINER = np.full((Phase.SIZE, Loc.SIZE), np.nan)
 
 class Requirements(Protocol):
     phase: Any
+    Pc_star: float
     pressure: NDArray[float64]
     temperature: NDArray[float64]
 
