@@ -157,21 +157,12 @@ def solve_dimensions(
         # NOTE можно добиться вида сверху, если записать недостающее в conditions
 
         if iter_count >= max_iter:
-            # NOTE Сообщение об ошибке либо не должно ссылаться на внешний источник
-            # NOTE совсем, либо должно быть более подробным
-            # NOTE
-            # NOTE новый пользователь библиотеки через 3 года не будет понимать, на какие
-            # NOTE рисунки/блок-схемы/таблицы ссылка, сама статья тоже может потеряться,
-            # NOTE а человек поленится снова её искать в интернете
-            # NOTE
-            # NOTE Пример:
-            # NOTE f"Solution algorithm did not converge in {max_iter} iterations, "+
-            # NOTE "outer loop is abandoned"
             raise RuntimeError(
-                f"solve_dimensions: Fig. 3 did not converge to Pc = Pc* "
-                f"within {max_iter} iterations.")
+                f"Solution algorithm did not converge in {max_iter} iterations: "
+                f"discharge pressure Pc did not reach target Pc_star "
+                f"({req.Pc_star:.4g} Pa) within relative tolerance "
+                f"{Pc_rel_tolerance:.4g}.")
 
-        # Fig. 3: Pc vs Pc* → подбор A3 → Eq. (4)
         # Эта часть не соответствует блок схеме, начинаю менять знаки как
         # там и не сходится ничего
         if Pc >= req.Pc_star:
