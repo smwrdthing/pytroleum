@@ -447,5 +447,3 @@ def _mixing_coeff(area_ratio: float) -> float:
 # NOTE Почитать:
 # NOTE https://gist.github.com/sloria/7001839
 # NOTE + глянуть ссылки внизу страницы
-
-# NOTE Привести файлы в пакете в порядок: убать лишнее
