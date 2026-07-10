@@ -158,6 +158,23 @@ class Design:
     area: np.ndarray
     length: np.ndarray
 
+    def _secondary_choke_area(self) -> None:
+        """Fig. 3 — Eq. (8): Asy."""
+
+        self.area[Phase.S, Loc.CH] = (
+            self.area[Phase.M, Loc.AM] -
+            self.area[Phase.P, Loc.CH])
+
+    def _finalize_mix_geometry(self) -> None:
+        """Set mix-section diameters."""
+
+        self.diameter[Phase.M, Loc.AM] = np.sqrt(
+            4.0 * self.area[Phase.M, Loc.AM] / np.pi)
+
+        for loc in (Loc.PM, Loc.CH, Loc.PS, Loc.SH):
+            self.diameter[Phase.M, loc] = (
+                self.diameter[Phase.M, Loc.AM])
+
     def report(self) -> None:
         report_dimensions(self)
 
@@ -188,7 +205,7 @@ def solve_dimensions(
     while True:
         while True:
             _primary_core_state(conditions, design)
-            _secondary_choke_area(design)
+            design._secondary_choke_area()
 
             if design.area[Phase.S, Loc.CH] >= 0.0:
                 # NOTE Условие цикла сразу в while, break здесь не нужен
@@ -233,7 +250,7 @@ def solve_dimensions(
             design.area[Phase.M, Loc.AM] -= _DA3
         iter_count += 1
 
-    _finalize_mix_geometry(design)
+    design._finalize_mix_geometry()
     return conditions
 
 
@@ -310,16 +327,6 @@ def _primary_core_state(
          ((conditions.gamma + 1.0) / (2.0 * (conditions.gamma - 1.0)))))
 
 
-def _secondary_choke_area(
-        design: Design,
-) -> None:
-    """Fig. 3 — Eq. (8): Asy."""
-
-    design.area[Phase.S, Loc.CH] = (
-        design.area[Phase.M, Loc.AM] -
-        design.area[Phase.P, Loc.CH])
-
-
 def _secondary_mass_flow(
         conditions: OperationConditions,
         design: Design,
@@ -361,17 +368,6 @@ def _mix_pre_shock_velocity_pressure(
         conditions.velocity[Phase.S, Loc.CH]
     ) / (conditions.mass_flow_rate[Phase.P] +
          conditions.mass_flow_rate[Phase.S])
-
-
-def _finalize_mix_geometry(design: Design) -> None:
-    """Set mix-section diameters"""
-
-    design.diameter[Phase.M, Loc.AM] = np.sqrt(
-        4.0 * design.area[Phase.M, Loc.AM] / np.pi)
-
-    for loc in (Loc.PM, Loc.CH, Loc.PS, Loc.SH):
-        design.diameter[Phase.M, loc] = (
-            design.diameter[Phase.M, Loc.AM])
 
 
 # --- Helpers ---
