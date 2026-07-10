@@ -117,14 +117,10 @@ def solve_dimensions(
 
     iter_count = 0
     while True:
-        # Fig. 3: Asy < 0 → A3 = Apy + ΔA3 → Eq. (4)
         while True:
             _primary_core_state(conditions, design, gamma)
             _secondary_choke_area(design)
 
-            # NOTE если такие кнострукции нужны - их надо выделять визуально,
-            # NOTE без пустых линий до и после этот условный блок сливается со всем
-            # NOTE остальным и теряется из виду
             if design.area[Phase.S, Loc.CH] >= 0.0:
                 # NOTE Условие цикла сразу в while, break здесь не нужен
                 break
