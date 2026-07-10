@@ -163,8 +163,6 @@ def solve_dimensions(
                 f"({req.Pc_star:.4g} Pa) within relative tolerance "
                 f"{Pc_rel_tolerance:.4g}.")
 
-        # Эта часть не соответствует блок схеме, начинаю менять знаки как
-        # там и не сходится ничего
         if Pc >= req.Pc_star:
             design.area[Phase.M, Loc.AM] += _DA3
         else:
