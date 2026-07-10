@@ -173,9 +173,6 @@ def solve_dimensions(
     return conditions
 
 
-# --- Fig. 3 (Huang et al., Eqs. 1–18) ---
-
-
 def _primary_mass_flow(
         conditions: OperationConditions,
         design: Design,
