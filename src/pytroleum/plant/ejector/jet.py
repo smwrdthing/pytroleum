@@ -198,11 +198,11 @@ def design(req: Requirements, Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
 
     design = Design()
     design.diameter[Phase.P, Loc.TH] = req.nozzle_throat_diameter
-    design.area[Phase.P, Loc.TH] = (
-        np.pi / 4 * req.nozzle_throat_diameter ** 2)
     design.diameter[Phase.P, Loc.EX] = req.nozzle_exit_diameter
+    design.area[Phase.P, Loc.TH] = (
+        np.pi / 4 * design.diameter[Phase.P, Loc.TH] ** 2)
     design.area[Phase.P, Loc.EX] = (
-        np.pi / 4 * req.nozzle_exit_diameter ** 2)
+        np.pi / 4 * design.diameter[Phase.P, Loc.EX] ** 2)
 
     operation_conditions = OperationConditions(phase=req.phase)
     operation_conditions.read_requirements(req)
