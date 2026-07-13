@@ -419,11 +419,12 @@ def _primary_choke_mach_residual(
 ) -> float | np.ndarray:
     """Return residual for the primary choke Mach number."""
 
-    return (
+    residual = (
         _isentropic_relation(gamma, mach_exhaust) **
         (gamma / (gamma - 1.0)) /
         _isentropic_relation(gamma, mach) ** (gamma / (gamma - 1.0)) -
         pressure_ratio)
+    return residual
 
 
 def _mixing_coeff(area_ratio: float) -> float:
