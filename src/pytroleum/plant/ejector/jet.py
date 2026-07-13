@@ -146,6 +146,11 @@ class OperationConditions:
             _isentropic_relation(self.gamma, self.mach[Phase.M, Loc.AM]) **
             (self.gamma / (self.gamma - 1.0)))
 
+    def converged(self, Pc_star: float, rel_tolerance: float) -> bool:
+        """Return True if discharge pressure matches the target within tolerance."""
+        Pc = self.pressure[Phase.M, Loc.D]
+        return abs(Pc - Pc_star) / Pc_star <= rel_tolerance
+
     def report(self) -> None:
         """Print calculated flow states and performance parameters."""
         report_conditions(self)
@@ -207,18 +212,17 @@ def solve_dimensions(
         design.area[Phase.P, Loc.TH] * _A3_INITIAL_RATIO)
 
     iter_count = 0
-    while True:
-        while True:
+    while not conditions.converged(req.Pc_star, Pc_rel_tolerance):
+        # Asy < 0 → A3 = Apy + ΔA3 см. Huang et al. (1999)
+        valid_secondary_area = False
+        while not valid_secondary_area:
             _primary_core_state(conditions, design)
             design._secondary_choke_area()
+            valid_secondary_area = design.area[Phase.S, Loc.CH] >= 0.0
 
-            if design.area[Phase.S, Loc.CH] >= 0.0:
-                # NOTE Условие цикла сразу в while, break здесь не нужен
-                break
-
-            # A3 = Apy + ΔA3: mixed-section area from primary core area.
-            design.area[Phase.M, Loc.AM] = design.area[Phase.P, Loc.CH]
-            design.area[Phase.M, Loc.AM] += _DA3
+            if not valid_secondary_area:
+                design.area[Phase.M, Loc.AM] = design.area[Phase.P, Loc.CH]
+                design.area[Phase.M, Loc.AM] += _DA3
 
         _secondary_mass_flow(conditions, design)
         conditions._choke_temperatures()
@@ -227,33 +231,21 @@ def solve_dimensions(
         conditions._aftermix_state()
         conditions._mix_drain_pressure()
 
-        Pc = conditions.pressure[Phase.M, Loc.D]
-        # NOTE условие можно в функцию от conditoins, будет чище + не надо вытаскивать Pc
-        if abs(Pc - req.Pc_star) / req.Pc_star <= Pc_rel_tolerance:
-            # NOTE Условие цикла сразу в while, break здесь не нужен
-            break
-        # NOTE в итоге должно быть что-то вроде
-        # NOTE >> while not converged(conditions):
-        # NOTE >>     # код цикла
-        # NOTE может быть
-        # NOTE >> while not conditions.converged(): # если сделать converged методом
-        # NOTE >>     # код цикла
-        # NOTE
-        # NOTE Сигнатура функции, проверящей сходимость, может быть сложнее, но в целом
-        # NOTE можно добиться вида сверху, если записать недостающее в conditions
-
         if iter_count >= max_iter:
             raise RuntimeError(
-                f"Solution algorithm did not converge in {max_iter} iterations: "
-                f"discharge pressure Pc did not reach target Pc_star "
-                f"({req.Pc_star:.4g} Pa) within relative tolerance "
-                f"{Pc_rel_tolerance:.4g}.")
+                f"Solution algorithm did not converge in {max_iter} iterations, "
+                f"outer loop is abandoned.")
 
-        if Pc >= req.Pc_star:
-            design.area[Phase.M, Loc.AM] += _DA3
-        else:
-            design.area[Phase.M, Loc.AM] -= _DA3
-        iter_count += 1
+        if not conditions.converged(req.Pc_star, Pc_rel_tolerance):
+            # Pc vs Pc* → подбор A3 см. Huang et al. (1999)
+            Pc = conditions.pressure[Phase.M, Loc.D]
+
+            if Pc >= req.Pc_star:
+                design.area[Phase.M, Loc.AM] += _DA3
+            else:
+                design.area[Phase.M, Loc.AM] -= _DA3
+
+            iter_count += 1
 
     design._finalize_mix_geometry()
     return conditions
