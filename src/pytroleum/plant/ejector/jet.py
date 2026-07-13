@@ -301,19 +301,24 @@ def _primary_core_state(
         args=(
             conditions.gamma,
             conditions.mach[Phase.P, Loc.EX],
-            conditions.pressure[Phase.S, Loc.CH] /
+            conditions.pressure[Phase.P, Loc.CH] /
             conditions.pressure[Phase.P, Loc.EX]),
     )[0]
+
+    # Search design.area[Phase.P, Loc.CH]
+    numerator = (
+        PRIMARY_CORE_AREA_FACTOR / conditions.mach[Phase.P, Loc.CH] *
+        (2.0 / (conditions.gamma + 1.0) *
+         _isentropic_relation(conditions.gamma, conditions.mach[Phase.P, Loc.CH])) **
+        ((conditions.gamma + 1.0) / (2.0 * (conditions.gamma - 1.0))))
+    denominator = (
+        1.0 / conditions.mach[Phase.P, Loc.EX] *
+        (2.0 / (conditions.gamma + 1.0) *
+         _isentropic_relation(conditions.gamma, conditions.mach[Phase.P, Loc.EX])) **
+        ((conditions.gamma + 1.0) / (2.0 * (conditions.gamma - 1.0))))
+
     design.area[Phase.P, Loc.CH] = (
-        design.area[Phase.P, Loc.EX] *
-        (PRIMARY_CORE_AREA_FACTOR / conditions.mach[Phase.P, Loc.CH] *
-         (2.0 / (conditions.gamma + 1.0) *
-          _isentropic_relation(conditions.gamma, conditions.mach[Phase.P, Loc.CH])) **
-         ((conditions.gamma + 1.0) / (2.0 * (conditions.gamma - 1.0)))) /
-        (1.0 / conditions.mach[Phase.P, Loc.EX] *
-         (2.0 / (conditions.gamma + 1.0) *
-          _isentropic_relation(conditions.gamma, conditions.mach[Phase.P, Loc.EX])) **
-         ((conditions.gamma + 1.0) / (2.0 * (conditions.gamma - 1.0)))))
+        design.area[Phase.P, Loc.EX] * numerator / denominator)
 
 
 def _secondary_mass_flow(
