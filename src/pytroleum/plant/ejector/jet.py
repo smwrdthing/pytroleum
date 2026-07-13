@@ -17,7 +17,7 @@ from interfaces import Loc, Phase, _CONTAINER
 
 _R_UNIV = 8.314462618
 
-# Huang et al. (1999), Eqs. (1), (5), (7); Section 4: np, ns, fp; Eq. (19): fm
+# Huang et al. (1999), Int. J. Refrigeration — 1-D critical-mode ejector model.
 PRIMARY_NOZZLE_EFF = 0.95
 SECONDARY_NOZZLE_EFF = 0.85
 PRIMARY_CORE_AREA_FACTOR = 0.88
@@ -39,6 +39,7 @@ class Requirements:
     temperature: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
 
     def report(self) -> None:
+        """Print boundary conditions from the technical specification."""
         report_inputs(self)
 
 
@@ -62,6 +63,7 @@ class OperationConditions:
             [*self.mass_flow_rate, np.sum(self.mass_flow_rate)])
 
     def read_requirements(self, req: Requirements) -> None:
+        """Load boundary conditions from req and set Cp, γ, and R."""
         self.phase = req.phase
         # NOTE надёжнее будет сконструировать новые объекты для уравнений состояний,
         # NOTE здесь может оказаться так, что self.phase и req.phase - одно и то же,
@@ -73,7 +75,7 @@ class OperationConditions:
         self._extract_properties_for()
 
     def _extract_properties_for(self) -> None:
-        """Evaluate constant gamma, R, and cp at the primary inlet state."""
+        """Set constant Cp, γ, and R at the nozzle inlet state."""
         self.phase.update(
             PT_INPUTS,
             self.pressure[Phase.P, Loc.IN],
@@ -84,7 +86,7 @@ class OperationConditions:
         self.R = _R_UNIV / self.phase.molar_mass()
 
     def _secondary_choke_state(self) -> None:
-        """Fig. 3 — Eq. (6): Msy, Psy."""
+        """Set secondary-stream Mach number and pressure at the choke plane."""
 
         self.mach[Phase.S, Loc.CH] = 1.0
         self.pressure[Phase.S, Loc.CH] = (
@@ -93,7 +95,7 @@ class OperationConditions:
             (self.gamma / (self.gamma - 1.0)))
 
     def _choke_temperatures(self) -> None:
-        """Fig. 3 — Eqs. (9), (10): Tpy, Tsy."""
+        """Set primary and secondary stream temperatures at the choke plane."""
 
         self.temperature[Phase.P, Loc.CH] = (
             self.temperature[Phase.P, Loc.IN] /
@@ -103,7 +105,7 @@ class OperationConditions:
             _isentropic_relation(self.gamma, self.mach[Phase.S, Loc.CH]))
 
     def _mix_pre_shock_temperature_mach(self) -> None:
-        """Fig. 3 — Eqs. (12), (15): Tm, Mm."""
+        """Set mixed-stream temperature and Mach number before the shock."""
 
         primary_choke_energy = (
             self.cp * self.temperature[Phase.P, Loc.CH] +
@@ -125,7 +127,7 @@ class OperationConditions:
                     self.temperature[Phase.M, Loc.PS]))
 
     def _aftermix_state(self) -> None:
-        """Fig. 3 — Eqs. (16), (17): P3, M3."""
+        """Set mixed-stream pressure and Mach number after the shock."""
 
         self.pressure[Phase.M, Loc.AM] = (
             self.pressure[Phase.M, Loc.PS] *
@@ -137,7 +139,7 @@ class OperationConditions:
              (self.gamma - 1.0) / 2.0))
 
     def _mix_drain_pressure(self) -> None:
-        """Fig. 3 — Eq. (18): Pc."""
+        """Set discharge pressure at the ejector exit."""
 
         self.pressure[Phase.M, Loc.D] = (
             self.pressure[Phase.M, Loc.AM] *
@@ -145,19 +147,20 @@ class OperationConditions:
             (self.gamma / (self.gamma - 1.0)))
 
     def report(self) -> None:
+        """Print calculated flow states and performance parameters."""
         report_conditions(self)
 
 
 @dataclass
 class Design:
-    """Ejector geometry from Huang et al. critical-mode analysis."""
+    """Ejector flow-passage geometry (areas, diameters, lengths)."""
 
     diameter: np.ndarray
     area: np.ndarray
     length: np.ndarray
 
     def _secondary_choke_area(self) -> None:
-        """Fig. 3 — Eq. (8): Asy."""
+        """Set secondary choke area from mixed and primary core areas."""
 
         self.area[Phase.S, Loc.CH] = (
             self.area[Phase.M, Loc.AM] -
@@ -177,6 +180,7 @@ class Design:
         return self.area[Phase.P, loc_num] / self.area[Phase.P, loc_denom]
 
     def report(self) -> None:
+        """Print ejector geometry (areas and diameters, lenghts)."""
         report_dimensions(self)
 
 
@@ -190,7 +194,7 @@ def solve_dimensions(
         Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
         max_iter: int = _MAX_ITER,
 ) -> OperationConditions:  # NOTE сигнатура вызова и имя функции противоречат друг-другу
-    """Huang et al. (1999) critical-mode analysis, Eqs. (1)–(18), Fig. 3."""
+    """Run a jet ejector at critical mode"""
 
     conditions = OperationConditions(phase=req.phase)
     conditions.read_requirements(req)
@@ -259,13 +263,7 @@ def _primary_mass_flow(
         conditions: OperationConditions,
         design: Design,
 ) -> None:
-    """Fig. 3 — Eq. (1): mp."""
-    # NOTE докстринги нужны для документации функции, короткие ссылки на внешние
-    # NOTE источники вне кода - комментариями (либо вовсе исключить, см. заметки выше)
-    # NOTE
-    # NOTE Либо для полного докстринга можно оставить ссылку внизу в качестве
-    # NOTE дополнительной информации, оформление таких штук можно подсмотреть в
-    # NOTE библиотеках типа numpy, scipy
+    """Compute primary mass flow rate"""
 
     conditions.mass_flow_rate[Phase.P] = _mass_flow_rate(
         conditions.pressure[Phase.P, Loc.IN],
@@ -278,7 +276,7 @@ def _primary_exhaust_state(
         conditions: OperationConditions,
         design: Design,
 ) -> None:
-    """Fig. 3 — Eqs. (2), (3): Mp1, Pp1."""
+    """Compute primary nozzle exit Mach number and pressure."""
 
     conditions.mach[Phase.P, Loc.EX] = fsolve(
         _primary_exhaust_mach_residual,
@@ -298,7 +296,7 @@ def _primary_core_state(
         conditions: OperationConditions,
         design: Design,
 ) -> None:
-    """Fig. 3 — Eqs. (4), (5): Mpy, Apy."""
+    """Compute primary choke Mach number and core flow area."""
 
     conditions.pressure[Phase.P, Loc.CH] = (
         conditions.pressure[Phase.S, Loc.CH])
@@ -327,7 +325,7 @@ def _secondary_mass_flow(
         conditions: OperationConditions,
         design: Design,
 ) -> None:
-    """Fig. 3 — Eq. (7): ms."""
+    """Compute secondary mass flow rate"""
 
     conditions.mass_flow_rate[Phase.S] = _mass_flow_rate(
         conditions.pressure[Phase.S, Loc.IN],
@@ -340,7 +338,7 @@ def _mix_pre_shock_velocity_pressure(
         conditions: OperationConditions,
         design: Design,
 ) -> None:
-    """Fig. 3 — Eqs. (11), (13), (14), (19): Pm, Vpy, Vsy, Vm."""
+    """Compute mixed-stream state before the shock."""
 
     conditions.velocity[Phase.P, Loc.CH] = _velocity_from_mach(
         conditions.mach[Phase.P, Loc.CH], conditions.gamma, conditions.R,
@@ -375,7 +373,7 @@ def _velocity_from_mach(
         R: float,
         temperature: float,
 ) -> float:
-    """Return V = M · sqrt(γRT) (Huang et al., Eqs. 13, 14)."""
+    """Return flow velocity from Mach number"""
 
     return mach * np.sqrt(gamma * R * temperature)
 
@@ -388,7 +386,7 @@ def _mass_flow_rate(
         R: float,
         nozzle_efficiency: float,
 ) -> float:
-    """Mass flow at choking condition (Huang et al., Eqs. 1, 7)."""
+    """Return mass flow rate."""
 
     return (
         pressure * area / np.sqrt(temperature) *
@@ -400,7 +398,7 @@ def _mass_flow_rate(
 def _isentropic_relation(
         gamma: float, mach: float | np.ndarray,
 ) -> float | np.ndarray:
-    """Return 1 + (γ − 1)/2 · M²."""
+    """Return the isentropic compressibility factor"""
 
     return 1.0 + (gamma - 1.0) / 2.0 * mach ** 2
 
@@ -410,7 +408,7 @@ def _primary_exhaust_mach_residual(
         gamma: float,
         area_ratio: float,
 ) -> float | np.ndarray:
-    """Eq. (2) residual: (A/A*)² − f(M) for primary nozzle exit Mach."""
+    """Return residual for the primary nozzle exit Mach number."""
 
     residual = (
         1.0 / mach ** 2 * (2.0 / (gamma + 1.0) * _isentropic_relation(gamma, mach)) **
@@ -424,7 +422,7 @@ def _primary_choke_mach_residual(
         mach_exhaust: float,
         pressure_ratio: float,
 ) -> float | np.ndarray:
-    """Eq. (4) residual: isentropic pressure ratio match at primary choke."""
+    """Return residual for the primary choke Mach number."""
 
     return (
         _isentropic_relation(gamma, mach_exhaust) **
@@ -434,7 +432,7 @@ def _primary_choke_mach_residual(
 
 
 def _mixing_coeff(area_ratio: float) -> float:
-    """Return fm for A3/At (Huang et al., Eq. 19)."""
+    """Return empirical mixing coefficient"""
 
     if area_ratio > 8.3:
         return 0.80
