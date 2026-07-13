@@ -4,11 +4,10 @@ from CoolProp import AbstractState
 from CoolProp.CoolProp import PropsSI
 
 from jet import (
-    Design,
     Loc,
     Phase,
     Requirements,
-    solve_dimensions,
+    design,
 )
 
 FLUID = "R141b"
@@ -23,27 +22,14 @@ Pc_star = PropsSI("P", "T", Tc_star + 273.15, "Q", 1.0, FLUID)
 
 SHAPE = (Phase.SIZE, Loc.SIZE)
 
-design = Design(
-    diameter=np.full(SHAPE, np.nan),
-    area=np.full(SHAPE, np.nan),
-    length=np.full(SHAPE, np.nan),
-)
-
-# Table 1, nozzle E
-design.diameter[Phase.P, Loc.TH] = 2.82e-3
-design.area[Phase.P, Loc.TH] = np.pi / 4 * \
-    design.diameter[Phase.P, Loc.TH] ** 2
-
-design.diameter[Phase.P, Loc.EX] = 5.10e-3
-design.area[Phase.P, Loc.EX] = np.pi / 4 * \
-    design.diameter[Phase.P, Loc.EX] ** 2
-
 _eos = AbstractState("HEOS", FLUID)
 _eos.specify_phase(CoolProp.iphase_gas)
 
 req = Requirements(
     phase=_eos,
     Pc_star=Pc_star,
+    nozzle_throat_diameter=2.82e-3,  # Table 1, nozzle E
+    nozzle_exit_diameter=5.10e-3,
     pressure=np.full(SHAPE, np.nan),
     temperature=np.full(SHAPE, np.nan),
 )
@@ -53,11 +39,11 @@ req.pressure[Phase.S, Loc.IN] = P_evap
 req.temperature[Phase.P, Loc.IN] = T_gen + 273.15
 req.temperature[Phase.S, Loc.IN] = T_evap + 273.15
 
-conditions = solve_dimensions(req, design)
+design, operation_conditions = design(req)
 
 req.report()
 design.report()
-conditions.report()
+operation_conditions.report()
 
 # NOTE отношение площадей и коэффициент эжекции расходятся с данными в статье,
 # NOTE нужно перепроверить реализацию алгоритма, найти ошибку

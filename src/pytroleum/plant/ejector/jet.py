@@ -35,6 +35,8 @@ class Requirements:
 
     phase: AbstractState
     Pc_star: float
+    nozzle_throat_diameter: float
+    nozzle_exit_diameter: float
     pressure: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
     temperature: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
 
@@ -160,9 +162,9 @@ class OperationConditions:
 class Design:
     """Ejector flow-passage geometry (areas, diameters, lengths)."""
 
-    diameter: np.ndarray
-    area: np.ndarray
-    length: np.ndarray
+    diameter: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
+    area: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
+    length: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
 
     def _secondary_choke_area(self) -> None:
         """Set secondary choke area from mixed and primary core areas."""
@@ -189,34 +191,35 @@ class Design:
         report_dimensions(self)
 
 
-def solve_dimensions(
-        req: Requirements,
+def design(req: Requirements, Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
+           max_iter: int = _MAX_ITER,
+           ) -> tuple[Design, OperationConditions]:
+    """Run a jet ejector at critical mode."""
 
-        design: Design,
-        # NOTE design лучше создавать внутри функции, которая выполняет проектный расчёт
-        # NOTE и возвращать вместе с OperationConditions (см. заметки в __init__.py)
+    design = Design()
+    design.diameter[Phase.P, Loc.TH] = req.nozzle_throat_diameter
+    design.area[Phase.P, Loc.TH] = (
+        np.pi / 4 * req.nozzle_throat_diameter ** 2)
+    design.diameter[Phase.P, Loc.EX] = req.nozzle_exit_diameter
+    design.area[Phase.P, Loc.EX] = (
+        np.pi / 4 * req.nozzle_exit_diameter ** 2)
 
-        Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
-        max_iter: int = _MAX_ITER,
-) -> OperationConditions:  # NOTE сигнатура вызова и имя функции противоречат друг-другу
-    """Run a jet ejector at critical mode"""
+    operation_conditions = OperationConditions(phase=req.phase)
+    operation_conditions.read_requirements(req)
 
-    conditions = OperationConditions(phase=req.phase)
-    conditions.read_requirements(req)
-
-    _primary_mass_flow(conditions, design)
-    _primary_exhaust_state(conditions, design)
-    conditions._secondary_choke_state()
+    _primary_mass_flow(operation_conditions, design)
+    _primary_exhaust_state(operation_conditions, design)
+    operation_conditions._secondary_choke_state()
 
     design.area[Phase.M, Loc.AM] = (
         design.area[Phase.P, Loc.TH] * _A3_INITIAL_RATIO)
 
     iter_count = 0
-    while not conditions.converged(req.Pc_star, Pc_rel_tolerance):
+    while not operation_conditions.converged(req.Pc_star, Pc_rel_tolerance):
         # Asy < 0 → A3 = Apy + ΔA3 см. Huang et al. (1999)
         valid_secondary_area = False
         while not valid_secondary_area:
-            _primary_core_state(conditions, design)
+            _primary_core_state(operation_conditions, design)
             design._secondary_choke_area()
             valid_secondary_area = design.area[Phase.S, Loc.CH] >= 0.0
 
@@ -224,21 +227,21 @@ def solve_dimensions(
                 design.area[Phase.M, Loc.AM] = design.area[Phase.P, Loc.CH]
                 design.area[Phase.M, Loc.AM] += _DA3
 
-        _secondary_mass_flow(conditions, design)
-        conditions._choke_temperatures()
-        _mix_pre_shock_velocity_pressure(conditions, design)
-        conditions._mix_pre_shock_temperature_mach()
-        conditions._aftermix_state()
-        conditions._mix_drain_pressure()
+        _secondary_mass_flow(operation_conditions, design)
+        operation_conditions._choke_temperatures()
+        _mix_pre_shock_velocity_pressure(operation_conditions, design)
+        operation_conditions._mix_pre_shock_temperature_mach()
+        operation_conditions._aftermix_state()
+        operation_conditions._mix_drain_pressure()
 
         if iter_count >= max_iter:
             raise RuntimeError(
                 f"Solution algorithm did not converge in {max_iter} iterations, "
                 f"outer loop is abandoned.")
 
-        if not conditions.converged(req.Pc_star, Pc_rel_tolerance):
+        if not operation_conditions.converged(req.Pc_star, Pc_rel_tolerance):
             # Pc vs Pc* → подбор A3 см. Huang et al. (1999)
-            Pc = conditions.pressure[Phase.M, Loc.D]
+            Pc = operation_conditions.pressure[Phase.M, Loc.D]
 
             if Pc >= req.Pc_star:
                 design.area[Phase.M, Loc.AM] += _DA3
@@ -248,7 +251,7 @@ def solve_dimensions(
             iter_count += 1
 
     design._finalize_mix_geometry()
-    return conditions
+    return design, operation_conditions
 
 
 def _primary_mass_flow(
