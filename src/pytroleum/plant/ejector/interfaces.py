@@ -43,6 +43,9 @@ class Requirements(Protocol):
     pressure: NDArray[float64]
     temperature: NDArray[float64]
 
+    def report(self) -> None:
+        ...
+
 
 class OperationConditions(Protocol):
     mass_flow_rate: NDArray[float64]
@@ -51,7 +54,14 @@ class OperationConditions(Protocol):
     mach: NDArray[float64]
     velocity: NDArray[float64]
 
+    def report(self) -> None:
+        ...
+
 
 class Design(Protocol):
     diameter: NDArray[float64]
     area: NDArray[float64]
+    length: NDArray[float64]
+
+    def report(self) -> None:
+        ...

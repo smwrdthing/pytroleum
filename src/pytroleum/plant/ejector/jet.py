@@ -173,6 +173,9 @@ class Design:
             self.diameter[Phase.M, loc] = (
                 self.diameter[Phase.M, Loc.AM])
 
+    def _area_ratio(self, loc_num: Loc, loc_denom: Loc) -> float:
+        return self.area[Phase.P, loc_num] / self.area[Phase.P, loc_denom]
+
     def report(self) -> None:
         report_dimensions(self)
 
@@ -282,13 +285,8 @@ def _primary_exhaust_state(
         [MACH_GUESS],
         args=(
             conditions.gamma,
-            design.area[Phase.P, Loc.EX] /
-            design.area[Phase.P, Loc.TH]),
+            design._area_ratio(Loc.EX, Loc.TH)),
     )[0]
-    # NOTE Идея, чтобы повысить читаемость:
-    # NOTE Для отношения площадей можно в design завести метод area_ratio, который будет
-    # NOTE принимать целочисленные значения, получится что-то типа
-    # NOTE >> design.area_ratio(Loc.EX, Loc.TH)
 
     conditions.pressure[Phase.P, Loc.EX] = (
         conditions.pressure[Phase.P, Loc.IN] /
