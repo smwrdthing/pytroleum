@@ -38,6 +38,8 @@ _CONTAINER = np.full((Phase.SIZE, Loc.SIZE), np.nan)
 
 
 class Requirements(Protocol):
+    """Boundary conditions from the technical specification (ТЗ)."""
+
     phase: Any
     Pc_star: float
     nozzle_throat_diameter: float
@@ -50,6 +52,12 @@ class Requirements(Protocol):
 
 
 class OperationConditions(Protocol):
+    """Calculated flow states and performance parameters."""
+
+    phase: Any
+    gamma: float
+    R: float
+    cp: float
     mass_flow_rate: NDArray[float64]
     pressure: NDArray[float64]
     temperature: NDArray[float64]
@@ -61,6 +69,8 @@ class OperationConditions(Protocol):
 
 
 class Design(Protocol):
+    """Ejector flow-passage geometry (areas, diameters, lengths)."""
+
     diameter: NDArray[float64]
     area: NDArray[float64]
     length: NDArray[float64]

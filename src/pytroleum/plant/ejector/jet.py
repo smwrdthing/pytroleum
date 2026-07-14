@@ -64,7 +64,7 @@ class OperationConditions:
         self.mass_flow_rate = np.array(
             [*self.mass_flow_rate, np.sum(self.mass_flow_rate)])
 
-    def read_requirements(self, req: Requirements) -> None:
+    def _read_requirements(self, req: Requirements) -> None:
         """Load boundary conditions from req and set Cp, γ, and R."""
         self.phase = _copy_eos(req.phase)
         self.pressure = req.pressure.copy()
@@ -143,7 +143,7 @@ class OperationConditions:
             _isentropic_relation(self.gamma, self.mach[Phase.M, Loc.AM]) **
             (self.gamma / (self.gamma - 1.0)))
 
-    def converged(self, Pc_star: float, rel_tolerance: float) -> bool:
+    def _converged(self, Pc_star: float, rel_tolerance: float) -> bool:
         """Return True if discharge pressure matches the target within tolerance."""
         Pc = self.pressure[Phase.M, Loc.D]
         return abs(Pc - Pc_star) / Pc_star <= rel_tolerance
@@ -200,7 +200,7 @@ def design(req: Requirements, Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
         np.pi / 4 * design.diameter[Phase.P, Loc.EX] ** 2)
 
     operation_conditions = OperationConditions()
-    operation_conditions.read_requirements(req)
+    operation_conditions._read_requirements(req)
 
     _primary_mass_flow(operation_conditions, design)
     _primary_exhaust_state(operation_conditions, design)
@@ -210,7 +210,7 @@ def design(req: Requirements, Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
         design.area[Phase.P, Loc.TH] * _A3_INITIAL_RATIO)
 
     iter_count = 0
-    while not operation_conditions.converged(req.Pc_star, Pc_rel_tolerance):
+    while not operation_conditions._converged(req.Pc_star, Pc_rel_tolerance):
         # Asy < 0 → A3 = Apy + ΔA3 см. Huang et al. (1999)
         valid_secondary_area = False
         while not valid_secondary_area:
@@ -234,7 +234,7 @@ def design(req: Requirements, Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
                 f"Solution algorithm did not converge in {max_iter} iterations, "
                 f"outer loop is abandoned.")
 
-        if not operation_conditions.converged(req.Pc_star, Pc_rel_tolerance):
+        if not operation_conditions._converged(req.Pc_star, Pc_rel_tolerance):
             # Pc vs Pc* → подбор A3 см. Huang et al. (1999)
             Pc = operation_conditions.pressure[Phase.M, Loc.D]
 
