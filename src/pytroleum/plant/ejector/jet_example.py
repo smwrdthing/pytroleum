@@ -26,8 +26,8 @@ eos = AbstractState("HEOS", FLUID)
 req = Requirements(
     phase=eos,
     Pc_star=Pc_star,
-    nozzle_throat_diameter=2.82e-3,  # Table 1, nozzle E
-    nozzle_exit_diameter=5.10e-3,
+    diameter_throat_nozzle=2.82e-3,  # Table 1, nozzle E
+    diameter_exit_nozzle=5.10e-3,
     pressure=np.full(SHAPE, np.nan),
     temperature=np.full(SHAPE, np.nan),
 )

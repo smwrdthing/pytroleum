@@ -42,8 +42,8 @@ class Requirements(Protocol):
 
     phase: Any
     Pc_star: float
-    nozzle_throat_diameter: float
-    nozzle_exit_diameter: float
+    diameter_throat_nozzle: float
+    diameter_exit_nozzle: float
     pressure: NDArray[float64]
     temperature: NDArray[float64]
 

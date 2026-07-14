@@ -35,8 +35,8 @@ class Requirements:
 
     phase: AbstractState
     Pc_star: float
-    nozzle_throat_diameter: float
-    nozzle_exit_diameter: float
+    diameter_throat_nozzle: float
+    diameter_exit_nozzle: float
     pressure: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
     temperature: np.ndarray = field(default_factory=lambda: _CONTAINER.copy())
 
@@ -192,8 +192,8 @@ def design(req: Requirements, Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
     """Run a jet ejector at critical mode."""
 
     design = Design()
-    design.diameter[Phase.P, Loc.TH] = req.nozzle_throat_diameter
-    design.diameter[Phase.P, Loc.EX] = req.nozzle_exit_diameter
+    design.diameter[Phase.P, Loc.TH] = req.diameter_throat_nozzle
+    design.diameter[Phase.P, Loc.EX] = req.diameter_exit_nozzle
     design.area[Phase.P, Loc.TH] = (
         np.pi / 4 * design.diameter[Phase.P, Loc.TH] ** 2)
     design.area[Phase.P, Loc.EX] = (
