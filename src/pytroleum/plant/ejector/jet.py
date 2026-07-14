@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from pytroleum.tdyna.CoolStub import AbstractState  # type: ignore
 else:
     from CoolProp import AbstractState
-from CoolProp.constants import PT_INPUTS
+from CoolProp.constants import PT_INPUTS, iphase_gas
 
 import numpy as np
 from scipy.optimize import fsolve
@@ -48,7 +48,7 @@ class Requirements:
 @dataclass
 class OperationConditions:
 
-    phase: AbstractState
+    phase: AbstractState = field(init=False)
     gamma: float = field(init=False)
     R: float = field(init=False)
     cp: float = field(init=False)
@@ -66,12 +66,7 @@ class OperationConditions:
 
     def read_requirements(self, req: Requirements) -> None:
         """Load boundary conditions from req and set Cp, γ, and R."""
-        self.phase = req.phase
-        # NOTE надёжнее будет сконструировать новые объекты для уравнений состояний,
-        # NOTE здесь может оказаться так, что self.phase и req.phase - одно и то же,
-        # NOTE тогда при изменении self.phase будет меняться и req.phase, при копировании
-        # NOTE объектов из полей классов такую связь нужно исключить
-
+        self.phase = _copy_eos(req.phase)
         self.pressure = req.pressure.copy()
         self.temperature = req.temperature.copy()
         self._extract_properties_for()
@@ -204,7 +199,7 @@ def design(req: Requirements, Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
     design.area[Phase.P, Loc.EX] = (
         np.pi / 4 * design.diameter[Phase.P, Loc.EX] ** 2)
 
-    operation_conditions = OperationConditions(phase=req.phase)
+    operation_conditions = OperationConditions()
     operation_conditions.read_requirements(req)
 
     _primary_mass_flow(operation_conditions, design)
@@ -365,6 +360,12 @@ def _mix_pre_shock_velocity_pressure(
 
 
 # --- Helpers ---
+
+
+def _copy_eos(phase: AbstractState) -> AbstractState:
+    eos = AbstractState(phase.backend_name(), "&".join(phase.fluid_names()))
+    eos.specify_phase(iphase_gas)
+    return eos
 
 
 def _velocity_from_mach(

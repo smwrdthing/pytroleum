@@ -1,5 +1,4 @@
 import numpy as np
-import CoolProp
 from CoolProp import AbstractState
 from CoolProp.CoolProp import PropsSI
 
@@ -22,11 +21,10 @@ Pc_star = PropsSI("P", "T", Tc_star + 273.15, "Q", 1.0, FLUID)
 
 SHAPE = (Phase.SIZE, Loc.SIZE)
 
-_eos = AbstractState("HEOS", FLUID)
-_eos.specify_phase(CoolProp.iphase_gas)
+eos = AbstractState("HEOS", FLUID)
 
 req = Requirements(
-    phase=_eos,
+    phase=eos,
     Pc_star=Pc_star,
     nozzle_throat_diameter=2.82e-3,  # Table 1, nozzle E
     nozzle_exit_diameter=5.10e-3,
