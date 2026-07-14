@@ -239,9 +239,9 @@ def design(req: Requirements, Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
             Pc = operation_conditions.pressure[Phase.M, Loc.D]
 
             if Pc >= req.Pc_star:
-                design.area[Phase.M, Loc.AM] += _DA3
-            else:
                 design.area[Phase.M, Loc.AM] -= _DA3
+            else:
+                design.area[Phase.M, Loc.AM] += _DA3
 
             iter_count += 1
 
