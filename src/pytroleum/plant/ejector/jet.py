@@ -219,8 +219,8 @@ def design(req: Requirements, Pc_rel_tolerance: float = _PC_REL_TOLERANCE,
             valid_secondary_area = design.area[Phase.S, Loc.CH] >= 0.0
 
             if not valid_secondary_area:
-                design.area[Phase.M, Loc.AM] = design.area[Phase.P, Loc.CH]
-                design.area[Phase.M, Loc.AM] += _DA3
+                design.area[Phase.M,
+                            Loc.AM] = design.area[Phase.P, Loc.CH] + _DA3
 
         _secondary_mass_flow(operation_conditions, design)
         operation_conditions._choke_temperatures()
