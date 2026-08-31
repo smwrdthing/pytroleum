@@ -20,6 +20,7 @@
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
+from typing import Tuple
 
 _TO_MM = 1000
 BETA = 1.15  # коэффициент избытка флегмы
@@ -70,14 +71,15 @@ STANDARD_DIAMETERS = np.array([
 # =====================================================================
 
 
-def material_balance(total_flow_rate, xF, yD, xR):
+def material_balance(total_flow_rate: float, xF: float,
+                     yD: float, xR: float) -> Tuple[float, float]:
     """Материальный баланс колонны"""
     distillate_flow_rate = total_flow_rate * (xF - xR) / (yD - xR)
     residual_flow_rate = total_flow_rate - distillate_flow_rate
     return distillate_flow_rate, residual_flow_rate
 
 
-def working_reflux(R_min, beta=BETA):
+def working_reflux(R_min: float, beta: float = BETA) -> float:
     """Рабочее флегмовое число"""
     return beta * R_min
 
@@ -86,14 +88,16 @@ def working_reflux(R_min, beta=BETA):
 # 2. ВНУТРЕННИЕ МАТЕРИАЛЬНЫЕ ПОТОКИ (верх / низ колонны)
 # =====================================================================
 
-def internal_flows_top(reflux_ratio, distillate_flow_rate):
+def internal_flows_top(reflux_ratio: float,
+                       distillate_flow_rate: float) -> Tuple[float, float]:
     """L, G для укрепляющей (верхней) части колонны, кг/с."""
     liquid_flow_rate = reflux_ratio * distillate_flow_rate
     vapor_flow_rate = liquid_flow_rate + distillate_flow_rate
     return liquid_flow_rate, vapor_flow_rate
 
 
-def internal_flows_bottom(L_top, F_liquid_part, residual_flow_rate):
+def internal_flows_bottom(L_top: float, F_liquid_part: float,
+                          residual_flow_rate: float) -> Tuple[float, float]:
     """
     L, G для исчерпывающей (нижней) части колонны, кг/с.
     F_liquid_part - жидкая часть питания, поступающая в низ колонны, кг/с.
@@ -103,15 +107,15 @@ def internal_flows_bottom(L_top, F_liquid_part, residual_flow_rate):
     return liquid_flow_rate, vapor_flow_rate
 
 
-def vapor_volume_flow(vapor_flow_rate, R, temperature,
-                      compressibility_factor,
-                      molecular_weight, pressure):
+def vapor_volume_flow(vapor_flow_rate: float, R: float, temperature: float,
+                      compressibility_factor: float,
+                      molecular_weight: float, pressure: float) -> float:
     """Объёмный расход паров по уравнению Клапейрона-Менделеева, м³/с."""
     return (vapor_flow_rate * R * temperature * compressibility_factor /
             (molecular_weight * pressure))
 
 
-def vapor_density(vapor_flow_rate, vapor_volume):
+def vapor_density(vapor_flow_rate: float, vapor_volume: float) -> float:
     """Плотность паров, кг/м³."""
     return vapor_flow_rate / vapor_volume
 
@@ -136,19 +140,19 @@ def vapor_velocity(liquid_flow_rate: float,
     k = get_k(liquid_flow_rate, vapor_flow_rate, vapor_density, liquid_density)
 
     density_ratio = vapor_density / liquid_density
-    packing_ratio = packing_a / packing_void**3
+    packing_ratio = packing_a / packing_void ** 3
     psi = liquid_density / water_density
 
     return 3.14 * k * (packing_ratio * density_ratio *
-                       liquid_viscosity**0.12 * psi) ** (-0.5)
+                       liquid_viscosity ** 0.12 * psi) ** (-0.5)
 
 
-def column_diameter(V, w):
+def column_diameter(vapor_volume_flow: float, vapor_velocity: float) -> float:
     """Расчётный диаметр колонны, м."""
-    return np.sqrt(V / (0.785 * w))
+    return np.sqrt(vapor_volume_flow / (0.785 * vapor_velocity))
 
 
-def select_nominal_diameter(diameter: float, nominal_diameters) -> float:
+def select_nominal_diameter(diameter: float, nominal_diameters: np.ndarray) -> float:
     """Выбор ближайшего большего номинального диаметра, м."""
     for d_nom in sorted(nominal_diameters):
         if d_nom >= diameter:
@@ -229,7 +233,7 @@ if __name__ == "__main__":
     D_nom = select_nominal_diameter(D_calc, STANDARD_DIAMETERS)
 
     print(f"Дистиллят:           {D:.3f} кг/с")
-    print(f"Остаток:     {W:.3f} кг/с")
+    print(f"Остаток:             {W:.3f} кг/с")
     print(f"Флегмовое число:     {R:.3f}")
     print(f"L (жидкость):        {L:.3f} кг/с")
     print(f"G (пар):             {G:.3f} кг/с")
