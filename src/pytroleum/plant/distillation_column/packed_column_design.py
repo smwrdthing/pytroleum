@@ -17,13 +17,12 @@
   7. Гидравлическое сопротивление орошаемой насадки          (V.36-V.40)
 """
 
-import math
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 
 _TO_MM = 1000
+BETA = 1.15  # коэффициент избытка флегмы
 
 # =====================================================================
 # ДАННЫЕ ИЗ ГРАФИКА V-4 (стр. 158) для определения коэффициента k
@@ -78,7 +77,7 @@ def material_balance(total_flow_rate, xF, yD, xR):
     return distillate_flow_rate, residual_flow_rate
 
 
-def working_reflux(R_min, beta=1.15):
+def working_reflux(R_min, beta=BETA):
     """Рабочее флегмовое число"""
     return beta * R_min
 
@@ -146,7 +145,7 @@ def vapor_velocity(liquid_flow_rate: float,
 
 def column_diameter(V, w):
     """Расчётный диаметр колонны, м."""
-    return math.sqrt(V / (0.785 * w))
+    return np.sqrt(V / (0.785 * w))
 
 
 def select_nominal_diameter(diameter: float, nominal_diameters) -> float:
@@ -199,7 +198,7 @@ if __name__ == "__main__":
     yD = 0.95
     xR = 0.05
     R_min = 1.2
-    beta = 1.15
+    beta = BETA
 
     # Характеристики насадки (кольца Рашига 25 мм)
     packing_a = 204.0          # м²/м³
