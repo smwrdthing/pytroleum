@@ -79,9 +79,9 @@ def material_balance(total_flow_rate: float, xF: float,
     return distillate_flow_rate, residual_flow_rate
 
 
-def working_reflux(R_min: float, beta: float = BETA) -> float:
+def working_reflux(reflux_min: float, beta: float = BETA) -> float:
     """Рабочее флегмовое число"""
-    return beta * R_min
+    return beta * reflux_min
 
 
 # =====================================================================
@@ -90,7 +90,7 @@ def working_reflux(R_min: float, beta: float = BETA) -> float:
 
 def internal_flows_top(reflux_ratio: float,
                        distillate_flow_rate: float) -> Tuple[float, float]:
-    """L, G для укрепляющей (верхней) части колонны, кг/с."""
+    """L, G для верхней части колонны, кг/с."""
     liquid_flow_rate = reflux_ratio * distillate_flow_rate
     vapor_flow_rate = liquid_flow_rate + distillate_flow_rate
     return liquid_flow_rate, vapor_flow_rate
@@ -98,10 +98,7 @@ def internal_flows_top(reflux_ratio: float,
 
 def internal_flows_bottom(L_top: float, F_liquid_part: float,
                           residual_flow_rate: float) -> Tuple[float, float]:
-    """
-    L, G для исчерпывающей (нижней) части колонны, кг/с.
-    F_liquid_part - жидкая часть питания, поступающая в низ колонны, кг/с.
-    """
+    """L, G для нижней части колонны, кг/с. """
     liquid_flow_rate = L_top + F_liquid_part
     vapor_flow_rate = liquid_flow_rate - residual_flow_rate
     return liquid_flow_rate, vapor_flow_rate
@@ -149,7 +146,7 @@ def vapor_velocity(liquid_flow_rate: float,
 
 def column_diameter(vapor_volume_flow: float, vapor_velocity: float) -> float:
     """Расчётный диаметр колонны, м."""
-    return np.sqrt(vapor_volume_flow / (0.785 * vapor_velocity))
+    return np.sqrt(4*vapor_volume_flow / (np.pi * vapor_velocity))
 
 
 def select_nominal_diameter(diameter: float, nominal_diameters: np.ndarray) -> float:
@@ -181,7 +178,7 @@ if __name__ == "__main__":
     plt.xscale('log')
     plt.yscale('log')
 
-    plt.xlabel('X')
+    plt.xlabel('X = (L/G)·√(ρ_п/ρ_ж)')
     plt.ylabel('k')
     plt.grid(True, alpha=0.3, which='both')
     plt.legend()
