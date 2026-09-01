@@ -9,8 +9,8 @@
 
 Семь расчётных блоков:
   1. Материальный баланс и рабочее флегмовое число
-  2. Внутренние потоки пара и жидкости по колонне
-  3. Диаметр колонны (скорость захлёбывания)                (V.1 - V.4)
+  2. Внутренние потоки пара и жидкости по колонне (верх и низ)
+  3. Диаметр колонны верха и низа + пересчёт скоростей          (V.1 - V.4)
   4. Число единиц переноса (ЧЕП)                             (V.9, V.12)
   5. Высота слоя насадки: метод ВЕП и метод ВЭТТ             (V.10, V.23)
   6. Гидравлическое сопротивление сухой насадки              (V.31-V.33)
@@ -24,6 +24,9 @@ from typing import Tuple
 
 _TO_MM = 1000
 BETA = 1.15  # коэффициент избытка флегмы
+
+# Допустимая скорость паров принимается ниже скорости захлёбывания
+ADMISSIBLE_VELOCITY_FACTOR = 0.8
 
 # =====================================================================
 # ДАННЫЕ ИЗ ГРАФИКА V-4 (стр. 158) для определения коэффициента k
@@ -133,7 +136,7 @@ def vapor_velocity(liquid_flow_rate: float,
                    packing_a: float,
                    packing_void: float,
                    water_density: float) -> float:
-    """Расчёт рабочей скорости пара по формуле (V.5)."""
+    """Расчёт рабочей скорости пара"""
     k = get_k(liquid_flow_rate, vapor_flow_rate, vapor_density, liquid_density)
 
     density_ratio = vapor_density / liquid_density
@@ -144,20 +147,37 @@ def vapor_velocity(liquid_flow_rate: float,
                        liquid_viscosity ** 0.12 * psi) ** (-0.5)
 
 
-def column_diameter(vapor_volume_flow: float, vapor_velocity: float) -> float:
+def admissible_vapor_velocity(flooding_velocity: float,
+                              factor: float = ADMISSIBLE_VELOCITY_FACTOR) -> float:
+    """Допустимая скорость паров, м/с"""
+    return factor * flooding_velocity
+
+
+def calc_column_diameter(vapor_volume_flow: float, vapor_velocity: float) -> float:
     """Расчётный диаметр колонны, м."""
     return np.sqrt(4*vapor_volume_flow / (np.pi * vapor_velocity))
 
 
-def select_nominal_diameter(diameter: float, nominal_diameters: np.ndarray) -> float:
-    """Выбор ближайшего большего номинального диаметра, м."""
+def select_column_diameter(*diameters: float,
+                           nominal_diameters: np.ndarray = STANDARD_DIAMETERS) -> float:
+    """Выбор ближайшего большего номинального диаметра из нормального ряда.
+
+    Принимает один или несколько расчётных диаметров (верх, низ и т.д.),
+    берёт наибольший и округляет вверх до стандарта.
+    """
+    d_max = max(diameters)
     for d_nom in sorted(nominal_diameters):
-        if d_nom >= diameter:
+        if d_nom >= d_max:
             return d_nom
     raise ValueError(
-        f"Расчётный диаметр {diameter * _TO_MM:.1f} мм "
+        f"Расчётный диаметр {d_max * _TO_MM:.1f} мм "
         f"больше {max(nominal_diameters) * _TO_MM:.0f} мм"
     )
+
+
+def actual_vapor_velocity(vapor_volume_flow: float, diameter: float) -> float:
+    """Фактическая скорость пара в колонне ПРИНЯТОГО (номинального) диаметра,м/с"""
+    return 4 * vapor_volume_flow / (np.pi * diameter ** 2)
 
 
 # =====================================================================
@@ -165,6 +185,7 @@ def select_nominal_diameter(diameter: float, nominal_diameters: np.ndarray) -> f
 # =====================================================================
 
 if __name__ == "__main__":
+
     # =================================================================
     # ГРАФИК ЗАВИСИМОСТИ k ОТ X (ЛОГАРИФМИЧЕСКАЯ ШКАЛА)
     # =================================================================
@@ -200,40 +221,85 @@ if __name__ == "__main__":
     xR = 0.05
     R_min = 1.2
     beta = BETA
+    F_liquid_part = total_flow
 
     # Характеристики насадки (кольца Рашига 25 мм)
     packing_a = 204.0          # м²/м³
     packing_void = 0.74        # м³/м³
     water_density = 1000.0     # кг/м³
 
-    # Параметры верха колонны
-    rho_vapor = 3.1            # кг/м³
-    rho_liquid = 800.0         # кг/м³
-    mu_liquid = 0.3            # сП
+    # ---- Параметры ВЕРХНЕЙ части колонны ----
+    rho_vapor_top = 3.1        # кг/м³
+    rho_liquid_top = 800.0     # кг/м³
+    mu_liquid_top = 0.3        # сП
 
-    # Материальный баланс
+    # ---- Параметры НИЖНЕЙ части колонны ----
+    # (плотности и вязкость отличаются от верха из-за более высокой
+    # температуры и иного состава низа колонны
+    rho_vapor_bottom = 3.5     # кг/м³
+    rho_liquid_bottom = 780.0  # кг/м³
+    mu_liquid_bottom = 0.2     # сП
+
+    # ---- Материальный баланс и рабочее флегмовое число ----
     D, W = material_balance(total_flow, xF, yD, xR)
     R = working_reflux(R_min, beta)
 
-    # Внутренние потоки
-    L, G = internal_flows_top(R, D)
+    # ---- Внутренние потоки: верх и низ колонны ----
+    L_top, G_top = internal_flows_top(R, D)
+    L_bottom, G_bottom = internal_flows_bottom(L_top, F_liquid_part, W)
 
-    # Скорость пара
-    omega = vapor_velocity(L, G, rho_vapor, rho_liquid, mu_liquid,
-                           packing_a, packing_void, water_density)
+    # ---- Скорости пара при захлёбывании ----
+    omega_top = vapor_velocity(L_top, G_top, rho_vapor_top, rho_liquid_top,
+                               mu_liquid_top, packing_a, packing_void,
+                               water_density)
+    omega_bottom = vapor_velocity(L_bottom, G_bottom, rho_vapor_bottom,
+                                  rho_liquid_bottom, mu_liquid_bottom,
+                                  packing_a, packing_void, water_density)
 
-    # Расчётный диаметр
-    V = G / rho_vapor
-    D_calc = column_diameter(V, omega)
+    # ---- Допустимые скорости (0,8 * скорость захлёбывания) ----
+    w_dop_top = admissible_vapor_velocity(omega_top)
+    w_dop_bottom = admissible_vapor_velocity(omega_bottom)
 
-    # Стандартный диаметр
-    D_nom = select_nominal_diameter(D_calc, STANDARD_DIAMETERS)
+    # ---- Объёмные расходы пара по каждой секции ----
+    V_top = G_top / rho_vapor_top
+    V_bottom = G_bottom / rho_vapor_bottom
 
-    print(f"Дистиллят:           {D:.3f} кг/с")
-    print(f"Остаток:             {W:.3f} кг/с")
-    print(f"Флегмовое число:     {R:.3f}")
-    print(f"L (жидкость):        {L:.3f} кг/с")
-    print(f"G (пар):             {G:.3f} кг/с")
-    print(f"Скорость пара:       {omega:.3f} м/с")
-    print(f"Диаметр расчётный:   {D_calc:.3f} м")
-    print(f"Диаметр стандартный: {D_nom:.3f} м")
+    # ---- Расчётные диаметры верха и низа колонны по отдельности ----
+    # (по допустимой скорости, а не по скорости захлёбывания!)
+    D_calc_top = calc_column_diameter(V_top, w_dop_top)
+    D_calc_bottom = calc_column_diameter(V_bottom, w_dop_bottom)
+
+    # ---- Единый (номинальный) диаметр колонны ----
+    # Берём больший из расчётных диаметров верха/низа и округляем
+    # вверх до ближайшего диаметра нормального ряда
+    D_nom = select_column_diameter(D_calc_top, D_calc_bottom)
+
+    # ---- Пересчёт ФАКТИЧЕСКИХ скоростей пара по принятому диаметру ----
+    w_actual_top = actual_vapor_velocity(V_top, D_nom)
+    w_actual_bottom = actual_vapor_velocity(V_bottom, D_nom)
+
+    print(f"Дистиллят:                 {D:.3f} кг/с")
+    print(f"Остаток:                   {W:.3f} кг/с")
+    print(f"Флегмовое число:           {R:.3f}")
+    print()
+    print("Верхняя часть колонны:")
+    print(f"  L (жидкость):            {L_top:.3f} кг/с")
+    print(f"  G (пар):                 {G_top:.3f} кг/с")
+    print(f"  Скорость захлёбывания:   {omega_top:.3f} м/с")
+    print(f"  Допустимая скорость:     {w_dop_top:.3f} м/с (0,8·w_захл)")
+    print(f"  Расчётный диаметр:       {D_calc_top:.3f} м")
+    print()
+    print("Нижняя часть колонны:")
+    print(f"  L (жидкость):            {L_bottom:.3f} кг/с")
+    print(f"  G (пар):                 {G_bottom:.3f} кг/с")
+    print(f"  Скорость захлёбывания:   {omega_bottom:.3f} м/с")
+    print(f"  Допустимая скорость:     {w_dop_bottom:.3f} м/с (0,8·w_захл)")
+    print(f"  Расчётный диаметр:       {D_calc_bottom:.3f} м")
+    print()
+    print(f"Диаметр колонны (единый, номинальный): {D_nom:.3f} м")
+    print()
+    print("Фактические скорости пара при принятом диаметре:")
+    print(f"  Верх колонны:  {w_actual_top:.3f} м/с "
+          f"({100*w_actual_top/omega_top:.0f}% от скорости захлёбывания)")
+    print(f"  Низ колонны:   {w_actual_bottom:.3f} м/с "
+          f"({100*w_actual_bottom/omega_bottom:.0f}% от скорости захлёбывания)")
