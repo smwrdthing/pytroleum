@@ -200,26 +200,25 @@ def minimum_reflux_underwood(mixture: Mixture, xD: list[float],
                              q: float,
                              light_key: int,
                              heavy_key: int) -> tuple[float, float]:
-    """
-    Метод Андервуда для многокомпонентной смеси.
+    """ Метод Андервуда для многокомпонентной смеси"""
 
-    Возвращает (theta, R_min).
-    θ — корень (II.36) между α тяжёлого и лёгкого ключевых;
-    R_min — из уравнения (II.35):
-
-               p   α_i · xD_i
-    R_min + 1 = Σ  ————————————
-               i=1  α_i − θ
-    """
+    # Извлекаем данные из объекта mixture для удобства
     alpha = mixture.alpha
     xF = mixture.xF
 
+    # Берём летучести ключевых компонентов
+    # light_key — индекс лёгкого ключевого компонента (бензол, индекс 0, α=2.40)
+    # heavy_key — индекс тяжёлого ключевого компонента (толуол, индекс 1, α=1.00)
     alpha_lk = alpha[light_key]
     alpha_hk = alpha[heavy_key]
 
+    # Находим все корни уравнения Андервуда
     thetas = underwood_theta(alpha, xF, q)
+
+    # Выбираем корень, который лежит между летучестями ключевых компонентов
     theta = next(t for t in thetas if alpha_hk < t < alpha_lk)
 
+    # Минимальное флегмовое число
     R_min = sum(a * x / (a - theta) for a, x in zip(alpha, xD)) - 1
     return theta, R_min
 
@@ -229,36 +228,28 @@ def minimum_reflux_underwood(mixture: Mixture, xD: list[float],
 # ============================================================
 
 def mean_relative_volatility(alpha_lh_top: float, alpha_lh_bottom: float) -> float:
-    """Средняя относительная летучесть по колонне (среднегеометрическая).
-
-    По книге (стр. 74): α_l-h = sqrt( α_верх · α_низ )
-    """
+    """Среднее геометрическое летучестей в верху и низу колонны"""
     return np.sqrt(alpha_lh_top * alpha_lh_bottom)
 
 
 def minimum_plates_fenske(xD: list[float], xR: list[float],
                           light_key: int, heavy_key: int,
                           alpha_lh: float) -> float:
-    """N_min по уравнению Фенске–Андервуда (II.108), стр. 74:
-
-              lg( xD_l/xD_h · xR_h/xR_l )
-    N_min =  ——————————————————————————————
-                      lg( α_l-h )
-    """
+    """Минимальное число теоретических тарелок по уравнению Фенске–Андервуда"""
     return np.log10((xD[light_key] / xD[heavy_key]) * (xR[heavy_key] / xR[light_key])) \
         / np.log10(alpha_lh)
 
 
 def working_reflux(R_min: float, beta: float = BETA) -> float:
-    """Рабочее флегмовое число R = beta * R_min, beta = R/R_min (стр. 74)."""
+    """Рабочее флегмовое число"""
     return beta * R_min
 
 
 def theoretical_plates_gilliland(R: float, R_min: float, N_min: float) -> float:
-    """Число теоретических тарелок N по графику II-14 (Джиллиленд), стр. 74.
+    """Число теоретических тарелок N по графику Джиллиленда
 
         X = (R - R_min) / (R + 1)
-        Y = (N - N_min) / (N + 1)   ← с графика
+        Y = (N - N_min) / (N + 1)
         N = (Y + N_min) / (1 - Y)
     """
     X = (R - R_min) / (R + 1)
@@ -267,7 +258,7 @@ def theoretical_plates_gilliland(R: float, R_min: float, N_min: float) -> float:
 
 
 def packing_height(N: float, h_ekv: float = H_EKV) -> float:
-    """Высота слоя насадки H = N * h_экв, м. (формула не менялась)."""
+    """Высота слоя насадки, м."""
     return N * h_ekv
 
 
