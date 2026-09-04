@@ -266,15 +266,10 @@ def packing_height(N: float, h_ekv: float = H_EKV) -> float:
 # 4. ДИАМЕТР НАСАДОЧНОЙ КОЛОННЫ - уравнение (V.5), стр. 159
 # ============================================================
 
-def get_k(L_mass: float, G_mass: float, rho_vap: float, rho_liq: float) -> float:
-    """Коэффициент k с графика V-4 (стр. 159).
-
-    X = (L/G) * sqrt(rho_пар / rho_жид) — величина безразмерная, поэтому
-    L и G можно передавать в любых одинаковых единицах массового
-    расхода (в этом коде - кг/с); результат от единиц не зависит.
-    """
-    X = (L_mass / G_mass) * np.sqrt(rho_vap / rho_liq)
-    return float(_K_INTERPOLATOR(X))
+def get_k(L: float, G: float, rho_vap: float, rho_liq: float) -> float:
+    """Коэффициент k для расчета скорости захлебования"""
+    X = (L / G) * np.sqrt(rho_vap / rho_liq)
+    return _K_INTERPOLATOR(X)
 
 
 def vapor_velocity(L: float, G: float, props: SectionProps,
