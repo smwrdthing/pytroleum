@@ -175,32 +175,24 @@ def material_balance(F: float, mixture: Mixture,
 # ============================================================
 
 def underwood_theta(alpha: list[float], xF: list[float], q: float) -> list[float]:
-    """Корни уравнения Андервуда (II.36):
+    """Корни уравнения Андервуда (II.36)"""
 
-         p   α_i · xF_i
-        Σ  ————————————  =  1 − q
-        i=1  α_i − θ
-
-    (величина 1-q в правой части (II.36) книга обозначает e'; для
-    стандартного случая ввода питания частично испарённой жидкостью
-    e' = 1 - q, где q - мольная доля жидкости в питании).
-
-    Для p компонентов — (p−1) корней, каждый в интервале (α_{i+1}, α_i).
-    R_мин и N_мин безразмерны и от выбора единиц измерения потоков не
-    зависят, поэтому эта часть расчёта не требует пересчёта в СИ.
-    Начальное приближение — середина интервала, решение — fsolve.
-    """
+    # Сортируем компоненты по убыванию летучести
     pairs = sorted(zip(alpha, xF), reverse=True)
+
+    # Отделяем летучести от составов в отсортированном порядке
     alpha_s = [a for a, _ in pairs]
     xF_s = [xf for _, xf in pairs]
 
+    # Функция f(θ) = Σ[α_i · xF_i / (α_i − θ)] - (1 - q)
     def f(theta: float) -> float:
         return sum(a * x / (a - theta) for a, x in zip(alpha_s, xF_s)) - (1.0 - q)
 
+    # Список для хранения всех найденных корней уравнения Андервуда
     thetas = []
     for i in range(len(alpha_s) - 1):
         theta0 = 0.5 * (alpha_s[i] + alpha_s[i + 1])
-        thetas.append(float(fsolve(f, theta0)[0]))
+        thetas.append(fsolve(f, theta0)[0])
     return thetas
 
 
