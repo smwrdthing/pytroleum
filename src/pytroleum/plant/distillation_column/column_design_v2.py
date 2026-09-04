@@ -266,15 +266,15 @@ def packing_height(N: float, h_ekv: float = H_EKV) -> float:
 # 4. ДИАМЕТР НАСАДОЧНОЙ КОЛОННЫ - уравнение (V.5), стр. 159
 # ============================================================
 
-def get_k(L: float, G: float, rho_vap: float, rho_liq: float) -> float:
+def get_k(L_mass: float, G_mass: float, rho_vap: float, rho_liq: float) -> float:
     """Коэффициент k для расчета скорости захлебования"""
-    X = (L / G) * np.sqrt(rho_vap / rho_liq)
+    X = (L_mass / G_mass) * np.sqrt(rho_vap / rho_liq)
     return _K_INTERPOLATOR(X)
 
 
 def vapor_velocity(L: float, G: float, props: SectionProps,
                    packing: Packing) -> float:
-    """Скорость захлёбывания w, м/с, по формуле (V.5), стр. 159:
+    """Скорость захлёбывания, м/с
 
         w = 3.14 * k * ( a/F_св^3 * rho_п/rho_ж * mu_ж^0.12 * psi )^(-0.5)
 
@@ -306,8 +306,7 @@ def vapor_velocity(L: float, G: float, props: SectionProps,
 
 def admissible_vapor_velocity(flooding_velocity: float,
                               factor: float = ADMISSIBLE_VELOCITY_FACTOR) -> float:
-    """Допустимая (рабочая) скорость паров, м/с (стр. 158: 20% ниже точки
-    захлёбывания)."""
+    """Допустимая (рабочая) скорость паров, м/с"""
     return factor * flooding_velocity
 
 
