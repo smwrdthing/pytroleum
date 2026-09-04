@@ -298,12 +298,8 @@ def admissible_vapor_velocity(flooding_velocity: float,
 
 
 def vapor_volume_flow(G: float, props: SectionProps) -> float:
-    """Объёмный расход пара, м3/с (СИ).
-
-    G — поток пара, КМОЛЬ/С (СИ), поэтому дополнительного деления на 3600
-    (как было в исходной версии кода при G в кмоль/ч) не требуется.
-    """
-    return G * props.M_avg / props.rho_vap   # (кмоль/с * кг/кмоль) / (кг/м3) = м3/с
+    """Объёмный расход пара, м3/с."""
+    return G * props.M_avg / props.rho_vap
 
 
 def calc_column_diameter(vapor_volume_flow: float, vapor_velocity: float) -> float:
@@ -313,11 +309,7 @@ def calc_column_diameter(vapor_volume_flow: float, vapor_velocity: float) -> flo
 
 def select_column_diameter(*diameters: float,
                            nominal_diameters: np.ndarray = STANDARD_DIAMETERS) -> float:
-    """Выбор ближайшего большего номинального диаметра из нормального ряда.
-
-    Принимает один или несколько расчётных диаметров (верх, низ и т.д.),
-    берёт наибольший и округляет вверх до стандарта.
-    """
+    """Выбор ближайшего большего номинального диаметра из нормального ряда. """
     d_max = max(diameters)
     for d_nom in sorted(nominal_diameters):
         if d_nom >= d_max:
@@ -333,8 +325,8 @@ def actual_vapor_velocity(vapor_volume: float, diameter: float) -> float:
     return float(4 * vapor_volume / (np.pi * diameter ** 2))
 
 
-def plot_graph_V4() -> None:
-    """График V-4: коэффициент k для уравнения (V.5), лог-лог масштаб."""
+def plot_graph_k() -> None:
+    """График для нахождения коэффициента k при расчете вакуумных насадочных колонн"""
     plt.figure(figsize=(8, 6))
     plt.plot(_X_DATA, _K_DATA, "o", label="точки с графика", markersize=5)
 
@@ -348,7 +340,8 @@ def plot_graph_V4() -> None:
     plt.ylim(0.1, 1)
     plt.xlabel(r"$X = (L/G)\sqrt{\rho_{\mathrm{п}}/\rho_{\mathrm{ж}}}$")
     plt.ylabel(r"$k$")
-    plt.title("Рис. V-4. Коэффициент $k$ для уравнения (V.5)")
+    plt.title(
+        "График для нахождения коэффициента k при расчете вакуумных насадочных колонн")
     plt.grid(True, which="both", alpha=0.3)
     plt.legend()
     plt.tight_layout()
@@ -356,7 +349,7 @@ def plot_graph_V4() -> None:
 
 
 def plot_graph_gilliland() -> None:
-    """График II-14 (Джиллиленд): Y = f(X) по оцифрованным точкам."""
+    """График Джиллиленда для нахождения числа теоретических тарелок N по графику II-14"""
     plt.figure(figsize=(8, 6))
     plt.plot(_GILLILAND_X, _GILLILAND_Y, "o",
              label="точки с графика", markersize=5)
@@ -369,7 +362,8 @@ def plot_graph_gilliland() -> None:
     plt.ylim(0, 1)
     plt.xlabel(r"$X = (R - R_{\mathrm{min}})/(R + 1)$")
     plt.ylabel(r"$Y = (N - N_{\mathrm{min}})/(N + 1)$")
-    plt.title("Рис. II-14. Корреляция Джиллиленда")
+    plt.title(
+        "График Джиллиленда для нахождения числа теоретических тарелок N")
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
@@ -382,7 +376,7 @@ def plot_graph_gilliland() -> None:
 
 if __name__ == "__main__":
 
-    plot_graph_V4()
+    plot_graph_k()
     plot_graph_gilliland()
 
     # --- смесь (бензол - толуол - о-ксилол) ---
