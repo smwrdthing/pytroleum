@@ -379,32 +379,36 @@ if __name__ == "__main__":
     plot_graph_k()
     plot_graph_gilliland()
 
-    # --- смесь (бензол - толуол - о-ксилол) ---
-    # порядок во всех списках одинаковый:
-    #   0 = Бензол,  1 = Толуол,  2 = о-Ксилол
+    # смесь
     mixture = Mixture(
         names=["Бензол", "Толуол", "о-Ксилол"],
-        xF=[0.40, 0.35, 0.25],
+        xF=[0.40, 0.35, 0.25],      # мол. доли в питании
         alpha=[2.40, 1.00, 0.32],   # относительные летучести по толуолу
     )
+
     light_key = 0   # Бензол
     heavy_key = 1   # Толуол
 
-    # ---- исходные данные в привычных инженерных единицах ----
-    # расход питания, КМОЛЬ/Ч (как обычно задают в условии)
+    # расход питания, КМОЛЬ/Ч
     F_h = 100.0
+
     # доля жидкости в сырье (1 = кип. жидкость)
     q = 1.0
-    recovery_D = [0.98, 0.02, 0.005]  # доли извлечения в дистиллят
 
-    beta = BETA                       # коэфф. избытка флегмы R/R_min
+    # доля каждого компонента, которая должна уйти в дистиллят
+    recovery_D = [0.98, 0.02, 0.005]
 
-    # физические свойства фаз: вязкость обычно задаётся в сантипуазах (сПз)
+    # коэфф. избытка флегмы
+    beta = BETA
+
+    # Вязкость жидкости в верху колонны, сПз
     mu_liq_top_cP = 0.32
+
+    # Вязкость жидкости в низу колонны, сПз
     mu_liq_bot_cP = 0.26
 
-    # --- пересчёт исходных данных в СИ (делается один раз, здесь) ---
-    F = F_h / HOUR_TO_SEC              # кмоль/ч -> кмоль/с
+    # Переводим расход питания из кмоль/ч в кмоль/с
+    F = F_h / HOUR_TO_SEC
 
     props_top = SectionProps(rho_liq=810.0, rho_vap=2.67,
                              mu_liq=mu_liq_top_cP * CP_TO_PAS,   # сПз -> Па*с
@@ -413,41 +417,49 @@ if __name__ == "__main__":
                              mu_liq=mu_liq_bot_cP * CP_TO_PAS,   # сПз -> Па*с
                              M_avg=80.0)
 
-    # --- насадка: кольца Паля стальные 25x25x0.6 ---
+    # насадка: кольца Паля
     packing = Packing(name="Кольца Паля",
                       a=170.0, eps=0.90)
 
-    # --- α_лк/α_тк в верху и низу колонны (для N_min) ---
+    # α_лк/α_тк в верху и низу колонны (для N_min)
     # В реальном расчёте берутся при температурах верха и низа.
-    # Здесь для примера — одно и то же значение из mixture.alpha.
     alpha_lh_top = mixture.alpha[light_key] / mixture.alpha[heavy_key]
     alpha_lh_bottom = mixture.alpha[light_key] / mixture.alpha[heavy_key]
     alpha_lh = mean_relative_volatility(alpha_lh_top, alpha_lh_bottom)
 
-    # ---------------- расчёт (всё в СИ: кмоль/с, кг/с, м3/с, м/с, Па*с) ----------------
+    # Покомпонентный материальный баланс колонны
     mb = material_balance(F, mixture, recovery_D)
+
+    # Минимальное флегмовое число по Андервуду
     theta, R_min = minimum_reflux_underwood(
         mixture, mb.xD, q, light_key, heavy_key)
+
+    # Минимальное число теоретических тарелок по Фенске
     N_min = minimum_plates_fenske(
         mb.xD, mb.xR, light_key, heavy_key, alpha_lh)
 
+    # Рабочее флегмовое число
     R = working_reflux(R_min, beta)
+
+    # Реальное число теоретических тарелок
     N = theoretical_plates_gilliland(R, R_min, N_min)
+
+    # Высота слоя насадки
     H = packing_height(N)
 
-    # ---- потоки верх / низ, кмоль/с ----
+    # потоки верх / низ, кмоль/с
     L_top = R * mb.D_flow
     G_top = (R + 1) * mb.D_flow
     L_bot = L_top + F * q
     G_bot = G_top
 
-    # ---- диаметр верха ----
+    # диаметр верха
     w_fl_top = vapor_velocity(L_top, G_top, props_top, packing)
     w_dop_top = admissible_vapor_velocity(w_fl_top)
     V_top = vapor_volume_flow(G_top, props_top)
     D_top = calc_column_diameter(V_top, w_dop_top)
 
-    # ---- диаметр низа ----
+    # диаметр низа
     w_fl_bot = vapor_velocity(L_bot, G_bot, props_bot, packing)
     w_dop_bot = admissible_vapor_velocity(w_fl_bot)
     V_bot = vapor_volume_flow(G_bot, props_bot)
@@ -455,7 +467,7 @@ if __name__ == "__main__":
 
     D_nom = select_column_diameter(D_top, D_bot)
 
-    # ---------------- вывод ----------------
+    # вывод
     print("=" * 70)
     print("МАТЕРИАЛЬНЫЙ БАЛАНС (СИ: кмоль/с; в скобках - кмоль/ч)")
     print("=" * 70)
@@ -465,23 +477,23 @@ if __name__ == "__main__":
         print(f"{name:12}{F*mixture.xF[i]:13.5f}{mb.flow_D[i]:13.5f}"
               f"{mb.xD[i]:9.4f}{mb.flow_R[i]:13.5f}{mb.xR[i]:9.4f}")
     print(f"{'Итого':12}{F:13.5f}{mb.D_flow:13.5f}{'':9}{mb.R_flow:13.5f}")
-    print(f"(в привычных единицах: F = {F*HOUR_TO_SEC:.2f} кмоль/ч,  "
+    print(f"(F = {F*HOUR_TO_SEC:.2f} кмоль/ч,  "
           f"D = {mb.D_flow*HOUR_TO_SEC:.2f} кмоль/ч,  "
           f"R = {mb.R_flow*HOUR_TO_SEC:.2f} кмоль/ч)")
 
     print("\n" + "=" * 70)
-    print("МИНИМАЛЬНОЕ ФЛЕГМОВОЕ ЧИСЛО (уравнения II.35 - II.36)")
+    print("МИНИМАЛЬНОЕ ФЛЕГМОВОЕ ЧИСЛО")
     print("=" * 70)
     print(f"theta = {theta:.4f}  (между alpha_h="
           f"{mixture.alpha[heavy_key]} и alpha_l="
           f"{mixture.alpha[light_key]})")
-    print(f"R_min = {R_min:.3f}   (безразмерная величина)")
+    print(f"R_min = {R_min:.3f}")
 
     print("\n" + "=" * 70)
     print("ЧИСЛО ТЕОРЕТИЧЕСКИХ ТАРЕЛОК")
     print("=" * 70)
     print(f"N_min = {N_min:.2f}  (Фенске, II.108)")
-    print(f"R = beta*R_min = {beta}*{R_min:.3f} = {R:.3f}")
+    print(f"R = {R:.3f}")
     print(f"N = {N:.2f}  (график II-14, Джиллиленд)")
 
     print("\n" + "=" * 70)
@@ -491,7 +503,7 @@ if __name__ == "__main__":
     print(f"H = N * h_экв = {N:.2f} * {H_EKV:.2f} = {H:.2f} м")
 
     print("\n" + "=" * 70)
-    print("ДИАМЕТР КОЛОННЫ (насадка - кольца Паля, формула V.5, СИ)")
+    print("ДИАМЕТР КОЛОННЫ (насадка - кольца Паля")
     print("=" * 70)
     print(f"mu_ж верх = {props_top.mu_liq:.5f} Па*с "
           f"({props_top.mu_liq/CP_TO_PAS:.2f} сПз)")
