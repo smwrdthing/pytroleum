@@ -8,6 +8,7 @@
   N      - корреляция Джиллиленда, график II-14     (II.108 -> N),    стр. 74
   D      - диаметр насадочной колонны              (V.5), график V-4, стр. 158-159
 """
+# NOTE : на какую книгу ссылки II...?
 
 from __future__ import annotations
 
@@ -17,7 +18,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import fsolve
 from scipy import interpolate
-
 
 # плотность воды, кг/м3
 WATER_DENSITY = 1000.0
@@ -39,6 +39,12 @@ CP_TO_PAS = 1.0e-3
 # ============================================================
 # ГРАФИК V-4: коэффициент k для уравнения (V.5)
 # ============================================================
+
+# NOTE сторонние данные можно вынести в отдельные .csv файлы
+# NOTE внутри директории модуля
+# NOTE
+# NOTE сделаьт column папкой, файлы либо в /column, либо в
+# NOTE /column/data, как-то так
 
 _X_DATA = np.array([
     0.0105, 0.0119, 0.0136, 0.0154, 0.0175, 0.0199, 0.0226, 0.0257,
@@ -110,6 +116,12 @@ STANDARD_DIAMETERS = np.array([
 
 @dataclass
 class Mixture:
+
+    # NOTE думаю следуте попробовать написать код, опираясь на
+    # NOTE классы из библиотек с похожими целями, в CoolProp и
+    # NOTE thermo в целом есть классы под смеси, если очень надо
+    # NOTE можно над нимим сделать оболочку в tdyna
+
     """Компонентный состав и относительные летучести смеси."""
     names: list[str]        # названия компонентов
     xF: list[float]         # состав, мол. доли
@@ -119,6 +131,9 @@ class Mixture:
 @dataclass
 class SectionProps:
     """Физические свойства фаз в сечении колонны (верх/низ)"""
+
+    # NOTE см. заметку к Mixtures
+
     rho_liq: float    # плотность жидкости, кг/м3
     rho_vap: float    # плотность пара, кг/м3
     mu_liq: float     # динамическая вязкость жидкости, Па*с
@@ -159,6 +174,9 @@ def material_balance(F: float, mixture: Mixture,
     flow_D = [F * xF * r for xF, r in zip(mixture.xF, recovery_D)]
     flow_R = [F * xF - d for xF, d in zip(mixture.xF, flow_D)]
 
+    # NOTE сюда хорошо пойдут операции над массивами из numpy вместо нативных циклов
+    # NOTE python
+
     # Суммарный расход дистиллята и остатка
     D_flow = sum(flow_D)
     R_flow = sum(flow_R)
@@ -187,6 +205,12 @@ def underwood_theta(alpha: list[float], xF: list[float], q: float) -> list[float
     # Функция f(θ) = Σ[α_i · xF_i / (α_i − θ)] - (1 - q)
     def f(theta: float) -> float:
         return sum(a * x / (a - theta) for a, x in zip(alpha_s, xF_s)) - (1.0 - q)
+
+    # NOTE вместо def f ... лучше сделать лямбда-функцией
+    # NOTE
+    # NOTE fsolve(lambda theta: sum(a*x/(a-theta) ...))
+    # NOTE
+    # NOTE Лучше избегать определения вложенных функций в python
 
     # Список для хранения всех найденных корней уравнения Андервуда
     thetas = []
@@ -236,6 +260,12 @@ def minimum_plates_fenske(xD: list[float], xR: list[float],
                           light_key: int, heavy_key: int,
                           alpha_lh: float) -> float:
     """Минимальное число теоретических тарелок по уравнению Фенске–Андервуда"""
+
+    # NOTE даём много параметров, ключи можно в один кортеж keys, внутри функции
+    # NOTE распаковываем
+    # NOTE
+    # NOTE light, heavy = keys
+
     return np.log10((xD[light_key] / xD[heavy_key]) * (xR[heavy_key] / xR[light_key])) \
         / np.log10(alpha_lh)
 
@@ -327,6 +357,9 @@ def actual_vapor_velocity(vapor_volume: float, diameter: float) -> float:
 
 def plot_graph_k() -> None:
     """График для нахождения коэффициента k при расчете вакуумных насадочных колонн"""
+
+    # NOTE см. matplotlib explicit API
+
     plt.figure(figsize=(8, 6))
     plt.plot(_X_DATA, _K_DATA, "o", label="точки с графика", markersize=5)
 
@@ -350,6 +383,9 @@ def plot_graph_k() -> None:
 
 def plot_graph_gilliland() -> None:
     """График Джиллиленда для нахождения числа теоретических тарелок N по графику II-14"""
+
+    # NOTE см. matplotlib explicit API
+
     plt.figure(figsize=(8, 6))
     plt.plot(_GILLILAND_X, _GILLILAND_Y, "o",
              label="точки с графика", markersize=5)
@@ -375,6 +411,8 @@ def plot_graph_gilliland() -> None:
 # ============================================================
 
 if __name__ == "__main__":
+
+    # NOTE если полностью готов, то можно в examples
 
     plot_graph_k()
     plot_graph_gilliland()
