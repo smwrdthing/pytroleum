@@ -113,13 +113,25 @@ print(f"efficiency : {efficiency*100:.2f} %")
 
 # Now let's do same thing but for range of flow rates
 varibale_inflow_range = np.arange(0.1, 2.0+0.1, 0.05)*1e-3
-variable_efficiency = []
+volumetric_variable_efficiency = []
+concentration_variable_efficiency = []
 for Q in varibale_inflow_range:
     flowsheet.solve_from_backpressures(Q, backpressures)  # type: ignore
     velocity_field.solve_ndim_profile_coeffs(flowsheet)
-    variable_efficiency.append(
+
+    # Model equations evaluate volumetric removal efficiency
+    volumetric_variable_efficiency.append(
         sep.evaluate_total_efficiency(setup, percentiles))  # type: ignore
-variable_efficiency = np.array(variable_efficiency)
+
+    # We also want to compute concentration removal efficiency, which is related
+    # to flow split as follows
+    flow_split = flowsheet.flow_rate[llh.FlowSpec.O]/Q
+    concentration_variable_efficiency.append(
+        (volumetric_variable_efficiency[-1] - flow_split) / (1 - flow_split))
+
+
+volumetric_variable_efficiency = np.array(volumetric_variable_efficiency)
+concentration_variable_efficiency = np.array(concentration_variable_efficiency)
 
 # Plotting ahead
 
@@ -166,7 +178,9 @@ fig, ax = plt.subplots()
 ax.set_title("Separation efficiency")
 ax.set_xlabel("Inlet flow rate [l/min]")
 ax.set_ylabel("Separation efficiency [%]")
-ax.plot(varibale_inflow_range*1e3*60, variable_efficiency*100, '-')
+# ax.plot(varibale_inflow_range*1e3*60, volumetric_variable_efficiency*100, '-')
+ax.plot(varibale_inflow_range*1e3*60,
+        concentration_variable_efficiency*100, '-')
 ax.grid(True)
 ax.set_xlim((0.0, varibale_inflow_range[-1]*1e3*60))
 ax.set_ylim((0, 110))
