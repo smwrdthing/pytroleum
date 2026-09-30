@@ -258,7 +258,8 @@ def evaluate_total_efficiency(
 
     # Evaluate pdf-only part
     I_pdf_only = quad(
-        lambda size: probability_density_func(size, percentiles),
+        lambda size: probability_density_func(size, percentiles)[0],
+        # [0] access is due to conversion issues
         d[-1], margin_factor*percentiles[-1])[0]
     # upper limit is deduced from 100-th percentile, which is stored last,
     # and quad return tuple with result and error estimation, we only need result,
