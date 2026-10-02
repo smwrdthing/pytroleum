@@ -84,7 +84,7 @@ class NetWithPump(net.DynamicNetwork):
         self.pump.characteristic_reference(**PUMP_REF)
         self.pump.max_angular_velocity = ANGULAR_VELOCITY
         self.pump.resistance_coeff = RESISTANCE_COEFF
-        self.pump.flow_area = INLET_AREA
+        self.pump._area = INLET_AREA  # tmp fix
 
         self.section.state = opd.factory_state(
             equation_of_state=[eos.factory_eos({"air": 1}),
